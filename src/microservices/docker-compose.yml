@@ -28,6 +28,8 @@ services:
       depends_on:
         eureka-server:
           condition: service_healthy
+        kafka:
+          condition: service_healthy
       environment:
         - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
         - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -36,8 +38,9 @@ services:
         - SERVICE_PORT=${MAP_INSTANCE_PORT}
         - ADAPTER_RIDE_PORT=${MAP_ADAPTER_RIDE_PORT}
         - ADAPTER_EBIKE_PORT=${MAP_ADAPTER_EBIKE_PORT}
+        - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
       healthcheck:
-        test: ["CMD-SHELL", "curl -f http://localhost:${MAP_INSTANCE_PORT}/health || exit 1", "curl -f http://localhost:${MAP_ADAPTER_EBIKE_PORT}/health || exit 1", "curl -f http://localhost:${MAP_ADAPTER_RIDE_PORT}/health || exit 1"]
+        test: ["CMD-SHELL", "curl -f http://localhost:${MAP_INSTANCE_PORT}/health || exit 1"]
         interval: 10s
         timeout: 5s
         retries: 3
@@ -81,6 +84,8 @@ services:
         condition: service_healthy
       map-microservice:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -93,9 +98,8 @@ services:
       - MONGO_CONNECTION=${MONGODB_CONNECTION_STRING}
       - MONGO_DATABSE=${EBIKE_MONGODB_DATABASE}
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
-      - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:${EBIKE_INSTANCE_PORT}/health", "curl -f http://localhost:${EBIKE_ADAPTER_RIDE_PORT}/health" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${EBIKE_INSTANCE_PORT}/health" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -117,6 +121,8 @@ services:
         condition: service_healthy
       map-microservice:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -129,6 +135,7 @@ services:
       - EBIKE_PORT=${EBIKE_ADAPTER_RIDE_PORT}
       - USER_HOST=${USER_INSTANCE_HOSTNAME}
       - USER_PORT=${USER_ADAPTER_RIDE_PORT}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:${RIDE_INSTANCE_PORT}/health" ]
       interval: 5s
@@ -148,6 +155,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -157,8 +166,9 @@ services:
       - ADAPTER_RIDE_PORT=${USER_ADAPTER_RIDE_PORT}
       - MONGO_CONNECTION=${MONGODB_CONNECTION_STRING}
       - MONGO_DATABSE=${USER_MONGODB_DATABASE}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:${USER_INSTANCE_PORT}/health", "curl -f http://localhost:${USER_ADAPTER_RIDE_PORT}/health" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${USER_INSTANCE_PORT}/health" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -205,6 +215,7 @@ services:
       api-gateway:
         condition: service_healthy
 
+
   # --- Zookeeper ---
   zookeeper:
     image: ${ZOOKEEPER_IMAGE}
@@ -221,6 +232,12 @@ services:
   kafka:
     image: ${KAFKA_IMAGE}
     container_name: kafka
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      start_period: 15s
+      interval: 5s
+      timeout: 10s
+      retries: 10
     depends_on:
       - zookeeper
     ports:
@@ -234,22 +251,7 @@ services:
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP}
       - KAFKA_INTER_BROKER_LISTENER_NAME=${KAFKA_INTER_BROKER_LISTENER_NAME}
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
-      - KAFKA_AUTO_CREATE_TOPICS_ENABLE="true"
-
-    networks:
-      - eureka-network
-
-  # --- Schema Registry ---
-  schema-registry:
-    image: ${SCHEMA_REGISTRY_IMAGE}
-    container_name: schema-registry
-    depends_on:
-      - kafka
-    ports:
-      - "${SCHEMA_REGISTRY_HOST_PORT}:8081"
-    environment:
-      - SCHEMA_REGISTRY_HOST_NAME=${SCHEMA_REGISTRY_HOST_NAME}
-      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=${SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS}
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
     networks:
       - eureka-network
 
@@ -258,8 +260,8 @@ services:
     image: ${KAFKA_UI_IMAGE}
     container_name: kafka-ui
     depends_on:
-      - kafka
-      - schema-registry
+      kafka:
+        condition: service_healthy
     ports:
       - "${KAFKA_UI_HOST_PORT}:8080"
     environment:
@@ -274,7 +276,8 @@ services:
     image: ${KAFKA_EXPORTER_IMAGE}
     container_name: kafka-exporter
     depends_on:
-      - kafka
+        kafka:
+          condition: service_healthy
     ports:
       - "${KAFKA_EXPORTER_HOST_PORT}:9308"
     command:
