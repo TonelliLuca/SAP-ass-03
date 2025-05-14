@@ -2,112 +2,111 @@ package application;
 
 import application.ports.*;
 import domain.model.*;
+import infrastructure.repository.LocalProjectionRepository;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
 public class RestRideServiceAPIImpl implements RestRideServiceAPI {
+    private static final Logger logger = LoggerFactory.getLogger(RestRideServiceAPIImpl.class);
+
     private final RideRepository rideRepository;
     private final Vertx vertx;
-    private final EbikeCommunicationPort ebikeCommunicationAdapter;
-    private final MapCommunicationPort mapCommunicationAdapter;
-    private final UserCommunicationPort userCommunicationAdapter;
+    private final LocalProjectionRepository projectionRepository;
+    private final RideEventsProducerPort rideEventsProducer;
 
-    public RestRideServiceAPIImpl(EventPublisher publisher, Vertx vertx, EbikeCommunicationPort ebikeCommunicationAdapter, MapCommunicationPort mapCommunicationAdapter, UserCommunicationPort userCommunicationAdapter) {
+    public RestRideServiceAPIImpl(
+            EventPublisher publisher,
+            Vertx vertx,
+            LocalProjectionRepository projectionRepository,
+            RideEventsProducerPort rideEventsProducer) {
+
         this.rideRepository = new RideRepositoryImpl(vertx, publisher);
         this.vertx = vertx;
-        this.ebikeCommunicationAdapter = ebikeCommunicationAdapter;
-        this.mapCommunicationAdapter = mapCommunicationAdapter;
-        this.userCommunicationAdapter = userCommunicationAdapter;
-        this.ebikeCommunicationAdapter.init();
-        this.mapCommunicationAdapter.init();
-        this.userCommunicationAdapter.init();
-    }
-    private CompletableFuture<EBike> checkEbike(String bikeId) {
-        System.out.println("Checking ebike: " + bikeId);
-        return ebikeCommunicationAdapter.getEbike(bikeId)
-                .thenApply(ebikeJson -> {
-                    if (ebikeJson == null) {
-                        System.err.println("EBike not found");
-                        return null;
-                    }
+        this.projectionRepository = projectionRepository;
+        this.rideEventsProducer = rideEventsProducer;
 
-                    JsonObject location = ebikeJson.getJsonObject("location");
-                    return new EBike(
-                            ebikeJson.getString("id"),
-                            location.getDouble("x"),  // Get x from location object
-                            location.getDouble("y"),  // Get y from location object
-                            EBikeState.valueOf(ebikeJson.getString("state")),
-                            ebikeJson.getInteger("batteryLevel")
-                    );
-                });
-    }
-
-    private CompletableFuture<User> checkUser(String userId) {
-        System.out.println("Checking user: " + userId);
-        return userCommunicationAdapter.getUser(userId)
-                .thenApply(userJson -> {
-                    if (userJson == null) {
-                        System.err.println("User not found");
-                        return null;
-                    }
-
-                    return new User(userJson.getString("username"), userJson.getInteger("credit"));
-                });
+        logger.info("RestRideServiceAPIImpl initialized");
     }
 
     @Override
     public CompletableFuture<Void> startRide(String userId, String bikeId) {
-        CompletableFuture<EBike> ebikeFuture = checkEbike(bikeId);
-        CompletableFuture<User> userFuture = checkUser(userId);
+        logger.info("Starting ride for user: {} and bike: {}", userId, bikeId);
 
-        return CompletableFuture.allOf(ebikeFuture, userFuture).thenCompose(v -> {
-            try {
+        // Get data from local projections using futures
+        CompletableFuture<EBike> ebikeFuture = projectionRepository.getEBike(bikeId);
+        CompletableFuture<User> userFuture = projectionRepository.getUser(userId);
+
+        return CompletableFuture.allOf(ebikeFuture, userFuture)
+            .thenCompose(v -> {
                 EBike ebike = ebikeFuture.join();
                 User user = userFuture.join();
 
-                if (ebike == null || user == null) {
-                    return CompletableFuture.failedFuture(new RuntimeException("EBike or User not found"));
-                } else if (ebike.getState() != EBikeState.AVAILABLE) {
+                if (ebike == null) {
+                    logger.error("EBike not found in projection: {}", bikeId);
+                    return CompletableFuture.failedFuture(new RuntimeException("EBike not found"));
+                }
+
+                if (user == null) {
+                    logger.error("User not found in projection: {}", userId);
+                    return CompletableFuture.failedFuture(new RuntimeException("User not found"));
+                }
+
+                if (ebike.getState() != EBikeState.AVAILABLE) {
+                    logger.error("EBike is not available: {}, state: {}", bikeId, ebike.getState());
                     return CompletableFuture.failedFuture(new RuntimeException("EBike is not available"));
-                } else if (user.getCredit() == 0) {
+                }
+
+                if (user.getCredit() == 0) {
+                    logger.error("User has no credit: {}", userId);
                     return CompletableFuture.failedFuture(new RuntimeException("User has no credit"));
-                } else if (ebike.getBatteryLevel() == 0){
+                }
+
+                if (ebike.getBatteryLevel() == 0) {
+                    logger.error("EBike has no battery: {}", bikeId);
                     return CompletableFuture.failedFuture(new RuntimeException("EBike has no battery"));
                 }
-                System.out.println("Starting ride for user: " + userId + " and bike: " + bikeId);
+
+                // Create ride
                 Ride ride = new Ride("ride-" + userId + "-" + bikeId, user, ebike);
                 rideRepository.addRide(ride);
+                logger.info("Ride created: {}", ride.getId());
+
+                // Publish ride start event
+                rideEventsProducer.publishRideStart(bikeId, userId);
+
+                // Start simulation
                 rideRepository.getRideSimulation(ride.getId()).startSimulation().whenComplete((result, throwable) -> {
                     if (throwable == null) {
-                        mapCommunicationAdapter.notifyEndRide(bikeId, userId);
+                        logger.info("Ride simulation completed successfully: {}", ride.getId());
+                        rideEventsProducer.publishRideEnd(bikeId, userId);
                         rideRepository.removeRide(ride);
                     } else {
-                        System.err.println("Error during ride simulation: " + throwable.getMessage());
+                        logger.error("Error during ride simulation: {}", throwable.getMessage());
                     }
                 });
-                mapCommunicationAdapter.notifyStartRide(bikeId, userId);
+
                 return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
-        });
+            });
     }
 
     @Override
     public CompletableFuture<Void> stopRide(String userId) {
+        logger.info("Stopping ride for user: {}", userId);
         return CompletableFuture.supplyAsync(() -> rideRepository.getRideSimulationByUserId(userId))
                 .thenCompose(rideSimulation -> {
                     if (rideSimulation != null) {
+                        String bikeId = rideSimulation.getRide().getEbike().getId();
+                        logger.info("Found active ride for user: {}, bike: {}", userId, bikeId);
                         rideSimulation.stopSimulationManually();
-                        ebikeCommunicationAdapter.sendUpdate(new JsonObject()
-                                .put("id", rideSimulation.getRide().getEbike().getId())
-                                .put("state", rideSimulation.getRide().getEbike().getState().toString()));
-                        mapCommunicationAdapter.notifyEndRide(rideSimulation.getRide().getEbike().getId(), userId);
-                        rideRepository.removeRide(rideSimulation.getRide());
+                        rideEventsProducer.publishRideEnd(bikeId, userId);
+                        return CompletableFuture.completedFuture(null);
                     }
-                    return CompletableFuture.completedFuture(null);
+                    logger.error("No active ride found for user: {}", userId);
+                    return CompletableFuture.failedFuture(new RuntimeException("No active ride found"));
                 });
     }
 }
