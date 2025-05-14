@@ -79,5 +79,21 @@ public class ServiceConfiguration {
                 .put("port", config.getInteger("ADAPTER_EBIKE_PORT", 8082));
     }
 
+    public String getKakaConf(String key, String defaultValue) {
+        // Convert from dot notation to uppercase environment variable format
+        String envKey = key.toUpperCase().replace(".", "_");
+
+        // Check if config contains the key
+        if (config != null && config.containsKey(envKey)) {
+            return config.getString(envKey);
+        }
+
+        // Special case for bootstrap servers
+        if (key.equals("kafka.bootstrapServers") && config != null && config.containsKey("KAFKA_BOOTSTRAP_SERVERS")) {
+            return config.getString("KAFKA_BOOTSTRAP_SERVERS");
+        }
+
+        return defaultValue;
+    }
 
 }
