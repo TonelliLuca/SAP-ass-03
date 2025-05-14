@@ -1,6 +1,7 @@
 import application.EBikeServiceImpl;
-import infrastructure.adapters.map.MapCommunicationAdapter;
-import infrastructure.adapters.ride.RideCommunicationAdapter;
+import application.ports.EbikeProducerPort;
+import infrastructure.adapters.kafka.EbikeUpdatesProducer;
+import infrastructure.adapters.kafka.RideUpdatesConsumer;
 import infrastructure.adapters.web.EBikeVerticle;
 import infrastructure.adapters.web.RESTEBikeAdapter;
 import infrastructure.config.ServiceConfiguration;
@@ -16,13 +17,17 @@ public class Main {
             System.out.println("Configuration loaded: " + conf.encodePrettily());
             MongoClient mongoClient = MongoClient.create(vertx, config.getMongoConfig());
             MongoEBikeRepository repository = new MongoEBikeRepository(mongoClient);
-            MapCommunicationAdapter mapCommunicationAdapter = new MapCommunicationAdapter(vertx);
-            EBikeServiceImpl service = new EBikeServiceImpl(repository, mapCommunicationAdapter);
+            String bootstrapServers = config.getKakaConf("kafka.bootstrapServers", "kafka:29092");
+            EbikeProducerPort producer = new EbikeUpdatesProducer(bootstrapServers);
+            //MapCommunicationAdapter mapCommunicationAdapter = new MapCommunicationAdapter(vertx);
+            EBikeServiceImpl service = new EBikeServiceImpl(repository, producer);
             RESTEBikeAdapter restEBikeAdapter = new RESTEBikeAdapter(service);
-            RideCommunicationAdapter rideCommunicationAdapter = new RideCommunicationAdapter(service, vertx); // Port for RideCommunicationAdapter
+            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers);
+            //RideCommunicationAdapter rideCommunicationAdapter = new RideCommunicationAdapter(service, vertx); // Port for RideCommunicationAdapter
             EBikeVerticle eBikeVerticle = new EBikeVerticle(restEBikeAdapter, vertx);
-            rideCommunicationAdapter.init();
+            //rideCommunicationAdapter.init();
             eBikeVerticle.init();
+            consumer.init();
         });
 
     }

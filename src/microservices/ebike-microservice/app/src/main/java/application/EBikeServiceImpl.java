@@ -2,8 +2,7 @@ package application;
 
 import application.ports.EBikeRepository;
 import application.ports.EBikeServiceAPI;
-import application.ports.MapCommunicationPort;
-import infrastructure.adapters.map.MapCommunicationAdapter;
+import application.ports.EbikeProducerPort;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -13,12 +12,11 @@ import java.util.concurrent.CompletableFuture;
 public class EBikeServiceImpl implements EBikeServiceAPI {
 
     private final EBikeRepository repository;
-    private final MapCommunicationPort mapCommunicationAdapter;
+    private final EbikeProducerPort mapCommunicationAdapter;
 
-    public EBikeServiceImpl(EBikeRepository repository, MapCommunicationAdapter mapCommunicationAdapter) {
+    public EBikeServiceImpl(EBikeRepository repository, EbikeProducerPort mapCommunicationAdapter) {
         this.repository = repository;
         this.mapCommunicationAdapter = mapCommunicationAdapter;
-        mapCommunicationAdapter.init();
         repository.findAll().thenAccept(mapCommunicationAdapter::sendAllUpdates);
     }
 

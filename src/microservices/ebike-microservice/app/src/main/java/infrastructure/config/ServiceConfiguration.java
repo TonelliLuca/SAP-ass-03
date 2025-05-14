@@ -88,4 +88,21 @@ public class ServiceConfiguration {
                 .put("connection_string", config.getString("MONGO_CONNECTION", "mongodb://mongodb:27017"))
                 .put("db_name", config.getString("MONGO_DATABSE", "ebikes_db"));
     }
+
+    public String getKakaConf(String key, String defaultValue) {
+        // Convert from dot notation to uppercase environment variable format
+        String envKey = key.toUpperCase().replace(".", "_");
+
+        // Check if config contains the key
+        if (config != null && config.containsKey(envKey)) {
+            return config.getString(envKey);
+        }
+
+        // Special case for bootstrap servers
+        if (key.equals("kafka.bootstrapServers") && config != null && config.containsKey("KAFKA_BOOTSTRAP_SERVERS")) {
+            return config.getString("KAFKA_BOOTSTRAP_SERVERS");
+        }
+
+        return defaultValue;
+    }
 }
