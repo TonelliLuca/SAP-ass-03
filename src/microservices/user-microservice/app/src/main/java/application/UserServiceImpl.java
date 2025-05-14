@@ -2,6 +2,7 @@ package application;
 
 import application.ports.UserServiceAPI;
 import application.ports.UserRepository;
+import application.ports.UserProducerPort;
 import application.ports.UserEventPublisher;
 
 import domain.model.User;
@@ -14,11 +15,16 @@ import java.util.concurrent.CompletableFuture;
 public class UserServiceImpl implements UserServiceAPI {
 
     private final UserRepository repository;
-    private final UserEventPublisher UserEventPublisher;
+    private final UserProducerPort userProducer;
+    private final UserEventPublisher userEventPublisher;
 
-    public UserServiceImpl(UserRepository repository, UserEventPublisher UserEventPublisher) {
+
+    public UserServiceImpl(UserRepository repository, UserEventPublisher publisher, UserProducerPort userProducer) {
         this.repository = repository;
-        this.UserEventPublisher = UserEventPublisher;
+        this.userProducer = userProducer;
+        this.userEventPublisher = publisher;
+        // Initialize by sending all existing users to Kafka (similar to EBike pattern)
+        repository.findAll().thenAccept(userProducer::sendAllUserUpdate);
     }
 
     @Override
@@ -48,8 +54,11 @@ public class UserServiceImpl implements UserServiceAPI {
                         .put("credit", credit);
 
                 return repository.save(user).thenApply(v -> {
-                    UserEventPublisher.publishUserUpdate(username, user);
-                    UserEventPublisher.publishAllUsersUpdates(user);
+                    userProducer.sendUpdate(user);
+                    JsonArray usersArray = new JsonArray().add(user);
+                    userProducer.sendAllUserUpdate(usersArray);
+                    userEventPublisher.publishUserUpdate(username, user);
+                    userEventPublisher.publishAllUsersUpdates(user);
                     return user;
                 });
             }
@@ -79,8 +88,11 @@ public class UserServiceImpl implements UserServiceAPI {
                     existingUser.put("credit", newCredit);
                 }
                 return repository.update(existingUser).thenApply(v -> {
-                    UserEventPublisher.publishUserUpdate(username, existingUser);
-                    UserEventPublisher.publishAllUsersUpdates(existingUser);
+                    userProducer.sendUpdate(existingUser);
+                    JsonArray usersArray = new JsonArray().add(existingUser);
+                    userProducer.sendAllUserUpdate(usersArray);
+                    userEventPublisher.publishUserUpdate(username, existingUser);
+                    userEventPublisher.publishAllUsersUpdates(existingUser);
                     return existingUser;
                 });
             } else {
@@ -99,8 +111,11 @@ public class UserServiceImpl implements UserServiceAPI {
                 int currentCredit = user.getInteger("credit");
                 user.put("credit", currentCredit + creditToAdd);
                 return repository.update(user).thenApply(v -> {
-                    UserEventPublisher.publishUserUpdate(username, user);
-                    UserEventPublisher.publishAllUsersUpdates(user);
+                    userProducer.sendUpdate(user);
+                    JsonArray usersArray = new JsonArray().add(user);
+                    userProducer.sendAllUserUpdate(usersArray);
+                    userEventPublisher.publishUserUpdate(username, user);
+                    userEventPublisher.publishAllUsersUpdates(user);
                     return user;
                 });
             }
@@ -115,9 +130,12 @@ public class UserServiceImpl implements UserServiceAPI {
                 JsonObject user = optionalUser.get();
                 int newCredit = Math.max(user.getInteger("credit") - creditToDecrease, 0);
                 user.put("credit", newCredit);
-                return repository.update(user).thenApply(v ->{
-                    UserEventPublisher.publishUserUpdate(username, user);
-                    UserEventPublisher.publishAllUsersUpdates(user);
+                return repository.update(user).thenApply(v -> {
+                    userProducer.sendUpdate(user);
+                    JsonArray usersArray = new JsonArray().add(user);
+                    userProducer.sendAllUserUpdate(usersArray);
+                    userEventPublisher.publishUserUpdate(username, user);
+                    userEventPublisher.publishAllUsersUpdates(user);
                     return user;
                 });
             }

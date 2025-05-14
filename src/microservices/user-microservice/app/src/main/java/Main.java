@@ -1,8 +1,10 @@
 import application.UserServiceImpl;
 import application.ports.UserEventPublisher;
+import application.ports.UserProducerPort;
 import application.ports.UserServiceAPI;
+import infrastructure.adapters.kafka.RideUpdatesConsumer;
+import infrastructure.adapters.kafka.UserUpdatesProducer;
 import infrastructure.utils.UserEventPublisherImpl;
-import infrastructure.adapters.ride.RideCommunicationAdapter;
 import infrastructure.adapters.web.RESTUserAdapter;
 import infrastructure.adapters.web.UserVerticle;
 import infrastructure.config.ServiceConfiguration;
@@ -19,16 +21,23 @@ public class Main {
         Vertx vertx = Vertx.vertx();
         ServiceConfiguration config = ServiceConfiguration.getInstance(vertx);
         config.load().onSuccess(conf -> {
+            String bootstrapServers = config.getKakaConf("kafka.bootstrapServers", "kafka:29092");
+
             logger.info("Configuration loaded: " + conf.encodePrettily());
             MongoClient mongoClient = MongoClient.create(vertx, config.getMongoConfig());
             MongoUserRepository repository = new MongoUserRepository(mongoClient);
             UserEventPublisher UserEventPublisher = new UserEventPublisherImpl(vertx);
-            UserServiceAPI service = new UserServiceImpl(repository, UserEventPublisher);
+            UserProducerPort producer = new UserUpdatesProducer(bootstrapServers);
+            UserServiceAPI service = new UserServiceImpl(repository, UserEventPublisher, producer);
             RESTUserAdapter controller = new RESTUserAdapter(service, vertx);
             UserVerticle userVerticle = new UserVerticle(controller, vertx);
-            RideCommunicationAdapter rideAdapter = new RideCommunicationAdapter(service, vertx);
+            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers);
             userVerticle.init();
-            rideAdapter.init();
+            consumer.init();
+
+            //RideCommunicationAdapter rideAdapter = new RideCommunicationAdapter(service, vertx);
+            //userVerticle.init();
+            //rideAdapter.init();
         });
     }
 }
