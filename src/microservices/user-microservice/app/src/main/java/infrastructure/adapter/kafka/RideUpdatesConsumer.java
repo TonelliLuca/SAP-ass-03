@@ -5,49 +5,57 @@ import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Kafka adapter that consumes user updates from the ride-events topic
- * and applies them to the local user service.
- */
 public class RideUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(RideUpdatesConsumer.class);
     private final UserServiceAPI userService;
     private final GenericKafkaConsumer<JsonObject> consumer;
 
-    public RideUpdatesConsumer(UserServiceAPI ebikeService, String bootstrapServers) {
-        this.userService = ebikeService;
+    public RideUpdatesConsumer(UserServiceAPI userService, String bootstrapServers) {
+        this.userService = userService;
         this.consumer = new GenericKafkaConsumer<>(
             bootstrapServers,
             "user-service-group",
             "ride-events",
             JsonObject.class
         );
-        logger.info("RideUpadtesAdapter created with bootstrap servers: {}", bootstrapServers);
+        logger.info("RideUpdatesConsumer created with bootstrap servers: {}", bootstrapServers);
     }
 
     public void init() {
-        consumer.start(this::processEBikeUpdate);
-        logger.info("RideUpadtesAdapter started - listening for user updates from ride service");
+        consumer.start(this::processUserUpdate);
+        logger.info("RideUpdatesConsumer started - listening for user updates from ride service");
     }
 
-    private void processEBikeUpdate(String key, JsonObject event) {
+    private void processUserUpdate(String key, JsonObject event) {
         try {
             logger.info("Received user update event: {}", event.encodePrettily());
-
-            // Extract user data from event payload
+            String type = event.getString("type");
             JsonObject payload = event.getJsonObject("payload");
-            if (payload == null || !payload.containsKey("ride")) {
-                logger.error("Invalid ride update: missing payload or user object");
+
+            if (payload == null) {
+                logger.error("Invalid ride update: missing payload");
                 return;
             }
 
-            JsonObject userData = payload.getJsonObject("ride").getJsonObject("user");
-            if (userData == null || !userData.containsKey("username")) {
-                logger.error("Invalid user update: missing user data or id");
+            // Get ride data from the standardized format
+            JsonObject rideData = payload.getJsonObject("ride");
+            if (rideData == null) {
+                logger.error("Invalid ride update: missing ride data");
+                return;
+            }
+
+            JsonObject userData = rideData.getJsonObject("user");
+            if (userData == null) {
+                logger.error("Invalid user update: missing user data");
                 return;
             }
 
             String username = userData.getString("username");
+            if (username == null) {
+                logger.error("Invalid user update: missing username");
+                return;
+            }
+
             logger.info("Processing update for user: {}", username);
 
             // Update the user in the local service
@@ -68,6 +76,6 @@ public class RideUpdatesConsumer {
 
     public void close() {
         consumer.stop();
-        logger.info("RideUpadtesAdapter stopped");
+        logger.info("RideUpdatesConsumer stopped");
     }
 }
