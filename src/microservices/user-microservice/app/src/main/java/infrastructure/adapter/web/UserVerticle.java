@@ -1,4 +1,4 @@
-package infrastructure.adapters.web;
+package infrastructure.adapter.web;
 
 import infrastructure.config.ServiceConfiguration;
 import io.vertx.core.AbstractVerticle;
@@ -8,40 +8,36 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public class EBikeVerticle extends AbstractVerticle {
-    private static final Logger logger = LoggerFactory.getLogger(EBikeVerticle.class);
+public class UserVerticle extends AbstractVerticle {
 
-    private final RESTEBikeAdapter controller;
+    private static final Logger logger = LoggerFactory.getLogger(UserVerticle.class);
+
+    private final RESTUserAdapter userService;
     private final String eurekaApplicationName;
+    private final String eurekaHost;
     private final int port;
     private final String eurekaInstanceId;
-    private final String eurekaHost;
-    private final Vertx vertx;
     private final int eurekaPort;
-    private final WebClient client;
+    private WebClient client;
+    private Vertx vertx;
 
-    public EBikeVerticle(RESTEBikeAdapter controller, Vertx vertx) {
-        this.controller = controller;
+    public UserVerticle(RESTUserAdapter userService, Vertx vertx) {
+        this.userService = userService;
         ServiceConfiguration config = ServiceConfiguration.getInstance(vertx);
         JsonObject eurekaConfig = config.getEurekaConfig();
         JsonObject serviceConfig = config.getServiceConfig();
-        this.eurekaInstanceId = UUID.randomUUID().toString();
+        this.eurekaApplicationName = serviceConfig.getString("name");
+        this.eurekaInstanceId = UUID.randomUUID().toString().substring(0, 5);
         this.eurekaHost = eurekaConfig.getString("host");
         this.eurekaPort = eurekaConfig.getInteger("port");
-        WebClientOptions options = new WebClientOptions()
-                .setConnectTimeout(2000)
-                .setIdleTimeout(30);
-        this.vertx = vertx;
-        this.client = WebClient.create(vertx, options);
-        this.eurekaApplicationName = serviceConfig.getString("name");
         this.port = serviceConfig.getInteger("port");
+        this.vertx = vertx;
     }
 
     @Override
@@ -49,14 +45,14 @@ public class EBikeVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
 
-        controller.configureRoutes(router);
+        userService.configureRoutes(router);
 
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(port)
                 .onSuccess(server -> {
                     registerWithEureka();
-                    logger.info("HTTP server started on port {}", port);
+                    logger.info("RestUserAdapter HTTP server started on port {}", port);
                     startPromise.complete();
                 })
                 .onFailure(startPromise::fail);
@@ -64,16 +60,14 @@ public class EBikeVerticle extends AbstractVerticle {
 
     public void init() {
         vertx.deployVerticle(this).onSuccess(id -> {
-            logger.info("EBikeVerticle deployed successfully with ID: " + id);
+            logger.info("UserVerticle deployed successfully with ID: " + id);
         }).onFailure(err -> {
-            logger.error("Failed to deploy EBikeVerticle: " + err.getMessage());
+            logger.error("Failed to deploy UserVerticle: " + err.getMessage());
         });
     }
 
-
-
     private void registerWithEureka() {
-        JsonObject instance = new JsonObject()
+       JsonObject instance = new JsonObject()
                 .put("instance", new JsonObject()
                         .put("instanceId", eurekaInstanceId)
                         .put("hostName", eurekaApplicationName)
@@ -90,21 +84,22 @@ public class EBikeVerticle extends AbstractVerticle {
                         .put("dataCenterInfo", new JsonObject()
                                 .put("@class", "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo")
                                 .put("name", "MyOwn")));
-        System.out.println("Registering with Eureka: " + instance.encodePrettily());
-        System.out.println("Eureka host: " + eurekaHost + " Eureka port: " + eurekaPort);
-        System.out.println("Eureka application name: " + eurekaApplicationName);
-        client.post(eurekaPort, eurekaHost, "/eureka/apps/" + eurekaApplicationName)
-                .putHeader("Content-Type", "application/json")
-                .sendJsonObject(instance)
-                .map(response -> {
-                    if (response.statusCode() == 204) {
-                        logger.info("Successfully registered with Eureka");
-                        startHeartbeat(eurekaApplicationName);
-                        return null;
-                    } else {
-                        throw new RuntimeException("Failed to register with Eureka: " + response.statusCode());
-                    }
-                });
+                System.out.println("Registering with Eureka: " + instance.encodePrettily());
+                System.out.println("Eureka host: " + eurekaHost + " Eureka port: " + eurekaPort);
+                System.out.println("Eureka application name: " + eurekaApplicationName);
+                client = WebClient.create(vertx);
+                client.post(eurekaPort, eurekaHost, "/eureka/apps/" + eurekaApplicationName)
+                        .putHeader("Content-Type", "application/json")
+                        .sendJsonObject(instance)
+                        .map(response -> {
+                            if (response.statusCode() == 204) {
+                                logger.info("Successfully registered with Eureka");
+                                startHeartbeat(eurekaApplicationName);
+                                return null;
+                            } else {
+                                throw new RuntimeException("Failed to register with Eureka: " + response.statusCode());
+                            }
+                        });
 
     }
 
@@ -127,7 +122,5 @@ public class EBikeVerticle extends AbstractVerticle {
                     }
                 });
     }
-
-
 
 }

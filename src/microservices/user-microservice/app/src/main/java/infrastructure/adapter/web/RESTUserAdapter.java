@@ -1,4 +1,4 @@
-package infrastructure.adapters.web;
+package infrastructure.adapter.web;
 
 import application.ports.UserServiceAPI;
 import domain.model.User;

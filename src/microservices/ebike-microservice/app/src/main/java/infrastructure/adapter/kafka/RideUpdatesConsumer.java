@@ -1,4 +1,4 @@
-package infrastructure.adapters.kafka;
+package infrastructure.adapter.kafka;
 
 import application.ports.EBikeServiceAPI;
 import io.vertx.core.json.JsonObject;
