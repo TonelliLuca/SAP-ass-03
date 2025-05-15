@@ -1,9 +1,9 @@
 import application.EBikeServiceImpl;
 import application.ports.EbikeProducerPort;
-import infrastructure.adapters.kafka.EbikeUpdatesProducer;
-import infrastructure.adapters.kafka.RideUpdatesConsumer;
-import infrastructure.adapters.web.EBikeVerticle;
-import infrastructure.adapters.web.RESTEBikeAdapter;
+import infrastructure.adapter.kafka.EbikeUpdatesProducer;
+import infrastructure.adapter.kafka.RideUpdatesConsumer;
+import infrastructure.adapter.web.EBikeVerticle;
+import infrastructure.adapter.web.RESTEBikeAdapter;
 import infrastructure.config.ServiceConfiguration;
 import infrastructure.persistence.MongoEBikeRepository;
 import io.vertx.core.Vertx;
