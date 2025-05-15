@@ -5,10 +5,6 @@ import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Kafka adapter that consumes e-bike updates from the ride-events topic
- * and applies them to the local e-bike service.
- */
 public class RideUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(RideUpdatesConsumer.class);
     private final EBikeServiceAPI ebikeService;
@@ -22,27 +18,51 @@ public class RideUpdatesConsumer {
             "ride-events",
             JsonObject.class
         );
-        logger.info("RideUpadtesAdapter created with bootstrap servers: {}", bootstrapServers);
+        logger.info("RideUpdatesConsumer created with bootstrap servers: {}", bootstrapServers);
     }
 
     public void init() {
-        consumer.start(this::processEBikeUpdate);
-        logger.info("RideUpadtesAdapter started - listening for e-bike updates from ride service");
+        consumer.start(this::processRideEvent);
+        logger.info("RideUpdatesConsumer started - listening for e-bike updates from ride service");
     }
 
-    private void processEBikeUpdate(String key, JsonObject event) {
+    private void processRideEvent(String key, JsonObject event) {
         try {
             logger.info("Received e-bike update event: {}", event.encodePrettily());
+            String type = event.getString("type");
+            JsonObject payload = event.getJsonObject("payload");
 
-            // Extract bike data from event payload
-            JsonObject bikeData = event.getJsonObject("payload").getJsonObject("ride").getJsonObject("bike");
-            if (bikeData == null || !bikeData.containsKey("id")) {
-                logger.error("Invalid e-bike update: missing bike data or id");
+            if (payload == null) {
+                logger.error("Invalid e-bike update: missing payload");
                 return;
             }
 
-            String bikeId = bikeData.getString("id");
+            // Get ride data from the standardized format
+            JsonObject rideData = payload.getJsonObject("ride");
+            if (rideData == null) {
+                logger.error("Invalid e-bike update: missing ride data");
+                return;
+            }
+
+            JsonObject bikeData = rideData.getJsonObject("bike");
+            if (bikeData == null) {
+                logger.error("Invalid e-bike update: missing bike data");
+                return;
+            }
+
+            // Accept both id and bikeName fields
+            String bikeId = bikeData.getString("id", bikeData.getString("bikeName"));
+            if (bikeId == null) {
+                logger.error("Invalid e-bike update: missing bike identifier");
+                return;
+            }
+
             logger.info("Processing update for bike: {}", bikeId);
+
+            // Ensure id field is present for service processing
+            if (!bikeData.containsKey("id")) {
+                bikeData.put("id", bikeId);
+            }
 
             // Update the e-bike in the local service
             ebikeService.updateEBike(bikeData)
@@ -62,6 +82,6 @@ public class RideUpdatesConsumer {
 
     public void close() {
         consumer.stop();
-        logger.info("RideUpadtesAdapter stopped");
+        logger.info("RideUpdatesConsumer stopped");
     }
 }
