@@ -21,6 +21,7 @@ public class Main {
             String bootstrapServers = config.getKakaConf("kafka.bootstrapServers", "kafka:29092");
             RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers);
             mapServiceVerticle.init();
+            consumer.init();
             //bikeUpdateAdapter.init();
             //rideUpdateAdapter.init();
         });
