@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class RideEventsProducer implements RideEventsProducerPort {
     private static final Logger logger = LoggerFactory.getLogger(RideEventsProducer.class);
     private final GenericKafkaProducer<JsonObject> rideProducer;
@@ -19,10 +18,20 @@ public class RideEventsProducer implements RideEventsProducerPort {
     @Override
     public void publishRideStart(String bikeId, String userId) {
         logger.info("Publishing ride start event: bike={}, user={}", bikeId, userId);
+        JsonObject bikeJson = new JsonObject()
+                .put("id", bikeId)
+                .put("bikeName", bikeId);  // Include both fields for compatibility
+
+        JsonObject userJson = new JsonObject()
+                .put("username", userId);
+
+        JsonObject rideJson = new JsonObject()
+                .put("bike", bikeJson)
+                .put("user", userJson);
+
         JsonObject payload = new JsonObject()
                 .put("status", "START")
-                .put("bike", new JsonObject().put("bikeName", bikeId))
-                .put("user", new JsonObject().put("username", userId));
+                .put("ride", rideJson);  // Add consistent ride wrapper
 
         publishEvent(payload, "ride_started");
     }
@@ -32,6 +41,7 @@ public class RideEventsProducer implements RideEventsProducerPort {
         logger.info("Publishing ride update event: id={}", ride.getId());
         JsonObject bikeJson = new JsonObject()
                 .put("id", ride.getEbike().getId())
+                .put("bikeName", ride.getEbike().getId())  // Add for compatibility
                 .put("state", ride.getEbike().getState().toString())
                 .put("batteryLevel", ride.getEbike().getBatteryLevel())
                 .put("location", new JsonObject()
@@ -57,10 +67,20 @@ public class RideEventsProducer implements RideEventsProducerPort {
     @Override
     public void publishRideEnd(String bikeId, String userId) {
         logger.info("Publishing ride end event: bike={}, user={}", bikeId, userId);
+        JsonObject bikeJson = new JsonObject()
+                .put("id", bikeId)
+                .put("bikeName", bikeId);  // Include both fields for compatibility
+
+        JsonObject userJson = new JsonObject()
+                .put("username", userId);
+
+        JsonObject rideJson = new JsonObject()
+                .put("bike", bikeJson)
+                .put("user", userJson);
+
         JsonObject payload = new JsonObject()
                 .put("status", "STOP")
-                .put("bike", new JsonObject().put("bikeName", bikeId))
-                .put("user", new JsonObject().put("username", userId));
+                .put("ride", rideJson);  // Add consistent ride wrapper
 
         publishEvent(payload, "ride_ended");
     }
