@@ -26,6 +26,7 @@ public class RideUpdatesConsumer {
         logger.info("RideUpdatesConsumer started - listening for user updates from ride service");
     }
 
+
     private void processUserUpdate(String key, JsonObject event) {
         try {
             logger.info("Received user update event: {}", event.encodePrettily());
@@ -37,14 +38,22 @@ public class RideUpdatesConsumer {
                 return;
             }
 
-            // Get ride data from the standardized format
+            if (payload.containsKey("map")) {
+                payload = payload.getJsonObject("map");
+            }
+
             JsonObject rideData = payload.getJsonObject("ride");
             if (rideData == null) {
-                logger.error("Invalid ride update: missing ride data");
+                logger.error("Invalid e-bike update: missing ride data");
                 return;
             }
 
-            JsonObject userData = rideData.getJsonObject("user");
+            JsonObject userData = rideData.getJsonObject("map").getJsonObject("user");
+            // Unwrap "map" if present (as in ONGOING messages)
+            if (userData != null && userData.containsKey("map")) {
+                userData = userData.getJsonObject("map");
+            }
+
             if (userData == null) {
                 logger.error("Invalid user update: missing user data");
                 return;
@@ -58,7 +67,6 @@ public class RideUpdatesConsumer {
 
             logger.info("Processing update for user: {}", username);
 
-            // Update the user in the local service
             userService.updateUser(userData)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {

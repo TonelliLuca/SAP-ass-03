@@ -55,8 +55,6 @@ public class UserServiceImpl implements UserServiceAPI {
 
                 return repository.save(user).thenApply(v -> {
                     userProducer.sendUpdate(user);
-                    JsonArray usersArray = new JsonArray().add(user);
-                    userProducer.sendAllUserUpdate(usersArray);
                     userEventPublisher.publishUserUpdate(username, user);
                     userEventPublisher.publishAllUsersUpdates(user);
                     return user;
@@ -89,8 +87,6 @@ public class UserServiceImpl implements UserServiceAPI {
                 }
                 return repository.update(existingUser).thenApply(v -> {
                     userProducer.sendUpdate(existingUser);
-                    JsonArray usersArray = new JsonArray().add(existingUser);
-                    userProducer.sendAllUserUpdate(usersArray);
                     userEventPublisher.publishUserUpdate(username, existingUser);
                     userEventPublisher.publishAllUsersUpdates(existingUser);
                     return existingUser;
@@ -112,8 +108,6 @@ public class UserServiceImpl implements UserServiceAPI {
                 user.put("credit", currentCredit + creditToAdd);
                 return repository.update(user).thenApply(v -> {
                     userProducer.sendUpdate(user);
-                    JsonArray usersArray = new JsonArray().add(user);
-                    userProducer.sendAllUserUpdate(usersArray);
                     userEventPublisher.publishUserUpdate(username, user);
                     userEventPublisher.publishAllUsersUpdates(user);
                     return user;
@@ -132,8 +126,6 @@ public class UserServiceImpl implements UserServiceAPI {
                 user.put("credit", newCredit);
                 return repository.update(user).thenApply(v -> {
                     userProducer.sendUpdate(user);
-                    JsonArray usersArray = new JsonArray().add(user);
-                    userProducer.sendAllUserUpdate(usersArray);
                     userEventPublisher.publishUserUpdate(username, user);
                     userEventPublisher.publishAllUsersUpdates(user);
                     return user;
