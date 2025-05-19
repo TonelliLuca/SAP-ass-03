@@ -61,6 +61,7 @@ public class RideSimulation implements Service {
                 ride.end();
                 stopSimulation();
                 completeSimulation();
+                return;
             }
 
             if (user.getCredit() == 0) {
@@ -68,6 +69,7 @@ public class RideSimulation implements Service {
                 stopSimulation();
                 bike.setState(EBikeState.AVAILABLE);
                 completeSimulation();
+                return;
             }
 
             V2d direction = bike.getDirection();
@@ -92,14 +94,12 @@ public class RideSimulation implements Service {
             bike.decreaseBattery(BATTERY_DECREASE);
             user.decreaseCredit(CREDIT_DECREASE);
 
-            publisher.publishEBikeUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel());
-            publisher.publishUserUpdate(user.getId(), user.getCredit());
+            publisher.publishRideUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel(), user.getId(), user.getCredit(), ride.getId());
         }
     }
 
     private void completeSimulation() {
-        publisher.publishEBikeUpdate(ride.getEbike().getId(), ride.getEbike().getLocation().x(), ride.getEbike().getLocation().y(), ride.getEbike().getState().toString(), ride.getEbike().getBatteryLevel());
-        publisher.publishUserUpdate(ride.getUser().getId(), ride.getUser().getCredit());
+        publisher.publishRideUpdate(ride.getEbike().getId(), ride.getEbike().getLocation().x(), ride.getEbike().getLocation().y(), ride.getEbike().getState().toString(), ride.getEbike().getBatteryLevel(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getId());
     }
 
     public void stopSimulation() {

@@ -11,25 +11,27 @@ public class EventPublisherImpl implements EventPublisher {
         this.vertx = vertx;
     }
 
-
     @Override
-    public synchronized void publishEBikeUpdate(String id, double x, double y, String state, int batteryLevel) {
-        JsonObject message = new JsonObject()
+    public synchronized void publishRideUpdate(String id, double x, double y, String state, int batteryLevel, String username, int credit, String rideId){
+        JsonObject bike = new JsonObject()
                 .put("id", id)
                 .put("state", state)
+                .put("batteryLevel", batteryLevel)
                 .put("location", new JsonObject()
-                        .put("x", x)
-                        .put("y", y))
-                .put("batteryLevel", batteryLevel);
-        vertx.eventBus().publish(RIDE_UPDATE_ADDRESS_EBIKE, message);
-    }
-
-    @Override
-    public synchronized void publishUserUpdate(String username, int credit) {
-        JsonObject message = new JsonObject()
+                    .put("x", x)
+                    .put("y", y));
+        JsonObject user = new JsonObject()
                 .put("username", username)
                 .put("credit", credit);
-        vertx.eventBus().publish(RIDE_UPDATE_ADDRESS_USER, message);
+        JsonObject rideJson = new JsonObject()
+                .put("id", rideId)
+                .put("bike", bike)
+                .put("user", user);
+
+        JsonObject payload = new JsonObject()
+                .put("status", "INFO")
+                .put("ride", rideJson);
+        vertx.eventBus().publish(RIDE_UPDATE, payload);
     }
 
 }

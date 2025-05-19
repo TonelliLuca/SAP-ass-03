@@ -1,7 +1,9 @@
 package infrastructure.adapter.kafka;
 
+import application.ports.EventPublisher;
 import application.ports.RideEventsProducerPort;
 import domain.model.Ride;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,10 +11,23 @@ import org.slf4j.LoggerFactory;
 public class RideEventsProducer implements RideEventsProducerPort {
     private static final Logger logger = LoggerFactory.getLogger(RideEventsProducer.class);
     private final GenericKafkaProducer<JsonObject> rideProducer;
+    private final Vertx vertx;
 
-    public RideEventsProducer(String bootstrapServers) {
+    public RideEventsProducer(String bootstrapServers, Vertx vertx) {
         this.rideProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-events");
         logger.info("RideEventsProducer initialized with bootstrap servers: {}", bootstrapServers);
+        this.vertx = vertx;
+    }
+
+    @Override
+    public void init(){
+        vertx.eventBus().consumer(EventPublisher.RIDE_UPDATE, message -> {
+            if (message.body() instanceof JsonObject) {
+                JsonObject update = (JsonObject) message.body();
+                this.publishRideUpdate(update);
+            }
+        });
+
     }
 
     @Override
@@ -37,31 +52,9 @@ public class RideEventsProducer implements RideEventsProducerPort {
     }
 
     @Override
-    public void publishRideUpdate(Ride ride) {
-        logger.info("Publishing ride update event: id={}", ride.getId());
-        JsonObject bikeJson = new JsonObject()
-                .put("id", ride.getEbike().getId())
-                .put("bikeName", ride.getEbike().getId())  // Add for compatibility
-                .put("state", ride.getEbike().getState().toString())
-                .put("batteryLevel", ride.getEbike().getBatteryLevel())
-                .put("location", new JsonObject()
-                        .put("x", ride.getEbike().getLocation().x())
-                        .put("y", ride.getEbike().getLocation().y()));
-
-        JsonObject userJson = new JsonObject()
-                .put("username", ride.getUser().getId())
-                .put("credit", ride.getUser().getCredit());
-
-        JsonObject rideJson = new JsonObject()
-                .put("id", ride.getId())
-                .put("bike", bikeJson)
-                .put("user", userJson);
-
-        JsonObject payload = new JsonObject()
-                .put("status", "ON_GOING")
-                .put("ride", rideJson);
-
-        publishEvent(payload, "ride_updated");
+    public void publishRideUpdate(JsonObject update) {
+        logger.info("Publishing ride update event: ", update.encodePrettily());
+        publishEvent(update, "ride_updated");
     }
 
     @Override
