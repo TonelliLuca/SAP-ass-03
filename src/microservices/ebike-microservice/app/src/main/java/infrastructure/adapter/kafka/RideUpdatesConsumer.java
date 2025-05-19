@@ -37,20 +37,27 @@ public class RideUpdatesConsumer {
                 return;
             }
 
-            // Get ride data from the standardized format
+            if (payload.containsKey("map")) {
+                payload = payload.getJsonObject("map");
+            }
+
             JsonObject rideData = payload.getJsonObject("ride");
             if (rideData == null) {
                 logger.error("Invalid e-bike update: missing ride data");
                 return;
             }
 
-            JsonObject bikeData = rideData.getJsonObject("bike");
+            JsonObject bikeData = rideData.getJsonObject("map").getJsonObject("bike");
+            // Unwrap "map" if present (as in ONGOING messages)
+            if (bikeData != null && bikeData.containsKey("map")) {
+                bikeData = bikeData.getJsonObject("map");
+            }
+
             if (bikeData == null) {
                 logger.error("Invalid e-bike update: missing bike data");
                 return;
             }
 
-            // Accept both id and bikeName fields
             String bikeId = bikeData.getString("id", bikeData.getString("bikeName"));
             if (bikeId == null) {
                 logger.error("Invalid e-bike update: missing bike identifier");
@@ -64,7 +71,6 @@ public class RideUpdatesConsumer {
                 bikeData.put("id", bikeId);
             }
 
-            // Update the e-bike in the local service
             ebikeService.updateEBike(bikeData)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {

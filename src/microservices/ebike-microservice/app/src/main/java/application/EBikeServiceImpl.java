@@ -55,7 +55,7 @@ public class EBikeServiceImpl implements EBikeServiceAPI {
                 });
     }
 
-    @Override
+   @Override
     public CompletableFuture<JsonObject> updateEBike(JsonObject ebike) {
         if (ebike.containsKey("batteryLevel")) {
             int newBattery = ebike.getInteger("batteryLevel");
@@ -71,7 +71,12 @@ public class EBikeServiceImpl implements EBikeServiceAPI {
             ebike.put("state", ebike.getString("state"));
         }
         if (ebike.containsKey("location")) {
-            ebike.put("location", ebike.getJsonObject("location"));
+            JsonObject location = ebike.getJsonObject("location");
+            // Unwrap nested "map" fields
+            while (location != null && location.containsKey("map")) {
+                location = location.getJsonObject("map");
+            }
+            ebike.put("location", location);
         }
         return repository.update(ebike).thenCompose(v ->
                 repository.findById(ebike.getString("id")).thenApply(updatedEbike -> {

@@ -46,7 +46,7 @@ public class EbikeUpdatesProducer implements EbikeProducerPort {
                     .put("type", "ebikes_batch_updated")
                     .put("timestamp", System.currentTimeMillis())
                     .put("payload", ebikes);
-
+            logger.info("Sent ebike batch update for ebikes: {}", event);
             ebikeProducer.send("batch-" + System.currentTimeMillis(), event);
             logger.debug("Sent batch update with {} ebikes", ebikes.size());
         } catch (Exception e) {
