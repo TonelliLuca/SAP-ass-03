@@ -134,21 +134,23 @@ public class MapServiceVerticle extends AbstractVerticle {
                     mapService.getAllBikes(username);
 
                     webSocket.closeHandler(v -> {
-                        ctx.response().setStatusCode(200).end("WebSocket Closed successfully");
+                        //ctx.response().setStatusCode(200).end("WebSocket Closed successfully");
 
                         metricsManager.incrementMethodCounter("observeUserBikes_connection_closed");
                         mapService.deregisterUser(username);
                         globalConsumer.unregister();
                         userConsumer.unregister();
+                        stopRideConsumer.unregister();
                     });
 
                     webSocket.exceptionHandler(err -> {
-                        ctx.response().setStatusCode(500).end("WebSocket Failed");
+                        //ctx.response().setStatusCode(500).end("WebSocket Failed");
 
                         metricsManager.incrementMethodCounter("observeUserBikes_connection_error");
                         mapService.deregisterUser(username);
                         globalConsumer.unregister();
                         userConsumer.unregister();
+                        stopRideConsumer.unregister();
                     });
                 } else {
                     ctx.response().setStatusCode(500).end("WebSocket Upgrade Failed");

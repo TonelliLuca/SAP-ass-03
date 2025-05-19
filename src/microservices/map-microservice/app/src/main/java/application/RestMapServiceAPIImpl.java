@@ -6,7 +6,8 @@ import domain.model.EBike;
 import application.ports.EventPublisher;
 import domain.model.EBikeRepository;
 import domain.model.EBikeRepositoryImpl;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,6 +17,7 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
     private final EBikeRepository bikeRepository;
     private final EventPublisher eventPublisher;
     private final List<String> registeredUsers = new CopyOnWriteArrayList<>();
+    private static final Logger logger = LoggerFactory.getLogger(RestMapServiceAPIImpl.class);
 
     public RestMapServiceAPIImpl(EventPublisher eventPublisher) {
         this.bikeRepository = new EBikeRepositoryImpl();
@@ -24,7 +26,6 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
 
     @Override
     public CompletableFuture<Void> updateEBikes(List<EBike> bikes) {
-
         return CompletableFuture.allOf(bikes.stream()
                 .map(bikeRepository::saveBike)
                 .toArray(CompletableFuture[]::new))
@@ -45,23 +46,35 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
 
     @Override
     public CompletableFuture<Void> updateEBike(EBike bike) {
-
+        logger.debug("Updating eBike: {}", bike.getId());
         return bikeRepository.saveBike(bike)
                 .thenAccept(v -> {
-                    bikeRepository.getAllBikes().thenAccept(eventPublisher::publishBikesUpdate);
+                    logger.debug("Saved eBike: {}", bike.getId());
+                    bikeRepository.getAllBikes().thenAccept(bikes -> {
+                        logger.debug("Publishing all bikes update, count: {}", bikes.size());
+                        eventPublisher.publishBikesUpdate(bikes);
+                    });
 
                     bikeRepository.getUsersWithAssignedAndAvailableBikes().thenAccept(usersWithBikeMap -> {
+                        logger.debug("Users with assigned/available bikes: {}", usersWithBikeMap.keySet());
                         if(!usersWithBikeMap.isEmpty()){
-                            usersWithBikeMap.forEach((username, userBikes) -> eventPublisher.publishUserBikesUpdate(userBikes, username));
+                            usersWithBikeMap.forEach((username, userBikes) -> {
+                                logger.debug("Publishing user bikes update for user: {}", username);
+                                eventPublisher.publishUserBikesUpdate(userBikes, username);
+                            });
 
                             registeredUsers.stream()
-                                    .filter(user -> !usersWithBikeMap.containsKey(user)) // Filter users without bikes assigned
+                                    .filter(user -> !usersWithBikeMap.containsKey(user))
                                     .forEach(user -> bikeRepository.getAvailableBikes().thenAccept(availableBikes -> {
+                                        logger.debug("Publishing available bikes to unassigned user: {}", user);
                                         eventPublisher.publishUserBikesUpdate(availableBikes, user);
                                     }));
                         }
                         else{
-                            bikeRepository.getAvailableBikes().thenAccept(eventPublisher::publishUserAvailableBikesUpdate);
+                            bikeRepository.getAvailableBikes().thenAccept(availableBikes -> {
+                                logger.debug("Publishing available bikes update, count: {}", availableBikes.size());
+                                eventPublisher.publishUserAvailableBikesUpdate(availableBikes);
+                            });
                         }
                     });
 
