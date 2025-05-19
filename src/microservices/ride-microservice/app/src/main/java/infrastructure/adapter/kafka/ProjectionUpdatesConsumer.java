@@ -1,6 +1,6 @@
 package infrastructure.adapter.kafka;
 
-import infrastructure.repository.LocalProjectionRepository;
+import application.ports.ProjectionRepositoryPort;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,11 +10,11 @@ public class ProjectionUpdatesConsumer {
 
     private final GenericKafkaConsumer<JsonObject> userConsumer;
     private final GenericKafkaConsumer<JsonObject> ebikeConsumer;
-    private final LocalProjectionRepository projectionRepository;
+    private final ProjectionRepositoryPort projectionRepository;
 
     public ProjectionUpdatesConsumer(
             String bootstrapServers,
-            LocalProjectionRepository projectionRepository) {
+            ProjectionRepositoryPort projectionRepository) {
 
         this.projectionRepository = projectionRepository;
 

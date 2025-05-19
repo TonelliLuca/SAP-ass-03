@@ -1,5 +1,6 @@
 package infrastructure.repository;
 
+import application.ports.ProjectionRepositoryPort;
 import domain.model.EBike;
 import domain.model.EBikeState;
 import domain.model.User;
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class LocalProjectionRepository {
+public class LocalProjectionRepository implements ProjectionRepositoryPort {
     private static final Logger logger = LoggerFactory.getLogger(LocalProjectionRepository.class);
 
     // Store projections
@@ -33,9 +34,6 @@ public class LocalProjectionRepository {
         });
     }
 
-    public CompletableFuture<JsonObject> getEBikeJson(String id) {
-        return CompletableFuture.supplyAsync(() -> ebikeProjections.get(id));
-    }
 
     private JsonObject unwrapMap(JsonObject obj) {
         while (obj != null && obj.containsKey("map")) {
@@ -84,9 +82,7 @@ public class LocalProjectionRepository {
         });
     }
 
-    public CompletableFuture<JsonObject> getUserJson(String username) {
-        return CompletableFuture.supplyAsync(() -> userProjections.get(username));
-    }
+
 
     public CompletableFuture<User> getUser(String username) {
         return CompletableFuture.supplyAsync(() -> {

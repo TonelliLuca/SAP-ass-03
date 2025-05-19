@@ -19,7 +19,7 @@ public class Main {
             String bootstrapServers = config.getKakaConf("kafka.bootstrapServers", "kafka:29092");
 
             // Create shared projection repository
-            LocalProjectionRepository localProjections = new LocalProjectionRepository();
+            ProjectionRepositoryPort localProjections = new LocalProjectionRepository();
 
             // Create Kafka event producer
             RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, vertx);

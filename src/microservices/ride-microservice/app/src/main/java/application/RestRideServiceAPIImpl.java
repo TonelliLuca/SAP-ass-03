@@ -2,7 +2,6 @@ package application;
 
 import application.ports.*;
 import domain.model.*;
-import infrastructure.repository.LocalProjectionRepository;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -15,13 +14,13 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
 
     private final RideRepository rideRepository;
     private final Vertx vertx;
-    private final LocalProjectionRepository projectionRepository;
+    private final ProjectionRepositoryPort projectionRepository;
     private final RideEventsProducerPort rideEventsProducer;
 
     public RestRideServiceAPIImpl(
             EventPublisher publisher,
             Vertx vertx,
-            LocalProjectionRepository projectionRepository,
+            ProjectionRepositoryPort projectionRepository,
             RideEventsProducerPort rideEventsProducer) {
 
         this.rideRepository = new RideRepositoryImpl(vertx, publisher);
