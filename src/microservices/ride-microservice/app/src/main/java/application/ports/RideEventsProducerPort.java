@@ -1,6 +1,6 @@
 package application.ports;
 
-import domain.model.Ride;
+
 import io.vertx.core.json.JsonObject;
 
 public interface RideEventsProducerPort {

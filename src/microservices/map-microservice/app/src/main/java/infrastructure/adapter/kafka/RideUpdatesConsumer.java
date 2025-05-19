@@ -88,31 +88,29 @@ public class RideUpdatesConsumer {
 
         logger.debug("Processing ride event - status: {}, user: {}, bike: {}", status, username, bikeId);
 
-        if ("START".equals(status)) {
-            mapService.notifyStartRide(username, bikeId)
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        logger.error("Failed to process ride start event: {}", error.getMessage());
-                    } else {
-                        logger.info("Successfully processed ride start for user {} and bike {}", username, bikeId);
-                    }
-                });
-        } else if ("STOP".equals(status)) {
-            mapService.notifyStopRide(username, bikeId)
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        logger.error("Failed to process ride stop event: {}", error.getMessage());
-                    } else {
-                        logger.info("Successfully processed ride stop for user {} and bike {}", username, bikeId);
-                    }
-                });
-        } else if ("INFO".equals(status)) {
+        switch (status) {
+            case "START" -> mapService.notifyStartRide(username, bikeId)
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            logger.error("Failed to process ride start event: {}", error.getMessage());
+                        } else {
+                            logger.info("Successfully processed ride start for user {} and bike {}", username, bikeId);
+                        }
+                    });
+            case "STOP" -> mapService.notifyStopRide(username, bikeId)
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            logger.error("Failed to process ride stop event: {}", error.getMessage());
+                        } else {
+                            logger.info("Successfully processed ride stop for user {} and bike {}", username, bikeId);
+                        }
+                    });
+            case "INFO" ->
 
-           // Convert bikeData to EBike
-            logger.info("Received INFO ride event  IGNORED");
-       } else {
-           logger.info("Received unknown ride status update - no action needed");
-       }
+                // Convert bikeData to EBike
+                    logger.info("Received INFO ride event  IGNORED");
+            case null, default -> logger.info("Received unknown ride status update - no action needed");
+        }
     } catch (Exception e) {
         logger.error("Error processing ride event", e);
     }
@@ -185,9 +183,5 @@ public class RideUpdatesConsumer {
         }
     }
 
-    public void close() {
-        rideConsumer.stop();
-        bikeConsumer.stop();
-        logger.info("RideUpdatesConsumer stopped");
-    }
+
 }

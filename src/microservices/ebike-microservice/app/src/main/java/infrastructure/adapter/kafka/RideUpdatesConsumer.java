@@ -29,7 +29,7 @@ public class RideUpdatesConsumer {
     private void processRideEvent(String key, JsonObject event) {
         try {
             logger.info("Received e-bike update event: {}", event.encodePrettily());
-            String type = event.getString("type");
+            //String type = event.getString("type");
             JsonObject payload = event.getJsonObject("payload");
 
             if (payload == null) {
@@ -86,8 +86,5 @@ public class RideUpdatesConsumer {
         }
     }
 
-    public void close() {
-        consumer.stop();
-        logger.info("RideUpdatesConsumer stopped");
-    }
+
 }

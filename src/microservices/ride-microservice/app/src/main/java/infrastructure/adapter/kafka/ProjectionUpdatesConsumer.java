@@ -59,8 +59,7 @@ public class ProjectionUpdatesConsumer {
                 var userList = payload.getJsonArray("list");
                 if (userList != null) {
                     userList.forEach(user -> {
-                        if (user instanceof JsonObject) {
-                            JsonObject userObj = (JsonObject) user;
+                        if (user instanceof JsonObject userObj) {
                             JsonObject userData = userObj.containsKey("map") ? userObj.getJsonObject("map") : userObj;
                             projectionRepository.updateUser(userData)
                                     .exceptionally(ex -> {
@@ -95,8 +94,7 @@ public class ProjectionUpdatesConsumer {
                 var ebikeList = payload.getJsonArray("list");
                 if (ebikeList != null) {
                     ebikeList.forEach(ebike -> {
-                        if (ebike instanceof JsonObject) {
-                            JsonObject ebikeObj = (JsonObject) ebike;
+                        if (ebike instanceof JsonObject ebikeObj) {
                             JsonObject ebikeData = ebikeObj.containsKey("map") ? ebikeObj.getJsonObject("map") : ebikeObj;
                             projectionRepository.updateEBike(ebikeData)
                                     .exceptionally(ex -> {
@@ -113,9 +111,5 @@ public class ProjectionUpdatesConsumer {
         }
     }
 
-    public void close() {
-        userConsumer.stop();
-        ebikeConsumer.stop();
-        logger.info("ProjectionUpdatesConsumer stopped");
-    }
+
 }

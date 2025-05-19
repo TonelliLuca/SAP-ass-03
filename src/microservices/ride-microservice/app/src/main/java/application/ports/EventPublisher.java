@@ -8,7 +8,6 @@ public interface EventPublisher {
 
     /**
      * Publishes a complete ride update event.
-     *
      * This method is used to publish a comprehensive update for a ride,
      * including both e-bike and user details. The update contains the
      * e-bike's location, state, and battery level, as well as the user's

@@ -54,16 +54,5 @@ public class EbikeUpdatesProducer implements EbikeProducerPort {
         }
     }
 
-    public void init() {
-        logger.info("EbikeUpdatesProducer initialized");
-    }
 
-    public void close() {
-        try {
-            ebikeProducer.close();
-            logger.info("EbikeUpdatesProducer closed");
-        } catch (Exception e) {
-            logger.error("Error closing EbikeUpdatesProducer", e);
-        }
-    }
 }

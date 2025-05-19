@@ -42,11 +42,7 @@ public class MapServiceVerticle extends AbstractVerticle {
     }
 
     public void init() {
-        vertx.deployVerticle(this).onSuccess(id -> {
-            System.out.println("MapServiceVerticle deployed successfully with ID: " + id);
-        }).onFailure(err -> {
-            System.err.println("Failed to deploy MapServiceVerticle: " + err.getMessage());
-        });
+        vertx.deployVerticle(this).onSuccess(id -> System.out.println("MapServiceVerticle deployed successfully with ID: " + id)).onFailure(err -> System.err.println("Failed to deploy MapServiceVerticle: " + err.getMessage()));
     }
 
     @Override
@@ -57,11 +53,9 @@ public class MapServiceVerticle extends AbstractVerticle {
 
         router.route().handler(BodyHandler.create());
 
-        router.get("/metrics").handler(ctx -> {
-            ctx.response()
-                    .putHeader("Content-Type", "text/plain")
-                    .end(metricsManager.getMetrics());
-        });
+        router.get("/metrics").handler(ctx -> ctx.response()
+                .putHeader("Content-Type", "text/plain")
+                .end(metricsManager.getMetrics()));
 
         router.get("/health").handler(ctx -> ctx.response().setStatusCode(200).end("OK"));
 
@@ -121,9 +115,7 @@ public class MapServiceVerticle extends AbstractVerticle {
                         metricsManager.incrementMethodCounter("observeUserBikes_message_sent");
                     });
 
-                    var stopRideConsumer = vertx.eventBus().consumer("ride.stop."+username, message -> {
-                        webSocket.writeTextMessage(message.body().toString());
-                    });
+                    var stopRideConsumer = vertx.eventBus().consumer("ride.stop."+username, message -> webSocket.writeTextMessage(message.body().toString()));
 
                     var userConsumer = vertx.eventBus().consumer(username, message -> {
                         webSocket.writeTextMessage(message.body().toString());

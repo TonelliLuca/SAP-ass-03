@@ -71,7 +71,7 @@ public class LocalProjectionRepository implements ProjectionRepositoryPort {
     public CompletableFuture<Void> updateUser(JsonObject userJson) {
         return CompletableFuture.runAsync(() -> {
             logger.info("Updating user projection: {}", userJson.encodePrettily());
-            if (userJson == null || !userJson.containsKey("username")) {
+            if (!userJson.containsKey("username")) {
                 logger.error("User projection update failed");
                 return;
             }
@@ -103,10 +103,5 @@ public class LocalProjectionRepository implements ProjectionRepositoryPort {
         });
     }
 
-    public CompletableFuture<Void> clear() {
-        return CompletableFuture.runAsync(() -> {
-            ebikeProjections.clear();
-            userProjections.clear();
-        });
-    }
+
 }

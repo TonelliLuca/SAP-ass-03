@@ -2,7 +2,6 @@ package infrastructure.adapter.kafka;
 
 import application.ports.EventPublisher;
 import application.ports.RideEventsProducerPort;
-import domain.model.Ride;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -22,8 +21,7 @@ public class RideEventsProducer implements RideEventsProducerPort {
     @Override
     public void init(){
         vertx.eventBus().consumer(EventPublisher.RIDE_UPDATE, message -> {
-            if (message.body() instanceof JsonObject) {
-                JsonObject update = (JsonObject) message.body();
+            if (message.body() instanceof JsonObject update) {
                 this.publishRideUpdate(update);
             }
         });
@@ -53,7 +51,7 @@ public class RideEventsProducer implements RideEventsProducerPort {
 
     @Override
     public void publishRideUpdate(JsonObject update) {
-        logger.info("Publishing ride update event: ", update.encodePrettily());
+        logger.info("Publishing ride update event: {}", update.encodePrettily());
         publishEvent(update, "ride_updated");
     }
 
@@ -88,8 +86,5 @@ public class RideEventsProducer implements RideEventsProducerPort {
         logger.debug("Published event: {}", event.encode());
     }
 
-    public void close() {
-        rideProducer.close();
-        logger.info("RideEventsProducer closed");
-    }
+
 }
