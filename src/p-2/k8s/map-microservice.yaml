@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: map-microservice
+  namespace: sap-assignment
+
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: map-microservice } }
+  template:
+    metadata:
+      labels: { app: map-microservice }
+    spec:
+      containers:
+        - name: map-microservice
+          image: map-microservice:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: app-config }
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: map-microservice-service
+  namespace: sap-assignment
+
+spec:
+  selector: { app: map-microservice }
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

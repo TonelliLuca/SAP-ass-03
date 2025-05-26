@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ebike-microservice
+  namespace: sap-assignment
+
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: ebike-microservice } }
+  template:
+    metadata:
+      labels: { app: ebike-microservice }
+    spec:
+      containers:
+        - name: ebike-microservice
+          image: ebike-microservice:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: app-config }
+          env:
+            - name: MONGO_DATABASE
+              value: "ebikes_db"
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ebike-microservice-service
+  namespace: sap-assignment
+
+spec:
+  selector: { app: ebike-microservice }
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
