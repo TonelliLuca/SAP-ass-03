@@ -16,8 +16,8 @@ public class UserVerticle extends AbstractVerticle {
     private WebSocket bikeWebSocket;
     private final Vertx vertx;
     private final String username;
-    private static final int PORT = 8080;
-    private static final String ADDRESS = "localhost";
+    private static final int PORT = 30080;
+    private static final String ADDRESS = "192.168.49.2";
 
     public UserVerticle(Vertx vertx, String username) {
         this.vertx = vertx;
