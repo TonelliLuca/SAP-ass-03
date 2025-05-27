@@ -22,7 +22,6 @@ docker build -t ride-microservice:latest -f ../p-1/microservices/ride-microservi
 echo "==== Deploying to Kubernetes ===="
 echo "Creating ConfigMap..."
 kubectl create ns sap-assignment
-kubectl create ns kafka
 kubectl apply -f ./k8s/configMap.yaml
 echo "Deploying infrastructure..."
 kubectl apply -f ./k8s/kafka/zookeeper.yaml
@@ -32,25 +31,17 @@ kubectl apply -f ./k8s/prometheus.yaml
 kubectl apply -f ./k8s/api-gateway.yaml
 kubectl apply -f ./k8s/eureka-server.yml
 
-
-
-
-echo "Waiting for infrastructure to initialize..."
-kubectl wait --for=condition=Ready pod -l app=zookeeper -n kafka --timeout=240s
-kubectl wait --for=condition=Ready pod -l app=mongodb -n sap-assignment --timeout=240s
-kubectl wait --for=condition=Ready pod -l app=kafka-broker-1 -n kafka --timeout=240s
-
 echo "Deploying services..."
-sleep 5
 kubectl apply -f ./k8s/user-microservice.yaml
 kubectl apply -f ./k8s/ebike-microservice.yaml
-kubectl apply -f ./k8s/map-microservice.yaml
 kubectl apply -f ./k8s/ride-microservice.yaml
-sleep 5
+kubectl apply -f ./k8s/map-microservice.yaml
+
+echo "Deploying Kafka UI"
 kubectl apply -f ./k8s/kafka/kafka-ui.yaml
 
 echo "==== Deployment complete. Checking status... ===="
-kubectl get pods
+kubectl get pods -n sap-assignment
 
 echo "==== Minikube IP address ===="
 minikube ip
