@@ -6,10 +6,9 @@ metadata:
 data:
   # Eureka configuration
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka-service:8761/eureka/"
-  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
-  EUREKA_CLIENT_FETCH_REGISTRY: "false"
   EUREKA_INSTANCE_HOSTNAME: "eureka-server"
   EUREKA_INSTANCE_PORT: "8761"
+  EUREKA_HOST: "eureka-service"
 
   # API Gateway configuration
   API_GATEWAY_EUREKA_INSTANCE_PORT: "8080"
@@ -25,23 +24,23 @@ data:
   MONGO_CONNECTION: "mongodb://mongodb-service:27017"
 
   # User microservice configuration
-  USER_INSTANCE_HOSTNAME: "user-microservice-service"
+  USER_INSTANCE_HOSTNAME: "user-microservice"
   USER_INSTANCE_PORT: "8080"
   USER_ADAPTER_RIDE_PORT: "8081"
 
   # E-bike microservice configuration
-  EBIKE_INSTANCE_HOSTNAME: "ebike-microservice-service"
+  EBIKE_INSTANCE_HOSTNAME: "ebike-microservice"
   EBIKE_INSTANCE_PORT: "8080"
   EBIKE_ADAPTER_RIDE_PORT: "8081"
 
   # Map microservice configuration
-  MAP_INSTANCE_HOSTNAME: "map-microservice-service"
+  MAP_INSTANCE_HOSTNAME: "map-microservice"
   MAP_INSTANCE_PORT: "8080"
   MAP_ADAPTER_RIDE_PORT: "8081"
   MAP_ADAPTER_EBIKE_PORT: "8082"
 
   # Ride microservice configuration
-  RIDE_INSTANCE_HOSTNAME: "ride-microservice-service"
+  RIDE_INSTANCE_HOSTNAME: "ride-microservice"
   RIDE_INSTANCE_PORT: "8080"
 
   # Zookeeper
@@ -50,14 +49,13 @@ data:
 
   # Kafka
   KAFKA_BROKER_ID: "1"
-  KAFKA_ZOOKEEPER_CONNECT: "zookeeper-service.kafka.svc.cluster.local:2181"
+  KAFKA_ZOOKEEPER_CONNECT: "zookeeper-service:2181"
   KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-broker-1:29092,PLAINTEXT_HOST://kafka-broker-1:9092"
   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
   KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
-  KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1.kafka.svc.cluster.local:29092"
-  kafka.bootstrapServers: "kafka-broker-1.kafka.svc.cluster.local:29092"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-broker-1:29092"
   # Kafka UI
   KAFKA_UI_CLUSTER_NAME: "local"
-  KAFKA_UI_BOOTSTRAP_SERVERS: "kafka-broker-1.kafka.svc.cluster.local:29092"
+  KAFKA_UI_BOOTSTRAP_SERVERS: "kafka-broker-1:29092"
   KAFKA_UI_SCHEMAREGISTRY_URL: "http://schema-registry:8081"

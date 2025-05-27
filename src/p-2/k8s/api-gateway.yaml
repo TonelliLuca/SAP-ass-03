@@ -11,6 +11,22 @@ spec:
     metadata:
       labels: { app: api-gateway }
     spec:
+      initContainers:
+        - name: wait-for-eureka
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://eureka-service:8761/actuator/health | grep -q "UP"; do echo waiting for eureka; sleep 2; done;' ]
+        - name: wait-for-ebike
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://ebike-microservice:8080/health | grep -q "UP"; do echo waiting for ebike-microservice; sleep 2; done;' ]
+        - name: wait-for-user
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://user-microservice:8080/health | grep -q "UP"; do echo waiting for user-microservice; sleep 2; done;' ]
+        - name: wait-for-map
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://map-microservice:8080/health | grep -q "OK"; do echo waiting for map-microservice; sleep 2; done;' ]
+        - name: wait-for-ride
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://ride-microservice:8080/health | grep -q "OK"; do echo waiting for ride-microservice; sleep 2; done;' ]
       containers:
         - name: api-gateway
           image: api-gateway:latest
@@ -19,6 +35,11 @@ spec:
             - containerPort: 8080
           envFrom:
             - configMapRef: { name: app-config }
+          env:
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "true"
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "true"
           readinessProbe:
             httpGet: { path: /actuator/health, port: 8080 }
             initialDelaySeconds: 20

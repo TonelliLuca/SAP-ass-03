@@ -11,6 +11,19 @@ spec:
     metadata:
       labels: { app: map-microservice }
     spec:
+      initContainers:
+        - name: wait-for-eureka
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://eureka-service:8761/actuator/health | grep -q "UP"; do echo waiting for eureka; sleep 2; done;' ]
+        - name: wait-for-kafka
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until nc -z kafka-broker-1 29092; do echo waiting for kafka; sleep 2; done;' ]
+        - name: wait-for-ebike
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://ebike-microservice:8080/health | grep -q "UP"; do echo waiting for ebike-microservice; sleep 2; done;' ]
+        - name: wait-for-ride
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://ride-microservice:8080/health | grep -q "OK"; do echo waiting for ride-microservice; sleep 2; done;' ]
       containers:
         - name: map-microservice
           image: map-microservice:latest
@@ -31,7 +44,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: map-microservice-service
+  name: map-microservice
   namespace: sap-assignment
 
 spec:

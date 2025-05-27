@@ -10,6 +10,10 @@ spec:
   template:
     metadata: { labels: { app: prometheus } }
     spec:
+      initContainers:
+        - name: wait-for-api-gateway
+          image: curlimages/curl:latest
+          command: [ 'sh', '-c', 'until curl -s http://api-gateway-service:8080/actuator/health | grep -q "UP"; do echo waiting for api-gateway; sleep 2; done;' ]
       containers:
         - name: prometheus
           image: prom/prometheus:latest

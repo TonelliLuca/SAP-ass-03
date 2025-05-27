@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   name: user-microservice
   namespace: sap-assignment
-
 spec:
   replicas: 1
   selector: { matchLabels: { app: user-microservice } }
@@ -11,6 +10,21 @@ spec:
     metadata:
       labels: { app: user-microservice }
     spec:
+      initContainers:
+        - name: wait-for-eureka
+          image: curlimages/curl:latest
+          command: ['sh', '-c', 'until curl -s http://eureka-service:8761/actuator/health | grep -q "UP"; do echo waiting for eureka; sleep 2; done;']
+        - name: wait-for-mongodb
+          image: curlimages/curl:latest
+          command: ['sh', '-c', 'until curl -s http://mongodb-service:27017 > /dev/null; do echo waiting for mongodb; sleep 2; done;']
+        - name: wait-for-kafka
+          image: curlimages/curl:latest
+          command: ['sh', '-c', 'until nc -z kafka-broker-1 29092; do echo waiting for kafka; sleep 2; done;']
+        - name: wait-for-ride
+          image: curlimages/curl:latest
+          command: ['sh', '-c', 'until curl -s http://ride-microservice:8080/health | grep -q "OK"; do echo waiting for ride-microservice; sleep 2; done;']
+
+
       containers:
         - name: user-microservice
           image: user-microservice:latest
@@ -34,7 +48,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: user-microservice-service
+  name: user-microservice
   namespace: sap-assignment
 
 spec:
