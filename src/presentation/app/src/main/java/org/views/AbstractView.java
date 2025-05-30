@@ -2,6 +2,7 @@ package org.views;
 
 
 import org.models.EBikeViewModel;
+import org.models.StationViewModel;
 import org.models.UserViewModel;
 
 import javax.swing.*;
@@ -17,6 +18,7 @@ public abstract class AbstractView extends JFrame {
     protected JPanel centralPanel;
     protected JButton logoutButton;
     protected JPanel buttonPanel;
+    protected List<StationViewModel> stations;
 
     protected List<EBikeViewModel> eBikes;
     protected UserViewModel actualUser;
@@ -54,6 +56,7 @@ public abstract class AbstractView extends JFrame {
 
         this.actualUser = actualUser;
         this.eBikes = new CopyOnWriteArrayList<>();
+        this.stations = new CopyOnWriteArrayList<>();
     }
 
     protected void addTopPanelButton(String text, ActionListener actionListener) {
@@ -77,6 +80,7 @@ public abstract class AbstractView extends JFrame {
         } else {
             paintUserView(g2);
         }
+        paintStations(g);
     }
 
     protected void paintAdminView(Graphics2D g2) {
@@ -116,5 +120,31 @@ public abstract class AbstractView extends JFrame {
 
     public void display() {
         SwingUtilities.invokeLater(() -> this.setVisible(true));
+    }
+
+    public void updateStations(List<StationViewModel> newStations) {
+        stations.clear();
+        stations.addAll(newStations);
+        updateVisualizerPanel();
+    }
+
+    protected void paintStations(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        int squareSize = 15;
+        int spacing = 3;
+        int centerX = centralPanel.getWidth() / 2;
+        int centerY = centralPanel.getHeight() / 2;
+
+        for (StationViewModel station : stations) {
+            int x = centerX + (int) station.x();
+            int y = centerY - (int) station.y();
+            for (int i = 0; i < station.capacity(); i++) {
+                g2.setColor(Color.GREEN); // All slots empty for now
+                g2.fillRect(x + i * (squareSize + spacing), y, squareSize, squareSize);
+                g2.setColor(Color.BLACK);
+                g2.drawRect(x + i * (squareSize + spacing), y, squareSize, squareSize);
+            }
+            g2.drawString("Station: " + station.stationId(), x, y - 5);
+        }
     }
 }

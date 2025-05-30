@@ -28,6 +28,7 @@ public class AdminView extends AbstractView {
         setupView();
         observeAllBikes();
         observeAllUsers();
+        observeStations();
         refreshView();
     }
 
@@ -124,5 +125,23 @@ public class AdminView extends AbstractView {
 
     private void log(String msg) {
         System.out.println("[AdminView] " + msg);
+    }
+
+    private void observeStations() {
+        vertx.eventBus().consumer("station.update", message -> {
+            JsonArray arr = (JsonArray) message.body();
+            List<org.models.StationViewModel> stationList = new java.util.ArrayList<>();
+            for (int i = 0; i < arr.size(); i++) {
+                JsonObject obj = arr.getJsonObject(i);
+                String id = obj.getString("stationId");
+                JsonObject pos = obj.getJsonObject("position");
+                double x = pos.getDouble("x");
+                double y = pos.getDouble("y");
+                int capacity = obj.getInteger("capacity");
+                int emptySlots = obj.getInteger("capacity");
+                stationList.add(new org.models.StationViewModel(id, x, y, capacity, emptySlots));
+            }
+            updateStations(stationList);
+        });
     }
 }
