@@ -7,8 +7,12 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdminVerticle extends AbstractVerticle {
+    private static final Logger log = LoggerFactory.getLogger(UserVerticle.class);
+
     private final WebClient webClient;
     private final HttpClient httpClient;
     private WebSocket userWebSocket;
@@ -48,6 +52,25 @@ public class AdminVerticle extends AbstractVerticle {
                     vertx.eventBus().publish("admin.bike.update", new JsonArray(message));
                 });
             });
+
+        httpClient.webSocket(8080, "localhost", "/MAP-MICROSERVICE/observeStations")
+                .onSuccess(ws -> {
+                    System.out.println("Connected to stations WebSocket");
+                   ws.textMessageHandler(message -> {
+                        log.info("Received station update: " + message);
+                        JsonArray rawArr = new JsonArray(message);
+                        JsonArray objArr = new JsonArray();
+                        for (int i = 0; i < rawArr.size(); i++) {
+                            Object el = rawArr.getValue(i);
+                            if (el instanceof String) {
+                                objArr.add(new JsonObject((String) el));
+                            } else if (el instanceof JsonObject) {
+                                objArr.add(el);
+                            }
+                        }
+                        vertx.eventBus().publish("station.update", objArr);
+                    });
+                });
     }
 
     private void handleUserUpdate(String message) {
