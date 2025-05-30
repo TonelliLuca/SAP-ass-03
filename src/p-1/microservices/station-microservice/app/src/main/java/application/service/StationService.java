@@ -2,10 +2,7 @@
 package application.service;
 
 import application.ports.*;
-import domain.events.BikeDockedEvent;
-import domain.events.BikeReleasedEvent;
 import domain.events.StationRegisteredEvent;
-import domain.model.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,23 +25,4 @@ public class StationService implements Service {
         });
     }
 
-    @Override
-    public void dockBike(String stationId, String bikeId) {
-        repo.findById(stationId).thenAccept(opt -> {
-            Station s = opt.orElseThrow(() -> new IllegalArgumentException("Unknown station"));
-            s.dockBike(bikeId);
-            repo.save(s);
-            pub.publish(new BikeDockedEvent(stationId, bikeId, s.getAvailableSlots()));
-        });
-    }
-
-    @Override
-    public void releaseBike(String stationId, String bikeId) {
-        repo.findById(stationId).thenAccept(opt -> {
-            Station s = opt.orElseThrow(() -> new IllegalArgumentException("Unknown station"));
-            s.releaseBike(bikeId);
-            repo.save(s);
-            pub.publish(new BikeReleasedEvent(stationId, bikeId, s.getAvailableSlots()));
-        });
-    }
 }
