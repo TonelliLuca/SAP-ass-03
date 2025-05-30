@@ -46,6 +46,27 @@ services:
         retries: 3
         start_period: 10s
 
+  station-microservice:
+    build:
+      context: ./station-microservice
+    networks:
+      - eureka-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      map-microservice:
+        condition: service_healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
   mongodb:
     image: mongo:latest
     ports:
