@@ -38,6 +38,7 @@ public class GenericKafkaConsumer<T> {
         logger.info("Subscribed to topic: {}", topic);
     }
 
+
     public void start(BiConsumer<String, T> handler) {
         Thread thread = new Thread(() -> {
             try {
@@ -45,7 +46,12 @@ public class GenericKafkaConsumer<T> {
                     ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(500));
                     for (ConsumerRecord<String, String> record : records) {
                         try {
-                            T value = mapper.readValue(record.value(), type);
+                            T value;
+                            if (type == String.class) {
+                                value = type.cast(record.value());
+                            } else {
+                                value = mapper.readValue(record.value(), type);
+                            }
                             handler.accept(record.key(), value);
                         } catch (Exception e) {
                             logger.error("Error processing record: {}", e.getMessage(), e);

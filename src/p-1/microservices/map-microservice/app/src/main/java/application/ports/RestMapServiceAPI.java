@@ -1,6 +1,7 @@
 package application.ports;
 
 import domain.model.EBike;
+import domain.model.Station;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -69,4 +70,7 @@ public interface RestMapServiceAPI {
      * @param username the username of the user to deregister.
      */
     void deregisterUser(String username);
+
+    void updateStation(Station station);
+    void getAllStations();
 }

@@ -1,6 +1,7 @@
 package application.ports;
 
 import domain.model.EBike;
+import domain.model.Station;
 
 import java.util.List;
 
@@ -37,4 +38,6 @@ public interface EventPublisher {
      * @param username the username of the user whose ride is to be stopped.
      */
     void publishStopRide(String username);
+
+    void publishStationsUpdate(List<Station> stations);
 }

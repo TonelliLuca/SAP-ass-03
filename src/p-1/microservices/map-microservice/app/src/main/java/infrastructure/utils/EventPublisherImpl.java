@@ -2,6 +2,7 @@ package infrastructure.utils;
 
 import application.ports.EventPublisher;
 import domain.model.EBike;
+import domain.model.Station;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -51,6 +52,23 @@ public class EventPublisherImpl implements EventPublisher {
                 .put("y", bike.getPosition().y()));
         json.put("state", bike.getState().toString());
         json.put("batteryLevel", bike.getBatteryLevel()); // Add this line
+        return json.encode();
+    }
+
+    @Override
+    public void publishStationsUpdate(List<Station> stations) {
+        JsonArray stationsJson = new JsonArray();
+        stations.forEach(station -> stationsJson.add(convertStationToJson(station)));
+        vertx.eventBus().publish("stations.update", stationsJson.encode());
+    }
+
+    private String convertStationToJson(Station station) {
+        JsonObject json = new JsonObject();
+        json.put("stationId", station.getId());
+        json.put("position", new JsonObject()
+                .put("x", station.getLocation().x())
+                .put("y", station.getLocation().y()));
+        json.put("capacity", station.getCapacity());
         return json.encode();
     }
 

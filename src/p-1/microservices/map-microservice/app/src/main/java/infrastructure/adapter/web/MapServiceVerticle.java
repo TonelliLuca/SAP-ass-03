@@ -152,6 +152,37 @@ public class MapServiceVerticle extends AbstractVerticle {
             });
         });
 
+        router.route("/observeStations").handler(ctx -> {
+            metricsManager.incrementMethodCounter("observeStations");
+
+            ctx.request().toWebSocket().onComplete(webSocketAsyncResult -> {
+                if (webSocketAsyncResult.succeeded()) {
+                    var webSocket = webSocketAsyncResult.result();
+
+                    metricsManager.incrementMethodCounter("observeStations_connection_success");
+
+                    var consumer = vertx.eventBus().consumer("stations.update", message -> {
+                        webSocket.writeTextMessage(message.body().toString());
+                        metricsManager.incrementMethodCounter("observeStations_message_sent");
+                    });
+                    mapService.getAllStations();
+
+                    webSocket.closeHandler(v -> {
+                        consumer.unregister();
+                        metricsManager.incrementMethodCounter("observeStations_connection_closed");
+                    });
+
+                    webSocket.exceptionHandler(err -> {
+                        consumer.unregister();
+                        metricsManager.incrementMethodCounter("observeStations_connection_error");
+                    });
+                } else {
+                    ctx.response().setStatusCode(500).end("WebSocket Upgrade Failed");
+                    metricsManager.incrementMethodCounter("observeStations_connection_failed");
+                }
+            });
+        });
+
         server.requestHandler(router).listen(this.port, result -> {
             if (result.succeeded()) {
                 System.out.println("HTTP server started on port "+this.port);
