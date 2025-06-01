@@ -164,7 +164,7 @@ public class UserView extends AbstractView {
                 double x = pos.getDouble("x");
                 double y = pos.getDouble("y");
                 int capacity = obj.getInteger("capacity");
-                int emptySlots = obj.getInteger("capacity");
+                int emptySlots = obj.getInteger("availableCapacity");
                 stationList.add(new org.models.StationViewModel(id, x, y, capacity, emptySlots));
             }
             updateStations(stationList);

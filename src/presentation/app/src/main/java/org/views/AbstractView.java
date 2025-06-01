@@ -139,7 +139,11 @@ public abstract class AbstractView extends JFrame {
             int x = centerX + (int) station.x();
             int y = centerY - (int) station.y();
             for (int i = 0; i < station.capacity(); i++) {
-                g2.setColor(Color.GREEN); // All slots empty for now
+                if (i < station.emptySlots()) {
+                    g2.setColor(Color.RED); // Available slot
+                } else {
+                    g2.setColor(Color.GREEN);   // Occupied slot
+                }
                 g2.fillRect(x + i * (squareSize + spacing), y, squareSize, squareSize);
                 g2.setColor(Color.BLACK);
                 g2.drawRect(x + i * (squareSize + spacing), y, squareSize, squareSize);

@@ -35,11 +35,12 @@ public class StationUpdatesConsumer {
             String stationId = event.getString("stationId");
             JsonObject locationJson = event.getJsonObject("location");
             int capacity = event.getInteger("capacity", 0);
+            int availableCapacity = event.getInteger("availableCapacity", 0);
 
             if (stationId != null && locationJson != null) {
                 float x = locationJson.getFloat("x", 0.0f);
                 float y = locationJson.getFloat("y", 0.0f);
-                Station station = new Station(stationId, new P2d(x, y), capacity);
+                Station station = new Station(stationId, new P2d(x, y), capacity, availableCapacity);
 
                 mapService.updateStation(station);
 

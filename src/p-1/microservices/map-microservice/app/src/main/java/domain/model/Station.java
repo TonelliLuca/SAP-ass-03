@@ -2,7 +2,7 @@ package domain.model;
 
 import ddd.Entity;
 
-public record Station(String stationId, P2d location, int capacity) implements Entity<String> {
+public record Station(String stationId, P2d location, int capacity, int availableCapacity) implements Entity<String> {
     @Override
     public String getId() {
         return stationId;
@@ -15,4 +15,6 @@ public record Station(String stationId, P2d location, int capacity) implements E
     public int getCapacity() {
         return capacity;
     }
+
+    public int getAvailableCapacity() {return availableCapacity;}
 }

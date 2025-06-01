@@ -8,7 +8,7 @@ import org.dialogs.admin.RechargeBikeDialog;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
 import org.verticles.AdminVerticle;
-
+import org.dialogs.admin.AddABikeDialog;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
@@ -35,12 +35,19 @@ public class AdminView extends AbstractView {
     private void setupView() {
         topPanel.setLayout(new FlowLayout());
 
-        JButton addBikeButton = new JButton("Add Bike");
+        JButton addBikeButton = new JButton("Add E-Bike");
         addBikeButton.addActionListener(e -> {
             AddEBikeDialog addEBikeDialog = new AddEBikeDialog(AdminView.this, vertx);
             addEBikeDialog.setVisible(true);
         });
         topPanel.add(addBikeButton);
+
+        JButton addABikeButton = new JButton("Add A-Bike");
+        addABikeButton.addActionListener(e -> {
+            AddABikeDialog addABikeDialog = new AddABikeDialog(AdminView.this, vertx, stations);
+            addABikeDialog.setVisible(true);
+        });
+        topPanel.add(addABikeButton);
 
         JButton rechargeBikeButton = new JButton("Recharge Bike");
         rechargeBikeButton.addActionListener(e -> {
@@ -138,7 +145,7 @@ public class AdminView extends AbstractView {
                 double x = pos.getDouble("x");
                 double y = pos.getDouble("y");
                 int capacity = obj.getInteger("capacity");
-                int emptySlots = obj.getInteger("capacity");
+                int emptySlots = obj.getInteger("availableCapacity");
                 stationList.add(new org.models.StationViewModel(id, x, y, capacity, emptySlots));
             }
             updateStations(stationList);

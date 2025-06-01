@@ -69,6 +69,7 @@ public class EventPublisherImpl implements EventPublisher {
                 .put("x", station.getLocation().x())
                 .put("y", station.getLocation().y()));
         json.put("capacity", station.getCapacity());
+        json.put("availableCapacity", station.getAvailableCapacity());
         return json.encode();
     }
 
