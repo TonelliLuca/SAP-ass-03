@@ -20,7 +20,7 @@ public class StationService implements Service {
         log.info("Initializing stations...");
         repo.getAll().thenAccept(stations -> {
             stations.forEach(station ->
-                pub.publish(new StationRegisteredEvent(station.getId(), station.getLocation(), station.getCapacity()))
+                pub.publish(new StationRegisteredEvent(station.getId(), station.getLocation(), station.getCapacity(), station.getAvailableCapacity()))
             );
         });
     }
