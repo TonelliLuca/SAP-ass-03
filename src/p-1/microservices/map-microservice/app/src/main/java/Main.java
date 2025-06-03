@@ -5,8 +5,7 @@ import infrastructure.utils.EventPublisherImpl;
 import infrastructure.adapter.web.MapServiceVerticle;
 import infrastructure.config.ServiceConfiguration;
 import io.vertx.core.Vertx;
-import infrastructure.adapter.kafka.RideUpdatesConsumer;
-import infrastructure.adapter.kafka.StationUpdatesConsumer;
+import infrastructure.adapter.kafka.MapEventsConsumer;
 
 public class Main {
     public static void main(String[] args) {
@@ -20,11 +19,10 @@ public class Main {
             //BikeUpdateAdapter bikeUpdateAdapter = new BikeUpdateAdapter(service, vertx);
             //RideUpdateAdapter rideUpdateAdapter = new RideUpdateAdapter(service, vertx);
             String bootstrapServers = config.getKakaConf();
-            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers);
-            StationUpdatesConsumer stationConsumer = new StationUpdatesConsumer(service, bootstrapServers);
+            MapEventsConsumer consumer = new MapEventsConsumer(service, bootstrapServers);
+
             mapServiceVerticle.init();
             consumer.init();
-            stationConsumer.init();
             //bikeUpdateAdapter.init();
             //rideUpdateAdapter.init();
         });
