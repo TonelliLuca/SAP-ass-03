@@ -1,6 +1,7 @@
 package infrastructure.utils;
 
 import application.ports.EventPublisher;
+import domain.model.Bike;
 import domain.model.EBike;
 import domain.model.Station;
 import io.vertx.core.Vertx;
@@ -17,21 +18,21 @@ public class EventPublisherImpl implements EventPublisher {
     }
 
     @Override
-    public void publishBikesUpdate(List<EBike> bikes) {
+    public void publishBikesUpdate(List<Bike> bikes) {
         JsonArray bikesJson = new JsonArray();
         bikes.forEach(bike -> bikesJson.add(convertBikeToJson(bike)));
         vertx.eventBus().publish("bikes.update", bikesJson.encode());
     }
 
     @Override
-    public void publishUserBikesUpdate(List<EBike> bikes, String username) {
+    public void publishUserBikesUpdate(List<Bike> bikes, String username) {
         JsonArray bikesJson = new JsonArray();
         bikes.forEach(bike -> bikesJson.add(convertBikeToJson(bike)));
         vertx.eventBus().publish(username, bikesJson.encode());
     }
 
     @Override
-    public void publishUserAvailableBikesUpdate(List<EBike> bikes) {
+    public void publishUserAvailableBikesUpdate(List<Bike> bikes) {
         JsonArray bikesJson = new JsonArray();
         bikes.forEach(bike -> bikesJson.add(convertBikeToJson(bike)));
         vertx.eventBus().publish("available_bikes", bikesJson.encode());
@@ -41,18 +42,19 @@ public class EventPublisherImpl implements EventPublisher {
     public void publishStopRide(String username) {
         JsonObject json = new JsonObject();
         json.put("rideStatus", "stopped");
-        vertx.eventBus().publish("ride.stop."+username , json.encode());
+        vertx.eventBus().publish("ride.stop." + username, json.encode());
     }
 
-    private String convertBikeToJson(EBike bike) {
+    private JsonObject convertBikeToJson(Bike bike) {
         JsonObject json = new JsonObject();
-        json.put("bikeName", bike.getBikeName());
+        json.put("id", bike.getId());
+        json.put("type", bike.getType());
         json.put("position", new JsonObject()
                 .put("x", bike.getPosition().x())
                 .put("y", bike.getPosition().y()));
         json.put("state", bike.getState().toString());
-        json.put("batteryLevel", bike.getBatteryLevel()); // Add this line
-        return json.encode();
+        json.put("batteryLevel", bike.getBatteryLevel());
+        return json;
     }
 
     @Override
@@ -62,7 +64,7 @@ public class EventPublisherImpl implements EventPublisher {
         vertx.eventBus().publish("stations.update", stationsJson.encode());
     }
 
-    private String convertStationToJson(Station station) {
+    private JsonObject convertStationToJson(Station station) {
         JsonObject json = new JsonObject();
         json.put("stationId", station.getId());
         json.put("position", new JsonObject()
@@ -70,7 +72,6 @@ public class EventPublisherImpl implements EventPublisher {
                 .put("y", station.getLocation().y()));
         json.put("capacity", station.getCapacity());
         json.put("availableCapacity", station.getAvailableCapacity());
-        return json.encode();
+        return json;
     }
-
 }
