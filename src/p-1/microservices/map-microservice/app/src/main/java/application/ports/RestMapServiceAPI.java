@@ -1,5 +1,6 @@
 package application.ports;
 
+import domain.model.Bike;
 import domain.model.EBike;
 import domain.model.Station;
 
@@ -17,7 +18,7 @@ public interface RestMapServiceAPI {
      * @param bike the e-bike to update.
      * @return a CompletableFuture that completes when the update is done.
      */
-    CompletableFuture<Void> updateEBike(EBike bike);
+    CompletableFuture<Void> updateBike(Bike bike);
 
     /**
      * Updates the information of multiple e-bikes.
@@ -25,7 +26,7 @@ public interface RestMapServiceAPI {
      * @param bikes the list of e-bikes to update.
      * @return a CompletableFuture that completes when the updates are done.
      */
-    CompletableFuture<Void> updateEBikes(List<EBike> bikes);
+    CompletableFuture<Void> updateBikes(List<Bike> bikes);
 
     /**
      * Notifies the start of a ride for a user.

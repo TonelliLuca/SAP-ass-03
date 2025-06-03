@@ -12,19 +12,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RestMapServiceAPIImpl implements RestMapServiceAPI {
     private final StationRepository stationRepository;
-    private final EBikeRepository bikeRepository;
+    private final BikeRepository bikeRepository;
     private final EventPublisher eventPublisher;
     private final List<String> registeredUsers = new CopyOnWriteArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(RestMapServiceAPIImpl.class);
 
     public RestMapServiceAPIImpl(EventPublisher eventPublisher) {
-        this.bikeRepository = new EBikeRepositoryImpl();
+        this.bikeRepository = new BikeRepositoryImpl();
         this.stationRepository = new StationRepositoryImpl();
         this.eventPublisher = eventPublisher;
     }
 
     @Override
-    public CompletableFuture<Void> updateEBikes(List<EBike> bikes) {
+    public CompletableFuture<Void> updateBikes(List<Bike> bikes) {
         return CompletableFuture.allOf(bikes.stream()
                 .map(bikeRepository::saveBike)
                 .toArray(CompletableFuture[]::new))
@@ -44,7 +44,7 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
     }
 
     @Override
-    public CompletableFuture<Void> updateEBike(EBike bike) {
+    public CompletableFuture<Void> updateBike(Bike bike) {
         logger.debug("Updating eBike: {}", bike.getId());
         return bikeRepository.saveBike(bike)
                 .thenAccept(v -> {
@@ -100,13 +100,17 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
 
     @Override
     public void getAllBikes() {
-        bikeRepository.getAllBikes().thenAccept(eventPublisher::publishBikesUpdate);
+        bikeRepository.getAllBikes().thenAccept(bikes -> {
+            bikes.removeIf(bike -> bike instanceof ABike && bike.getState() == BikeState.AVAILABLE);
+            eventPublisher.publishBikesUpdate(bikes);
+        });
     }
 
     @Override
     public void getAllBikes(String username) {
-        List<EBike> availableBikes = bikeRepository.getAvailableBikes().join();
-        List<EBike> userBikes = bikeRepository.getAllBikes(username).join();
+        List<Bike> availableBikes = bikeRepository.getAvailableBikes().join();
+        List<Bike> userBikes = bikeRepository.getAllBikes(username).join();
+        availableBikes.removeIf(bike -> bike instanceof ABike && bike.getState() == BikeState.AVAILABLE);
         if(!userBikes.isEmpty()){
             availableBikes.addAll(userBikes);
             eventPublisher.publishUserBikesUpdate(availableBikes, username);
