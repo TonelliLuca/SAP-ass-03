@@ -36,6 +36,7 @@ public class Simulation implements Service {
 
     public CompletableFuture<Void> start() {
         CompletableFuture<Void> future = new CompletableFuture<>();
+        this.abike = new ABike(abike.id(), abike.position(), abike.batteryLevel(), ABikeState.AUTONOMOUS_MOVING);
         logger.info("Starting Simulation");
         vertx.setPeriodic(100, l -> {
             synchronized (this) {
@@ -57,7 +58,12 @@ public class Simulation implements Service {
         double distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < SPEED) {
-            abike = new ABike(abike.id(), destination.position(), abike.batteryLevel(), ABikeState.AVAILABLE);
+            int newBattery = abike.batteryLevel();
+            ABikeState newState = ABikeState.AVAILABLE;
+            if (purpose == Purpose.TO_STATION && abike.state() == ABikeState.MAINTENANCE) {
+                newBattery = 100; // recharge
+            }
+            abike = new ABike(abike.id(), destination.position(), newBattery, newState);
             if(purpose == Purpose.TO_USER)
                 publisher.publish(new ABikeArrivedToUser(abike.getId(), destination.getId()));
             if(purpose == Purpose.TO_STATION)
