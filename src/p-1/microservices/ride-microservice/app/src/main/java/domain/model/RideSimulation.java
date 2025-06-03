@@ -52,7 +52,7 @@ public class RideSimulation implements Service {
     }
 
     private void updateRide() {
-        EBike bike = ride.getEbike();
+        Bike bike = ride.getBike();
         User user = ride.getUser();
 
         synchronized (bike) {
@@ -67,7 +67,7 @@ public class RideSimulation implements Service {
             if (user.getCredit() == 0) {
                 ride.end();
                 stopSimulation();
-                bike.setState(EBikeState.AVAILABLE);
+                bike.setState(BikeState.AVAILABLE);
                 completeSimulation();
                 return;
             }
@@ -94,12 +94,12 @@ public class RideSimulation implements Service {
             bike.decreaseBattery(BATTERY_DECREASE);
             user.decreaseCredit(CREDIT_DECREASE);
 
-            publisher.publishRideUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel(), user.getId(), user.getCredit(), ride.getId());
+            publisher.publishRideUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel(), user.getId(), user.getCredit(), ride.getId(), bike.getType());
         }
     }
 
     private void completeSimulation() {
-        publisher.publishRideUpdate(ride.getEbike().getId(), ride.getEbike().getLocation().x(), ride.getEbike().getLocation().y(), ride.getEbike().getState().toString(), ride.getEbike().getBatteryLevel(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getId());
+        publisher.publishRideUpdate(ride.getBike().getId(), ride.getBike().getLocation().x(), ride.getBike().getLocation().y(), ride.getBike().getState().toString(), ride.getBike().getBatteryLevel(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getId(), ride.getBike().getType() );
     }
 
     public void stopSimulation() {
@@ -110,8 +110,8 @@ public class RideSimulation implements Service {
     public void stopSimulationManually(){
         System.out.println("Stopping simulation manually");
         ride.end();
-        if(ride.getEbike().getState() == EBikeState.IN_USE){
-            ride.getEbike().setState(EBikeState.AVAILABLE);
+        if(ride.getBike().getState() == BikeState.IN_USE){
+            ride.getBike().setState(BikeState.AVAILABLE);
         }
         stopped = true;
     }
