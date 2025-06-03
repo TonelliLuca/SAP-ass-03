@@ -8,6 +8,8 @@ import domain.model.*;
 import domain.service.Simulation;
 import io.vertx.core.Vertx;
 import application.port.EventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -21,7 +23,7 @@ public class ABikeServiceImpl implements ABikeService {
     private final SimulationRepository simulationRepository;
     private final EventPublisher eventPublisher;
     private final Vertx vertx;
-
+    private final Logger logger = LoggerFactory.getLogger(ABikeServiceImpl.class);
     public ABikeServiceImpl(
             ABikeRepository abikeRepository,
             StationProjectionRepository stationRepository,
@@ -38,17 +40,23 @@ public class ABikeServiceImpl implements ABikeService {
 
     @Override
     public CompletableFuture<Void> createABike(String abikeId, String stationId) {
+        logger.info("Creating ABike with id {}", abikeId);
         return stationRepository.findById(stationId).thenCompose(station -> {
             if (station == null) {
                 return CompletableFuture.failedFuture(new IllegalArgumentException("Station not found"));
             }
             ABike abike = new ABike(abikeId, station.position(), 100, ABikeState.AVAILABLE);
-            return abikeRepository.save(abike);
+            return abikeRepository.save(abike).thenAccept(v -> {
+                // Only publish event if save succeeded and station exists
+                eventPublisher.publish(new domain.events.ABikeArrivedToStation(abikeId, stationId));
+                logger.info("Published ABikeArrivedToStation event for abike {} at station {}", abikeId, stationId);
+            });
         });
     }
 
     @Override
     public void dockABike(String abikeId) {
+        logger.info("Docking ABike with id {}", abikeId);
         ABike abike = abikeRepository.findById(abikeId).join();
         if (abike == null) {
             throw new IllegalArgumentException("ABike not found");
@@ -75,6 +83,7 @@ public class ABikeServiceImpl implements ABikeService {
 
     @Override
     public String callABike(Destination destination) {
+        logger.info("Calling ABike with destination {}", destination);
         // Find nearest station
         HashSet<Station> stations = stationRepository.getAll().join();
         Optional<Station> nearestStationOpt = stations.stream()
@@ -106,5 +115,25 @@ public class ABikeServiceImpl implements ABikeService {
         double dx = a.x() - b.x();
         double dy = a.y() - b.y();
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    @Override
+    public CompletableFuture<Void> saveStationProjection(Station station) {
+        return stationRepository.save(station)
+            .thenAccept(v -> logger.info("Saved station projection: {}", station))
+            .exceptionally(ex -> {
+                logger.error("Failed to save station projection: {}", ex.getMessage());
+                return null;
+            });
+    }
+
+    @Override
+    public CompletableFuture<Void> updateStationProjection(Station station) {
+        return stationRepository.update(station)
+            .thenAccept(v -> logger.info("Updated station projection: {}", station))
+            .exceptionally(ex -> {
+                logger.error("Failed to update station projection: {}", ex.getMessage());
+                return null;
+            });
     }
 }
