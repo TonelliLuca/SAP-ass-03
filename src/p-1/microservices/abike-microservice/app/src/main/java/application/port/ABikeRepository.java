@@ -10,4 +10,5 @@ public interface ABikeRepository extends Repository {
     CompletableFuture<Void> save(ABike ABike);
     CompletableFuture<ABike> findById(String id);
     CompletableFuture<HashSet<ABike>> findAll();
+    CompletableFuture<Void> update(ABike ABike);
 }
