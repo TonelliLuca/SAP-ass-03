@@ -1,5 +1,7 @@
 package application.ports;
 
+import io.vertx.core.json.JsonObject;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -23,4 +25,8 @@ public interface RestRideServiceAPI {
      * @return a CompletableFuture that completes when the ride is stopped.
      */
     CompletableFuture<Void> stopRide(String userId);
+
+
+    CompletableFuture<Void> handleUserProjectionUpdate(JsonObject userData);
+    CompletableFuture<Void> handleEBikeProjectionUpdate(JsonObject ebikeData);
 }

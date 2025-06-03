@@ -3,6 +3,7 @@ package application;
 import application.ports.*;
 import domain.model.*;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,5 +105,15 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
                     logger.error("No active ride found for user: {}", userId);
                     return CompletableFuture.failedFuture(new RuntimeException("No active ride found"));
                 });
+    }
+
+    @Override
+    public CompletableFuture<Void> handleUserProjectionUpdate(JsonObject userData) {
+        return projectionRepository.updateUser(userData);
+    }
+
+    @Override
+    public CompletableFuture<Void> handleEBikeProjectionUpdate(JsonObject ebikeData) {
+        return projectionRepository.updateEBike(ebikeData);
     }
 }

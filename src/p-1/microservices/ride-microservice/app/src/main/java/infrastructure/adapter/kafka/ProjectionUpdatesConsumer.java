@@ -1,6 +1,7 @@
 package infrastructure.adapter.kafka;
 
 import application.ports.ProjectionRepositoryPort;
+import application.ports.RestRideServiceAPI;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +11,13 @@ public class ProjectionUpdatesConsumer {
 
     private final GenericKafkaConsumer<JsonObject> userConsumer;
     private final GenericKafkaConsumer<JsonObject> ebikeConsumer;
-    private final ProjectionRepositoryPort projectionRepository;
+    private final RestRideServiceAPI rideService;
 
     public ProjectionUpdatesConsumer(
             String bootstrapServers,
-            ProjectionRepositoryPort projectionRepository) {
+            RestRideServiceAPI rideService) {
 
-        this.projectionRepository = projectionRepository;
+        this.rideService = rideService;
 
         this.userConsumer = new GenericKafkaConsumer<>(
             bootstrapServers,
@@ -41,6 +42,7 @@ public class ProjectionUpdatesConsumer {
         logger.info("ProjectionUpdatesConsumer started");
     }
 
+
     private void processUserEvent(String key, JsonObject event) {
         try {
             logger.info("Received user event: {}", event.encodePrettily());
@@ -49,11 +51,11 @@ public class ProjectionUpdatesConsumer {
 
             if ("user_updated".equals(type) && payload != null) {
                 JsonObject userData = payload.containsKey("map") ? payload.getJsonObject("map") : payload;
-                projectionRepository.updateUser(userData)
-                        .exceptionally(ex -> {
-                            logger.error("Error updating user projection: {}", ex.getMessage());
-                            return null;
-                        });
+                rideService.handleUserProjectionUpdate(userData)
+                    .exceptionally(ex -> {
+                        logger.error("Error updating user projection: {}", ex.getMessage());
+                        return null;
+                    });
                 logger.info("Processing user projection update: {}", userData.getString("username"));
             } else if ("users_batch_updated".equals(type) && payload != null) {
                 var userList = payload.getJsonArray("list");
@@ -61,11 +63,11 @@ public class ProjectionUpdatesConsumer {
                     userList.forEach(user -> {
                         if (user instanceof JsonObject userObj) {
                             JsonObject userData = userObj.containsKey("map") ? userObj.getJsonObject("map") : userObj;
-                            projectionRepository.updateUser(userData)
-                                    .exceptionally(ex -> {
-                                        logger.error("Error updating user in batch: {}", ex.getMessage());
-                                        return null;
-                                    });
+                            rideService.handleUserProjectionUpdate(userData)
+                                .exceptionally(ex -> {
+                                    logger.error("Error updating user in batch: {}", ex.getMessage());
+                                    return null;
+                                });
                         }
                     });
                     logger.info("Processing batch user update");
@@ -84,11 +86,11 @@ public class ProjectionUpdatesConsumer {
 
             if ("ebike_updated".equals(type) && payload != null) {
                 JsonObject ebikeData = payload.containsKey("map") ? payload.getJsonObject("map") : payload;
-                projectionRepository.updateEBike(ebikeData)
-                        .exceptionally(ex -> {
-                            logger.error("Error updating ebike projection: {}", ex.getMessage());
-                            return null;
-                        });
+                rideService.handleEBikeProjectionUpdate(ebikeData)
+                    .exceptionally(ex -> {
+                        logger.error("Error updating ebike projection: {}", ex.getMessage());
+                        return null;
+                    });
                 logger.info("Processing ebike projection update: {}", ebikeData.getString("id"));
             } else if ("ebikes_batch_updated".equals(type) && payload != null) {
                 var ebikeList = payload.getJsonArray("list");
@@ -96,11 +98,11 @@ public class ProjectionUpdatesConsumer {
                     ebikeList.forEach(ebike -> {
                         if (ebike instanceof JsonObject ebikeObj) {
                             JsonObject ebikeData = ebikeObj.containsKey("map") ? ebikeObj.getJsonObject("map") : ebikeObj;
-                            projectionRepository.updateEBike(ebikeData)
-                                    .exceptionally(ex -> {
-                                        logger.error("Error updating ebike in batch: {}", ex.getMessage());
-                                        return null;
-                                    });
+                            rideService.handleEBikeProjectionUpdate(ebikeData)
+                                .exceptionally(ex -> {
+                                    logger.error("Error updating ebike in batch: {}", ex.getMessage());
+                                    return null;
+                                });
                         }
                     });
                     logger.info("Processing batch ebike update");
@@ -110,6 +112,5 @@ public class ProjectionUpdatesConsumer {
             logger.error("Error processing ebike event", e);
         }
     }
-
 
 }

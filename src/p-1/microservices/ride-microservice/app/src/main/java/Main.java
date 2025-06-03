@@ -24,12 +24,7 @@ public class Main {
             // Create Kafka event producer
             RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, vertx);
 
-            // Create and initialize projection updates consumer
-            ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
-                bootstrapServers,
-                localProjections
-            );
-            updatesConsumer.init();
+
 
             // Create REST API service implementation
             RestRideServiceAPI service = new RestRideServiceAPIImpl(
@@ -38,6 +33,13 @@ public class Main {
                 localProjections,
                 producer
             );
+
+            // Create and initialize projection updates consumer
+            ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
+                    bootstrapServers,
+                    service
+                    );
+            updatesConsumer.init();
 
             // Create and initialize web service verticle
             RideServiceVerticle rideServiceVerticle = new RideServiceVerticle(service, vertx);
