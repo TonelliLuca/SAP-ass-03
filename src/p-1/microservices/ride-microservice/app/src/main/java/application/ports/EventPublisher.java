@@ -22,5 +22,5 @@ public interface EventPublisher {
      * @param credit the credit of the user.
      * @param rideId the unique identifier of the ride.
      */
-    void publishRideUpdate(String id, double x, double y, String state, int batteryLevel, String username, int credit, String rideId);
+    void publishRideUpdate(String id, double x, double y, String state, int batteryLevel, String username, int credit, String rideId, String bikeType);
 }
