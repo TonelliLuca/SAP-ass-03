@@ -106,15 +106,19 @@ public class UserView extends AbstractView {
     }
 
     private void observeAvailableBikes() {
-
-        vertx.eventBus().consumer("user.bike.update."+ actualUser.username(), message -> {
+        vertx.eventBus().consumer("user.bike.update." + actualUser.username(), message -> {
             JsonArray update = (JsonArray) message.body();
             eBikes.clear();
             for (int i = 0; i < update.size(); i++) {
+                JsonObject bikeObj = null;
                 Object element = update.getValue(i);
                 if (element instanceof String) {
-                    JsonObject bikeObj = new JsonObject((String) element);
-                    String id = bikeObj.getString("bikeName");
+                    bikeObj = new JsonObject((String) element);
+                } else if (element instanceof JsonObject) {
+                    bikeObj = (JsonObject) element;
+                }
+                if (bikeObj != null) {
+                    String id = bikeObj.getString("bikeName", bikeObj.getString("id"));
                     Integer batteryLevel = bikeObj.getInteger("batteryLevel");
                     String stateStr = bikeObj.getString("state");
                     JsonObject location = bikeObj.getJsonObject("position");
