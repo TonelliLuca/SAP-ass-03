@@ -2,7 +2,7 @@ package domain.model;
 
 import ddd.Aggregate;
 
-public class EBike implements Aggregate<String>, Bike{
+public class ABike implements Aggregate<String>, Bike{
 
 
     private final String id;
@@ -12,7 +12,7 @@ public class EBike implements Aggregate<String>, Bike{
     private volatile double speed; // Units per simulation tick
     private volatile int batteryLevel; // 0..100
 
-    public EBike(String id, double x, double y, BikeState state, int battery) {
+    public ABike(String id, double x, double y, BikeState state, int battery) {
         this.id = id;
         this.state = state;
         this.location = new P2d(x, y);
@@ -41,7 +41,7 @@ public class EBike implements Aggregate<String>, Bike{
 
     @Override
     public String getType() {
-        return "ebike";
+        return "abike";
     }
 
     @Override
@@ -54,7 +54,7 @@ public class EBike implements Aggregate<String>, Bike{
 
     @Override
     public String toString() {
-        return String.format("EBike{id='%s', location=%s, batteryLevel=%d%%, state='%s'}",
+        return String.format("ABike{id='%s', location=%s, batteryLevel=%d%%, state='%s'}",
                 id, location, batteryLevel, state);
     }
 
