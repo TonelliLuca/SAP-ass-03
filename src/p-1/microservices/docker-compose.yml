@@ -58,6 +58,8 @@ services:
         condition: service_healthy
       map-microservice:
         condition: service_healthy
+      abike-microservice:
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
       - MONGO_CONNECTION=${MONGODB_CONNECTION_STRING}
@@ -69,6 +71,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+
 
   mongodb:
     image: mongo:latest
@@ -312,6 +315,42 @@ services:
       - "--kafka.server=${KAFKA_EXPORTER_SERVER}"
     networks:
       - eureka-network
+
+  abike-microservice:
+    build:
+      context: ./abike-microservice
+    ports:
+      - 8085:${ABIKE_INSTANCE_PORT}
+    networks:
+      - eureka-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      map-microservice:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      ride-microservice:
+        condition: service_healthy
+
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+      - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
+      - EUREKA_PORT=${EUREKA_INSTANCE_PORT}
+      - SERVICE_NAME=${ABIKE_INSTANCE_HOSTNAME}
+      - SERVICE_PORT=${ABIKE_INSTANCE_PORT}
+      - MONGO_CONNECTION=${MONGODB_CONNECTION_STRING}
+      - MONGO_DATABSE=${ABIKE_MONGODB_DATABASE}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:${ABIKE_INSTANCE_PORT}/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
 
 networks:
   eureka-network:
