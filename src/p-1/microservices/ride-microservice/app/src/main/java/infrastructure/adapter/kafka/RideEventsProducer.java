@@ -29,11 +29,11 @@ public class RideEventsProducer implements RideEventsProducerPort {
     }
 
     @Override
-    public void publishRideStart(String bikeId, String userId) {
+    public void publishRideStart(String bikeId, String userId, String bikeType) {
         logger.info("Publishing ride start event: bike={}, user={}", bikeId, userId);
         JsonObject bikeJson = new JsonObject()
                 .put("id", bikeId)
-                .put("bikeName", bikeId);  // Include both fields for compatibility
+                .put("type", bikeType);
 
         JsonObject userJson = new JsonObject()
                 .put("username", userId);
@@ -56,11 +56,12 @@ public class RideEventsProducer implements RideEventsProducerPort {
     }
 
     @Override
-    public void publishRideEnd(String bikeId, String userId) {
+    public void publishRideEnd(String bikeId, String userId, String bikeType) {
         logger.info("Publishing ride end event: bike={}, user={}", bikeId, userId);
         JsonObject bikeJson = new JsonObject()
                 .put("id", bikeId)
-                .put("bikeName", bikeId);  // Include both fields for compatibility
+                .put("type", bikeType);
+        // Include both fields for compatibility
 
         JsonObject userJson = new JsonObject()
                 .put("username", userId);
