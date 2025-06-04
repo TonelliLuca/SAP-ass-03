@@ -41,17 +41,24 @@ public class MapEventsConsumer {
 
     private void processStationEvent(String key, String eventJson) {
         try {
-            logger.info("Received station event: {}", eventJson);
-            JsonObject event = new JsonObject(eventJson);
-            String stationId = event.getString("stationId");
-            JsonObject locationJson = event.getJsonObject("location");
-            int capacity = event.getInteger("capacity", 0);
-            int availableCapacity = event.getInteger("availableCapacity", 0);
-
-            if (stationId != null && locationJson != null) {
-                float x = locationJson.getFloat("x", 0.0f);
-                float y = locationJson.getFloat("y", 0.0f);
-                Station station = new Station(stationId, new P2d(x, y), capacity, availableCapacity);
+            logger.info("Received station event: {} with key: {}", eventJson, key);
+            Station station = null;
+            if ("StationUpdateEvent".equals(key) || "StationRegisteredEvent".equals(key)) {
+                JsonObject event = new JsonObject(eventJson);
+                JsonObject stationObj = event.getJsonObject("station");
+                if (stationObj != null) {
+                    String stationId = stationObj.getString("id");
+                    JsonObject location = stationObj.getJsonObject("location");
+                    int capacity = stationObj.getInteger("capacity", 0);
+                    int availableCapacity = stationObj.getInteger("availableCapacity", 0);
+                    if (stationId != null && location != null) {
+                        float x = location.getFloat("x", 0.0f);
+                        float y = location.getFloat("y", 0.0f);
+                        station = new Station(stationId, new P2d(x, y), capacity, availableCapacity);
+                    }
+                }
+            }
+            if (station != null) {
                 mapService.updateStation(station);
             } else {
                 logger.error("Invalid station event: missing required fields");
