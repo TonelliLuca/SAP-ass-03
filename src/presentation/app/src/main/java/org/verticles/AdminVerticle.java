@@ -109,6 +109,7 @@ public class AdminVerticle extends AbstractVerticle {
 
         vertx.eventBus().consumer("admin.abike.create", message -> {
             JsonObject bikeDetails = (JsonObject) message.body();
+            log.info("Received abike create: " + bikeDetails);
             webClient.post(PORT, ADDRESS, "/ABIKE-MICROSERVICE/api/abikes/create")
                     .sendJsonObject(bikeDetails, ar -> {
                         if (ar.succeeded() && ar.result().statusCode() == 201) {
