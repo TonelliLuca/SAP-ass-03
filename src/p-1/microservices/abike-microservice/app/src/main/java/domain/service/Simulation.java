@@ -36,7 +36,7 @@ public class Simulation implements Service {
 
     public CompletableFuture<Void> start() {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        this.abike = new ABike(abike.id(), abike.position(), abike.batteryLevel(), ABikeState.AUTONOMOUS_MOVING);
+        this.abike = new ABike(abike.id(), abike.position(), abike.batteryLevel(), ABikeState.AUTONOMOUS_MOVING, abike.stationId());
         logger.info("Starting Simulation");
         vertx.setPeriodic(100, l -> {
             synchronized (this) {
@@ -63,7 +63,7 @@ public class Simulation implements Service {
             if (purpose == Purpose.TO_STATION && abike.state() == ABikeState.MAINTENANCE) {
                 newBattery = 100; // recharge
             }
-            abike = new ABike(abike.id(), destination.position(), newBattery, newState);
+            abike = new ABike(abike.id(), destination.position(), newBattery, newState, abike.stationId());
             if(purpose == Purpose.TO_USER)
                 publisher.publish(new ABikeArrivedToUser(abike.getId(), destination.getId()));
             if(purpose == Purpose.TO_STATION)
@@ -75,7 +75,7 @@ public class Simulation implements Service {
         double stepX = (dx / distance) * SPEED;
         double stepY = (dy / distance) * SPEED;
         P2d newPosition = new P2d(current.x() + stepX, current.y() + stepY);
-        abike = new ABike(abike.id(), newPosition, abike.batteryLevel(), abike.state());
+        abike = new ABike(abike.id(), newPosition, abike.batteryLevel(), abike.state(), abike.stationId());
 
         publisher.publish(new ABikeUpdate(abike));
     }

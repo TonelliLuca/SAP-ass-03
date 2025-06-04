@@ -5,7 +5,7 @@ import ddd.Entity;
 
 import java.io.Serializable;
 
-public record ABike(String id, P2d position, int batteryLevel, ABikeState state) implements Aggregate<String>, Serializable {
+public record ABike(String id, P2d position, int batteryLevel, ABikeState state, String stationId) implements Aggregate<String>, Serializable {
     public ABike {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("ID cannot be null or empty");
@@ -15,6 +15,9 @@ public record ABike(String id, P2d position, int batteryLevel, ABikeState state)
         }
         if (state == null) {
             throw new IllegalArgumentException("State cannot be null");
+        }
+        if (stationId == null || stationId.isBlank()) {
+            throw new IllegalArgumentException("Station ID cannot be null or empty");
         }
     }
 
