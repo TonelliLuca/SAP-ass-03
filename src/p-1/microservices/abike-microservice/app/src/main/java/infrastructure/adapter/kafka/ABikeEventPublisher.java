@@ -17,8 +17,7 @@ public class ABikeEventPublisher implements EventPublisher {
     public void publish(Event event) {
         JsonObject json = JsonObject.mapFrom(event)
             .put("type", event.getClass().getSimpleName())
-            .put("timestamp", System.currentTimeMillis())
-            .put("payload", JsonObject.mapFrom(event));
+            .put("timestamp", System.currentTimeMillis());
         logger.info("Publishing event: {}", json);
         producer.send(event.getClass().getSimpleName(), json);
     }
