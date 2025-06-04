@@ -4,6 +4,7 @@ import application.ports.StationRepository;
 import application.service.StationService;
 import domain.model.P2d;
 import domain.model.Station;
+import infrastructure.adapter.kafka.StationConsumer;
 import infrastructure.adapter.kafka.StationProducer;
 import infrastructure.config.ServiceConfiguration;
 import infrastructure.repository.MongoRepository;
@@ -29,10 +30,10 @@ public class Main {
 
         // 4. Create service
         Service service = new StationService(repo, publisher);
-
-
+        StationConsumer consumer = new StationConsumer(config.getKafkaBootstrapServers(), service);
         // 5. Initialize service
         service.init();
+        consumer.init();
 
         // 6. Start health check server
         startHealthServer();
