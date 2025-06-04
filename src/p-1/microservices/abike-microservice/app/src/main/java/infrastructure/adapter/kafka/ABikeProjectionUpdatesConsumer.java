@@ -93,7 +93,7 @@ public class ABikeProjectionUpdatesConsumer {
         JsonObject pos = abikeData.getJsonObject("position");
         P2d position = new P2d(pos.getDouble("x"), pos.getDouble("y"));
         String stationId = abikeData.getString("stationId");
-        return new ABike(id, position, batteryLevel, state, stationId);
+        return new ABike(id, position, batteryLevel, state);
     }
 
     public void stop() {

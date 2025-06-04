@@ -28,7 +28,6 @@ public class ABikeMongoRepository implements ABikeRepository {
                 .put("_id", abike.id())
                 .put("batteryLevel", abike.batteryLevel())
                 .put("state", abike.state().name())
-                .put("stationId", abike.stationId())
                 .put("position", new JsonObject()
                         .put("x", abike.position().x())
                         .put("y", abike.position().y()));
@@ -38,10 +37,9 @@ public class ABikeMongoRepository implements ABikeRepository {
         String id = doc.getString("_id");
         int batteryLevel = doc.getInteger("batteryLevel");
         ABikeState state = ABikeState.valueOf(doc.getString("state"));
-        String stationId = doc.getString("stationId");
         JsonObject pos = doc.getJsonObject("position");
         P2d position = new P2d(pos.getDouble("x"), pos.getDouble("y"));
-        return new ABike(id, position, batteryLevel, state, stationId);
+        return new ABike(id, position, batteryLevel, state);
     }
 
     @Override
