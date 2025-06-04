@@ -40,7 +40,7 @@ public class ABikeProjectionUpdatesConsumer {
                 Station station = deserializeStation(eventJson);
                 abikeService.saveStationProjection(station);
             } else if ("StationUpdateEvent".equals(key)) {
-                Station station = deserializeStationFromUpdateEvent(eventJson);
+                Station station = deserializeStation(eventJson);
                 abikeService.updateStationProjection(station);
             }
         } catch (Exception e) {
@@ -50,11 +50,21 @@ public class ABikeProjectionUpdatesConsumer {
 
     private Station deserializeStation(String eventJson) {
         JsonObject event = new JsonObject(eventJson);
-        String stationId = event.getString("stationId");
-        JsonObject location = event.getJsonObject("location");
-        int capacity = event.getInteger("capacity");
+        JsonObject stationObj = event.getJsonObject("station");
+        if (stationObj == null) {
+            throw new IllegalArgumentException("Missing 'station' object in event");
+        }
+        String stationId = stationObj.getString("id");
+        JsonObject location = stationObj.getJsonObject("location");
+        int capacity = stationObj.getInteger("capacity", 0);
+
         HashSet<String> dockedBikes = new HashSet<>();
-        event.getJsonArray("dockedBikes").forEach(bikeId -> dockedBikes.add(bikeId.toString()));
+        if (stationObj.getJsonArray("dockedBikes") != null) {
+            stationObj.getJsonArray("dockedBikes").forEach(bikeId -> {
+                dockedBikes.add(bikeId.toString());
+            });
+        }
+
         return new Station(
             stationId,
             new P2d(location.getDouble("x"), location.getDouble("y")),
@@ -63,21 +73,6 @@ public class ABikeProjectionUpdatesConsumer {
         );
     }
 
-    private Station deserializeStationFromUpdateEvent(String eventJson) {
-        JsonObject event = new JsonObject(eventJson);
-        JsonObject stationObj = event.getJsonObject("station");
-        String stationId = stationObj.getString("id");
-        JsonObject location = stationObj.getJsonObject("position");
-        int capacity = stationObj.getInteger("capacity");
-        HashSet<String> dockedBikes = new HashSet<>();
-        stationObj.getJsonArray("dockedBikes").forEach(bikeId -> dockedBikes.add(bikeId.toString()));
-        return new Station(
-            stationId,
-            new P2d(location.getDouble("x"), location.getDouble("y")),
-            dockedBikes,
-            capacity
-        );
-    }
 
     private void processRideEvent(String key, JsonObject event) {
         logger.info("Received ride event: {}", event.encodePrettily());
@@ -97,7 +92,8 @@ public class ABikeProjectionUpdatesConsumer {
         ABikeState state = ABikeState.valueOf(abikeData.getString("state"));
         JsonObject pos = abikeData.getJsonObject("position");
         P2d position = new P2d(pos.getDouble("x"), pos.getDouble("y"));
-        return new ABike(id, position, batteryLevel, state);
+        String stationId = abikeData.getString("stationId");
+        return new ABike(id, position, batteryLevel, state, stationId);
     }
 
     public void stop() {

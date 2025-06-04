@@ -1,4 +1,4 @@
 package domain.events;
 
-public record ABikeArrivedToStation(String abikeId, String stationId) implements Event {
+public record ABikeArrivedToStation(String bikeId, String stationId) implements Event {
 }
