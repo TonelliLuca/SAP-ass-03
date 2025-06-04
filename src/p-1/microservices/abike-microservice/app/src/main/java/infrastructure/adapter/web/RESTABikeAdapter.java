@@ -36,7 +36,7 @@ public class RESTABikeAdapter {
 
         try {
             JsonObject body = ctx.body().asJsonObject();
-            String abikeId = body.getString("id");
+            String abikeId = body.getString("abikeId");
             String stationId = body.getString("stationId");
 
             if (abikeId == null || abikeId.trim().isEmpty() || stationId == null || stationId.trim().isEmpty()) {
