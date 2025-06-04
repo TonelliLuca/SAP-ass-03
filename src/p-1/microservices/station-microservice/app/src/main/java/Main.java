@@ -9,8 +9,10 @@ import infrastructure.adapter.kafka.StationProducer;
 import infrastructure.config.ServiceConfiguration;
 import infrastructure.repository.MongoRepository;
 
-import com.mongodb.reactivestreams.client.MongoClients;
-import com.mongodb.reactivestreams.client.MongoClient;
+
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
+
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -21,7 +23,7 @@ public class Main {
         // 1. Load configuration
         ServiceConfiguration config = ServiceConfiguration.getInstance();
 
-        // 2. Create MongoDB client using config
+        // 2. Create MongoDB client using config (using standard driver now)
         MongoClient mongoClient = MongoClients.create(config.getMongoConnection());
         StationRepository repo = new MongoRepository(mongoClient);
 

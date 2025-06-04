@@ -27,8 +27,6 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
-    // MongoDB
-    implementation("org.mongodb:mongodb-driver-reactivestreams:4.11.1")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
@@ -52,6 +50,9 @@ dependencies {
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("ch.qos.logback:logback-classic:1.4.11")
+
+    // MongoDB
+    implementation("org.mongodb:mongodb-driver-sync:4.11.1") // Add this line for standard MongoDB driver
 }
 
 tasks.test {

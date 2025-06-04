@@ -23,14 +23,22 @@ public class StationService implements Service {
         this.eventPublisher = eventPublisher;
     }
 
-    @Override
+   @Override
     public void init() {
         log.info("Initializing stations...");
-        stationRepository.getAll().thenAccept(stations -> {
-            stations.forEach(station ->
-                    eventPublisher.publish(new StationRegisteredEvent(station))
-            );
-        });
+        stationRepository.getAll()
+            .thenAcceptAsync(stations -> {
+                log.info("Stations have been initialized");
+                log.info("Stations found: " + stations.size());
+                stations.forEach(station -> {
+                    log.debug("Publishing StationRegisteredEvent for station: {}", station.getId());
+                    eventPublisher.publish(new StationRegisteredEvent(station));
+                });
+            })
+            .exceptionally(ex -> {
+                log.error("Exception during station initialization", ex);
+                return null;
+            });
     }
 
     @Override
