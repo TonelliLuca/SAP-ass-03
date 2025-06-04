@@ -116,6 +116,7 @@ public abstract class AbstractView extends JFrame {
         String credit = "Credit: " + actualUser.credit();
         g2.drawString(credit, 10, 20);
         g2.drawString("AVAILABLE EBIKES: ", 10, 35);
+        paintUserExtras(g2);
     }
 
     public void display() {
@@ -150,5 +151,9 @@ public abstract class AbstractView extends JFrame {
             }
             g2.drawString("Station: " + station.stationId(), x, y - 5);
         }
+    }
+
+    protected void paintUserExtras(Graphics2D g2) {
+        // Default: do nothing
     }
 }

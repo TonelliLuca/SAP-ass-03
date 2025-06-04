@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.dialogs.user.RechargeCreditDialog;
 import org.dialogs.user.StartRideDialog;
+import org.dialogs.user.CallAbikeDialog;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
 import org.verticles.UserVerticle;
@@ -18,7 +19,9 @@ public class UserView extends AbstractView {
     private final Vertx vertx;
     private JButton rideButton;
     private boolean isRiding = false;
-
+    private JButton callABikeButton;
+    private Double calledX = null;
+    private Double calledY = null;
 
     public UserView(UserViewModel user, Vertx vertx) {
         super("User View", user);
@@ -36,7 +39,9 @@ public class UserView extends AbstractView {
 
     private void setupView() {
         topPanel.setLayout(new FlowLayout());
-
+        callABikeButton = new JButton("Call ABike");
+        callABikeButton.addActionListener(event -> openCallAbikeDialog());
+        buttonPanel.add(callABikeButton);
         rideButton = new JButton("Start Ride");
         rideButton.addActionListener(e -> toggleRide());
         buttonPanel.add(rideButton);
@@ -173,5 +178,42 @@ public class UserView extends AbstractView {
             }
             updateStations(stationList);
         });
+    }
+
+    private void openCallAbikeDialog() {
+        SwingUtilities.invokeLater(() -> {
+            CallAbikeDialog dialog = new CallAbikeDialog(this, vertx, actualUser);
+            dialog.setVisible(true);
+            if (dialog.isConfirmed()) {
+                calledX = dialog.getXCoord();
+                calledY = dialog.getYCoord();
+                JsonObject req = new JsonObject()
+                        .put("username", actualUser.username())
+                        .put("x", calledX)
+                        .put("y", calledY);
+                vertx.eventBus().request("user.call.abike." + actualUser.username(), req, ar -> {
+                    if (ar.succeeded()) {
+                        JOptionPane.showMessageDialog(this, "Abike called successfully");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error calling abike: " + ar.cause().getMessage());
+                    }
+                });
+                refreshView();
+            }
+        });
+    }
+
+    @Override
+    protected void paintUserExtras(Graphics2D g2) {
+        if (calledX != null && calledY != null) {
+            int centerX = centralPanel.getWidth() / 2;
+            int centerY = centralPanel.getHeight() / 2;
+            int x = centerX + calledX.intValue();
+            int y = centerY - calledY.intValue();
+            g2.setColor(Color.RED);
+            g2.fillOval(x - 5, y - 5, 10, 10);
+            g2.setColor(Color.BLACK);
+            g2.drawString("User Call", x + 10, y);
+        }
     }
 }
