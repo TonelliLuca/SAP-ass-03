@@ -4,6 +4,7 @@ import application.port.ABikeRepository;
 import application.port.ABikeService;
 import application.port.SimulationRepository;
 import application.port.StationProjectionRepository;
+import domain.events.ABikeArrivedToStation;
 import domain.model.*;
 import domain.service.Simulation;
 import io.vertx.core.Vertx;
@@ -36,6 +37,12 @@ public class ABikeServiceImpl implements ABikeService {
         this.simulationRepository = simulationRepository;
         this.eventPublisher = eventPublisher;
         this.vertx = vertx;
+
+        this.abikeRepository.findAll().thenAccept(abikes -> {
+           abikes.forEach(abike -> {
+               this.eventPublisher.publish(new ABikeArrivedToStation(abike.getId(), abike.stationId()));
+           });
+        });
     }
 
     @Override
@@ -45,7 +52,7 @@ public class ABikeServiceImpl implements ABikeService {
             if (station == null) {
                 return CompletableFuture.failedFuture(new IllegalArgumentException("Station not found"));
             }
-            ABike abike = new ABike(abikeId, station.position(), 100, ABikeState.AVAILABLE);
+            ABike abike = new ABike(abikeId, station.location(), 100, ABikeState.AVAILABLE, stationId);
             return abikeRepository.save(abike).thenAccept(v -> {
                 // Only publish event if save succeeded and station exists
                 eventPublisher.publish(new domain.events.ABikeArrivedToStation(abikeId, stationId));
@@ -62,20 +69,15 @@ public class ABikeServiceImpl implements ABikeService {
             throw new IllegalArgumentException("ABike not found");
         }
 
-        // Find all stations
-        HashSet<Station> stations = stationRepository.getAll().join();
-
-        // Find nearest station with available space (capacity 10)
-        Optional<Station> nearestStationOpt = stations.stream()
-                .filter(station -> station.dockedBikes().size() < station.capacity())
-                .min(Comparator.comparingDouble(s -> distance(s.position(), abike.position())));
-        if (nearestStationOpt.isEmpty()) {
-            throw new IllegalStateException("No available station with free space");
+        Station station = stationRepository.findById(abike.stationId()).join();
+        if (station == null) {
+            throw new IllegalArgumentException("Station not found for ABike's stationId");
         }
-        Station nearestStation = nearestStationOpt.get();
+        if (station.dockedBikes().size() >= station.capacity()) {
+            throw new IllegalStateException("No available space at the ABike's station");
+        }
 
-        // Start simulation to move bike to station
-        Destination destination = new Destination(nearestStation.position(), nearestStation.id());
+        Destination destination = new Destination(station.location(), station.id());
         Simulation simulation = new Simulation(abike, destination, Purpose.TO_STATION, eventPublisher, vertx);
         simulationRepository.save(simulation);
         simulation.start();
@@ -87,7 +89,7 @@ public class ABikeServiceImpl implements ABikeService {
         // Find nearest station
         HashSet<Station> stations = stationRepository.getAll().join();
         Optional<Station> nearestStationOpt = stations.stream()
-                .min(Comparator.comparingDouble(s -> distance(s.position(), destination.position())));
+                .min(Comparator.comparingDouble(s -> distance(s.location(), destination.position())));
         if (nearestStationOpt.isEmpty()) {
             throw new IllegalStateException("No stations available");
         }
