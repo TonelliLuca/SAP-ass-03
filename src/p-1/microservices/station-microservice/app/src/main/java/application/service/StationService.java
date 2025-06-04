@@ -28,7 +28,7 @@ public class StationService implements Service {
         log.info("Initializing stations...");
         stationRepository.getAll().thenAccept(stations -> {
             stations.forEach(station ->
-                    eventPublisher.publish(new StationRegisteredEvent(station.getId(), station.getLocation(), station.getCapacity(), station.getAvailableCapacity(), station.getDockedBikes()))
+                    eventPublisher.publish(new StationRegisteredEvent(station))
             );
         });
     }
