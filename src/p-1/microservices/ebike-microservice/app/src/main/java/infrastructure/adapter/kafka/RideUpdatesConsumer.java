@@ -15,7 +15,7 @@ public class RideUpdatesConsumer {
         this.consumer = new GenericKafkaConsumer<>(
             bootstrapServers,
             "ebike-service-group",
-            "ride-events",
+            "ride-ebike-events",
             JsonObject.class
         );
         logger.info("RideUpdatesConsumer created with bootstrap servers: {}", bootstrapServers);
@@ -28,12 +28,10 @@ public class RideUpdatesConsumer {
 
     private void processRideEvent(String key, JsonObject event) {
         try {
-            logger.info("Received e-bike update event: {}", event.encodePrettily());
-            //String type = event.getString("type");
+            logger.info("Received ride event: {}", event.encodePrettily());
             JsonObject payload = event.getJsonObject("payload");
-
             if (payload == null) {
-                logger.error("Invalid e-bike update: missing payload");
+                logger.error("Invalid ride event: missing payload");
                 return;
             }
 
@@ -43,30 +41,34 @@ public class RideUpdatesConsumer {
 
             JsonObject rideData = payload.getJsonObject("ride");
             if (rideData == null) {
-                logger.error("Invalid e-bike update: missing ride data");
+                logger.error("Invalid ride event: missing ride data");
                 return;
             }
 
             JsonObject bikeData = rideData.getJsonObject("map").getJsonObject("bike");
-            // Unwrap "map" if present (as in ONGOING messages)
             if (bikeData != null && bikeData.containsKey("map")) {
                 bikeData = bikeData.getJsonObject("map");
             }
 
             if (bikeData == null) {
-                logger.error("Invalid e-bike update: missing bike data");
+                logger.error("Invalid ride event: missing bike data");
+                return;
+            }
+
+            String bikeType = bikeData.getString("type");
+            if (!"ebike".equalsIgnoreCase(bikeType)) {
+                logger.info("Skipping non-ebike ride event (type={})", bikeType);
                 return;
             }
 
             String bikeId = bikeData.getString("id", bikeData.getString("bikeName"));
             if (bikeId == null) {
-                logger.error("Invalid e-bike update: missing bike identifier");
+                logger.error("Invalid ride event: missing bike identifier");
                 return;
             }
 
-            logger.info("Processing update for bike: {}", bikeId);
+            logger.info("Processing update for e-bike: {}", bikeId);
 
-            // Ensure id field is present for service processing
             if (!bikeData.containsKey("id")) {
                 bikeData.put("id", bikeId);
             }
@@ -82,7 +84,7 @@ public class RideUpdatesConsumer {
                     }
                 });
         } catch (Exception e) {
-            logger.error("Error processing e-bike update", e);
+            logger.error("Error processing ride event", e);
         }
     }
 
