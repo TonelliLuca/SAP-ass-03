@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 
 public class RideEventsProducer implements RideEventsProducerPort {
     private static final Logger logger = LoggerFactory.getLogger(RideEventsProducer.class);
-    private final GenericKafkaProducer<JsonObject> rideProducer;
+    private final GenericKafkaProducer<JsonObject> rideEBikeProducer;
+    private final GenericKafkaProducer<JsonObject> rideABikeProducer;
     private final Vertx vertx;
 
     public RideEventsProducer(String bootstrapServers, Vertx vertx) {
-        this.rideProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-events");
+        this.rideEBikeProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-ebike-events");
+        this.rideABikeProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-abike-events");
         logger.info("RideEventsProducer initialized with bootstrap servers: {}", bootstrapServers);
         this.vertx = vertx;
     }
@@ -78,13 +80,33 @@ public class RideEventsProducer implements RideEventsProducerPort {
     }
 
     private void publishEvent(JsonObject payload, String eventType) {
+        String bikeType = "unknown";
+        if (payload.containsKey("ride")) {
+            JsonObject ride = payload.getJsonObject("ride");
+            if (ride != null && ride.containsKey("bike")) {
+                JsonObject bike = ride.getJsonObject("bike");
+                if (bike != null && bike.containsKey("type")) {
+                    bikeType = bike.getString("type", "unknown").toLowerCase();
+                }
+            }
+        }
+
+
         JsonObject event = new JsonObject()
                 .put("type", eventType)
                 .put("timestamp", System.currentTimeMillis())
                 .put("payload", payload);
 
-        rideProducer.send("ride-" + System.currentTimeMillis(), event);
-        logger.debug("Published event: {}", event.encode());
+        switch(bikeType) {
+            case "ebike":
+                this.rideEBikeProducer.send("ride", event);
+                logger.debug("Published event to ebike: {}", event.encode());
+                break;
+            case "abike":
+                this.rideABikeProducer.send("ride", event);
+                logger.debug("Published event to abike: {}", event.encode());
+                break;
+        }
     }
 
 

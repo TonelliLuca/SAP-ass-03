@@ -31,10 +31,10 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
 
 
     @Override
-    public CompletableFuture<Void> startRide(String userId, String bikeId) {
+    public CompletableFuture<Void> startRide(String userId, String bikeId, String bikeType) {
         logger.info("Starting ride for user: {} and bike: {}", userId, bikeId);
 
-        CompletableFuture<Bike> bikeFuture = projectionRepository.getBike(bikeId);
+        CompletableFuture<Bike> bikeFuture = projectionRepository.getBike(bikeId, bikeType);
         CompletableFuture<User> userFuture = projectionRepository.getUser(userId);
 
         return CompletableFuture.allOf(bikeFuture, userFuture)
@@ -54,12 +54,12 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
 
                 // Generic state check based on bike type
                 if ("ebike".equalsIgnoreCase(bike.getType())) {
-                    if (bike.getState() != BikeState.AVAILABLE) {
-                        logger.error("EBike is not available: {}, state: {}", bikeId, bike.getState());
+                    if (bike.getState() != BikeState.AVAILABLE ) {
+                        logger.error("Bike is not available: {}, state: {}", bikeId, bike.getState());
                         return CompletableFuture.failedFuture(new RuntimeException("EBike is not available"));
                     }
                 } else if ("abike".equalsIgnoreCase(bike.getType())) {
-                    if (bike.getState() != BikeState.AUTHONOMOUS_MOVING) {
+                    if (bike.getState() != BikeState.AUTONOMOUS_MOVING) {
                         logger.error("ABike is not in AUTHONOMOUS_MOVING state: {}, state: {}", bikeId, bike.getState());
                         return CompletableFuture.failedFuture(new RuntimeException("ABike is not in AUTHONOMOUS_MOVING state"));
                     }
@@ -121,7 +121,9 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
     }
 
     @Override
-    public CompletableFuture<Void> handleEBikeProjectionUpdate(JsonObject bikeData) {
+    public CompletableFuture<Void> handleBikeProjectionUpdate(JsonObject bikeData, String bikeType) {
+        bikeData.put("type", bikeType);
+        logger.info("Handling bike projection update for bike :{}",bikeData);
         return projectionRepository.updateBike(bikeData);
     }
 }

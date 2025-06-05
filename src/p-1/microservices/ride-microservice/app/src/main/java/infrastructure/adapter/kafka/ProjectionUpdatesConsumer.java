@@ -1,6 +1,5 @@
 package infrastructure.adapter.kafka;
 
-import application.ports.ProjectionRepositoryPort;
 import application.ports.RestRideServiceAPI;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -11,6 +10,7 @@ public class ProjectionUpdatesConsumer {
 
     private final GenericKafkaConsumer<JsonObject> userConsumer;
     private final GenericKafkaConsumer<JsonObject> ebikeConsumer;
+    private final GenericKafkaConsumer<JsonObject> abikeConsumer;
     private final RestRideServiceAPI rideService;
 
     public ProjectionUpdatesConsumer(
@@ -33,15 +33,22 @@ public class ProjectionUpdatesConsumer {
             JsonObject.class
         );
 
+        this.abikeConsumer = new GenericKafkaConsumer<>(
+            bootstrapServers,
+            "ride-service-abike-group",
+            "abike-events",
+            JsonObject.class
+        );
+
         logger.info("ProjectionUpdatesConsumer created");
     }
 
     public void init() {
         userConsumer.start(this::processUserEvent);
         ebikeConsumer.start(this::processEbikeEvent);
+        abikeConsumer.start(this::processAbikeEvent);
         logger.info("ProjectionUpdatesConsumer started");
     }
-
 
     private void processUserEvent(String key, JsonObject event) {
         try {
@@ -86,7 +93,7 @@ public class ProjectionUpdatesConsumer {
 
             if ("ebike_updated".equals(type) && payload != null) {
                 JsonObject ebikeData = payload.containsKey("map") ? payload.getJsonObject("map") : payload;
-                rideService.handleEBikeProjectionUpdate(ebikeData)
+                rideService.handleBikeProjectionUpdate(ebikeData,  "ebike")
                     .exceptionally(ex -> {
                         logger.error("Error updating ebike projection: {}", ex.getMessage());
                         return null;
@@ -98,7 +105,7 @@ public class ProjectionUpdatesConsumer {
                     ebikeList.forEach(ebike -> {
                         if (ebike instanceof JsonObject ebikeObj) {
                             JsonObject ebikeData = ebikeObj.containsKey("map") ? ebikeObj.getJsonObject("map") : ebikeObj;
-                            rideService.handleEBikeProjectionUpdate(ebikeData)
+                            rideService.handleBikeProjectionUpdate(ebikeData, "ebike")
                                 .exceptionally(ex -> {
                                     logger.error("Error updating ebike in batch: {}", ex.getMessage());
                                     return null;
@@ -113,4 +120,39 @@ public class ProjectionUpdatesConsumer {
         }
     }
 
+    private void processAbikeEvent(String key, JsonObject event) {
+        try {
+            logger.info("Received abike event: {}", event.encodePrettily());
+            JsonObject mapObj = event.getJsonObject("map");
+            if (mapObj == null) {
+                // Fallback: maybe the event itself is the ABike event
+                mapObj = event;
+            }
+            String type = mapObj.getString("type");
+            if ("ABikeUpdate".equals(type)) {
+                JsonObject abikeData = mapObj.getJsonObject("abike");
+                if (abikeData == null) {
+                    logger.error("Invalid ABikeUpdate: missing abike data");
+                    return;
+                }
+                rideService.handleBikeProjectionUpdate(abikeData, "abike")
+                    .exceptionally(ex -> {
+                        logger.error("Error updating abike projection: {}", ex.getMessage());
+                        return null;
+                    });
+                logger.info("Processing abike projection update: {}", abikeData.getString("id"));
+            } else if ("ABikeArrivedToUser".equals(type)) {
+                String abikeId = mapObj.getString("abikeId");
+                String userId = mapObj.getString("userId");
+                logger.info("Received ABikeArrivedToUser: abikeId={}, userId={}", abikeId, userId);
+                rideService.startRide(userId, abikeId, "abike")
+                    .exceptionally(ex -> {
+                        logger.error("Error starting abike ride: {}", ex.getMessage());
+                        return null;
+                    });
+            }
+        } catch (Exception e) {
+            logger.error("Error processing abike event", e);
+        }
+    }
 }

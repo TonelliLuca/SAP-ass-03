@@ -16,7 +16,7 @@ public interface RestRideServiceAPI {
      * @param bikeId the ID of the e-bike.
      * @return a CompletableFuture that completes when the ride is started.
      */
-    CompletableFuture<Void> startRide(String userId, String bikeId);
+    CompletableFuture<Void> startRide(String userId, String bikeId, String bikeType);
 
     /**
      * Stops a ride for a specific user.
@@ -28,5 +28,5 @@ public interface RestRideServiceAPI {
 
 
     CompletableFuture<Void> handleUserProjectionUpdate(JsonObject userData);
-    CompletableFuture<Void> handleEBikeProjectionUpdate(JsonObject ebikeData);
+    CompletableFuture<Void> handleBikeProjectionUpdate(JsonObject ebikeData, String bikeType);
 }

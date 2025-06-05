@@ -16,19 +16,10 @@ public class LocalProjectionRepository implements ProjectionRepositoryPort {
     private final Map<String, JsonObject> bikeProjections = new ConcurrentHashMap<>();
     private final Map<String, JsonObject> userProjections = new ConcurrentHashMap<>();
 
-    @Override
-    public CompletableFuture<Void> updateBike(JsonObject bikeJson) {
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Updating bike projection");
-            if (bikeJson == null || !bikeJson.containsKey("id")) {
-                logger.error("Bike projection update failed");
-                return;
-            }
-            String id = bikeJson.getString("id");
-            bikeProjections.put(id, bikeJson);
-            logger.info("Updated bike projection: {}", id);
-        });
+    private String bikeKey(String id, String type) {
+        return id + ":" + type.toLowerCase();
     }
+
 
     private JsonObject unwrapMap(JsonObject obj) {
         while (obj != null && obj.containsKey("map")) {
@@ -38,10 +29,31 @@ public class LocalProjectionRepository implements ProjectionRepositoryPort {
     }
 
     @Override
-    public CompletableFuture<Bike> getBike(String id) {
+    public CompletableFuture<Void> updateBike(JsonObject bikeJson) {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Updating bike projection");
+            logger.info(bikeJson.encodePrettily());
+            if (bikeJson == null || !bikeJson.containsKey("id")) {
+                logger.error("Bike projection update failed: missing id");
+                return;
+            }
+            if (!bikeJson.containsKey("position") && !bikeJson.containsKey("location")) {
+                logger.error("Bike projection update failed: missing position/location for bike id={}", bikeJson.getString("id"));
+                return;
+            }
+            String id = bikeJson.getString("id");
+            String type = bikeJson.getString("type", "ebike");
+            bikeProjections.put(bikeKey(id, type), bikeJson);
+            logger.info("Updated bike projection: {}", bikeProjections);
+        });
+    }
+
+    @Override
+    public CompletableFuture<Bike> getBike(String id, String bikeType) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Getting bike projection: {}", id);
-            JsonObject json = bikeProjections.get(id);
+            String key = bikeKey(id, bikeType);
+            JsonObject json = bikeProjections.get(key);
             if (json == null) {
                 logger.error("Getting bike projection failed");
                 return null;

@@ -72,7 +72,7 @@ public class RideServiceVerticle extends AbstractVerticle {
             String user = body.getString("user");
             String bike = body.getString("bike");
 
-            rideService.startRide(user, bike).thenAccept(v -> {
+            rideService.startRide(user, bike, "ebike").thenAccept(v -> {
                 ctx.response().setStatusCode(200).end("Ride started");
                 metricsManager.recordTimer(timer, "startRide");
             }).exceptionally(ex -> {

@@ -7,7 +7,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.concurrent.CompletableFuture;
 
 public interface ProjectionRepositoryPort {
-    CompletableFuture<Bike> getBike(String id);
+    CompletableFuture<Bike> getBike(String id, String bikeType);
     CompletableFuture<Void> updateBike(JsonObject ebikeJson);
     CompletableFuture<Void> updateUser(JsonObject userJson);
     CompletableFuture<User> getUser(String username) ;
