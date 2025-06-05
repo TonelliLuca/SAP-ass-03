@@ -287,7 +287,7 @@ public class MapEventsConsumer {
                         });
                 mapService.notifyABikeArrivedToUser(userId, abikeId);
             } else if ("ABikeCallComplete".equals(type)) {
-                String abikeId = mapObj.getString("abikeId");
+                String abikeId = mapObj.getString("bikeId");
                 String userId = mapObj.getString("userId");
                 logger.info("Received ABikeCallComplete: abikeId={}, userId={}", abikeId, userId);
                 mapService.notifyStopRide(userId, abikeId, "abike")

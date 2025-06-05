@@ -42,7 +42,7 @@ public class BikeRepositoryImpl implements BikeRepository, Repository {
     public CompletableFuture<Map<String, List<Bike>>> getUsersWithAssignedAndAvailableBikes() {
         return CompletableFuture.supplyAsync(() -> {
             List<Bike> availableBikes = bikes.values().stream()
-                    .filter(bike -> bike.getState() == BikeState.AVAILABLE)
+                    .filter(bike -> bike instanceof EBike && bike.getState() == BikeState.AVAILABLE)
                     .toList();
 
             return bikeAssignments.entrySet().stream()
@@ -60,19 +60,24 @@ public class BikeRepositoryImpl implements BikeRepository, Repository {
         });
     }
 
+
     @Override
     public CompletableFuture<List<Bike>> getAllBikes() {
-        return CompletableFuture.supplyAsync(() -> new ArrayList<>(bikes.values()));
+        return CompletableFuture.supplyAsync(() -> bikes.values().stream()
+            .filter(bike -> !(bike instanceof ABike && bike.getState() == BikeState.AVAILABLE))
+            .collect(Collectors.toList()));
     }
+
 
     @Override
     public CompletableFuture<List<Bike>> getAllBikes(String username) {
         return CompletableFuture.supplyAsync(() -> bikes.values().stream()
-                .filter(bike -> {
-                    String assignedBikeName = bikeAssignments.get(username);
-                    return assignedBikeName != null && assignedBikeName.equals(bike.getId());
-                })
-                .collect(Collectors.toList()));
+            .filter(bike -> {
+                String assignedBikeName = bikeAssignments.get(username);
+                return assignedBikeName != null && assignedBikeName.equals(bike.getId());
+            })
+            .filter(bike -> !(bike instanceof ABike && bike.getState() == BikeState.AVAILABLE))
+            .collect(Collectors.toList()));
     }
 
     @Override
