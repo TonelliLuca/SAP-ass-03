@@ -1,5 +1,6 @@
 package domain.service;
 
+import application.port.ABikeRepository;
 import application.port.EventPublisher;
 import ddd.Service;
 import domain.events.ABikeArrivedToStation;
@@ -24,14 +25,16 @@ public class Simulation implements Service {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final EventPublisher publisher;
     private final Vertx vertx;
+    private final ABikeRepository abikeRepository;
 
-    public Simulation(ABike abike, Destination destination, Purpose purpose, EventPublisher eventPublisher, Vertx vertx) {
+    public Simulation(ABike abike, Destination destination, Purpose purpose, EventPublisher eventPublisher, Vertx vertx, ABikeRepository repository) {
         this.abike = abike;
         this.destination = destination;
         this.publisher = eventPublisher;
         this.vertx = vertx;
         this.purpose = purpose;
         this.id = UUID.randomUUID().toString();
+        this.abikeRepository = repository;
     }
 
     public CompletableFuture<Void> start() {
@@ -59,11 +62,14 @@ public class Simulation implements Service {
 
         if (distance < SPEED) {
             int newBattery = abike.batteryLevel();
-            ABikeState newState = ABikeState.AVAILABLE;
-            if (purpose == Purpose.TO_STATION && abike.state() == ABikeState.MAINTENANCE) {
+            ABikeState newState = abike.state();
+            if (purpose == Purpose.TO_STATION) {
                 newBattery = 100; // recharge
+                newState = ABikeState.AVAILABLE;
             }
             abike = new ABike(abike.id(), destination.position(), newBattery, newState);
+            abikeRepository.update(abike); // Persist new position
+            publisher.publish(new ABikeUpdate(abike));
             if(purpose == Purpose.TO_USER)
                 publisher.publish(new ABikeArrivedToUser(abike.getId(), destination.getId()));
             if(purpose == Purpose.TO_STATION)
@@ -76,7 +82,7 @@ public class Simulation implements Service {
         double stepY = (dy / distance) * SPEED;
         P2d newPosition = new P2d(current.x() + stepX, current.y() + stepY);
         abike = new ABike(abike.id(), newPosition, abike.batteryLevel(), abike.state());
-
+        abikeRepository.update(abike); // Persist new position
         publisher.publish(new ABikeUpdate(abike));
     }
 

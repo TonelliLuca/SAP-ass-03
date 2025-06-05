@@ -24,7 +24,7 @@ public class ABikeProjectionUpdatesConsumer {
         this.stationConsumer = new GenericKafkaConsumer<>(
             bootstrapServers, "abike-service-station-group", "station-events", String.class);
         this.rideConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "abike-service-ride-group", "ride-events", JsonObject.class);
+            bootstrapServers, "abike-service-ride-group", "ride-abike-events", JsonObject.class);
     }
 
     public void init() {
@@ -74,15 +74,93 @@ public class ABikeProjectionUpdatesConsumer {
     }
 
 
+
+    private JsonObject unwrapMap(JsonObject obj) {
+        while (obj != null && obj.containsKey("map")) {
+            obj = obj.getJsonObject("map");
+        }
+        return obj;
+    }
+
     private void processRideEvent(String key, JsonObject event) {
-        logger.info("Received ride event: {}", event.encodePrettily());
-        JsonObject payload = event.getJsonObject("payload");
-        if (payload == null) return;
+        try {
+            logger.info("Received ride event: {}", event.encodePrettily());
+            JsonObject root = unwrapMap(event);
+            JsonObject payload = unwrapMap(root.getJsonObject("payload"));
+            if (payload == null) {
+                logger.error("Invalid ride event: missing payload");
+                return;
+            }
 
-        JsonObject abikeData = payload.getJsonObject("abike");
-        if (abikeData != null) {
-            ABike abike = mapJsonToABike(abikeData);
+            JsonObject rideData = unwrapMap(payload.getJsonObject("ride"));
+            if (rideData == null) {
+                logger.error("Invalid ride event: missing ride data");
+                return;
+            }
 
+            JsonObject bikeData = unwrapMap(rideData.getJsonObject("bike"));
+            if (bikeData == null) {
+                logger.error("Invalid ride event: missing bike data");
+                return;
+            }
+
+            String bikeType = bikeData.getString("type");
+            if (!"abike".equalsIgnoreCase(bikeType)) {
+                logger.info("Skipping non-abike ride event (type={})", bikeType);
+                return;
+            }
+
+            String abikeId = bikeData.getString("id", bikeData.getString("bikeName"));
+            if (abikeId == null) {
+                logger.error("Invalid ride event: missing abike identifier");
+                return;
+            }
+
+            String status = payload.getString("status", "INFO");
+            if ("STOP".equalsIgnoreCase(status)) {
+                JsonObject userData = unwrapMap(rideData.getJsonObject("user"));
+                String userId = userData != null ? userData.getString("username") : null;
+                logger.info("STOP detected for abike {}: starting docking simulation for user {}", abikeId, userId);
+                abikeService.completeCall(abikeId, userId);
+                return;
+            }
+
+            int batteryLevel = bikeData.getInteger("batteryLevel", 100);
+            String stateStr = bikeData.getString("state", "AVAILABLE");
+            domain.model.ABikeState state;
+            try {
+                state = domain.model.ABikeState.valueOf(stateStr);
+            } catch (Exception ex) {
+                logger.error("Invalid abike state: {}", stateStr);
+                return;
+            }
+
+            JsonObject pos = unwrapMap(
+                bikeData.getJsonObject("position") != null
+                    ? bikeData.getJsonObject("position")
+                    : bikeData.getJsonObject("location")
+            );
+            if (pos == null) {
+                logger.error("Invalid ride event: missing abike position");
+                return;
+            }
+            double x = pos.getDouble("x", 0.0);
+            double y = pos.getDouble("y", 0.0);
+
+            ABike abike = new ABike(abikeId, new P2d(x, y), batteryLevel, state);
+
+            abikeService.updateABike(abike)
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        logger.error("Failed to update abike: {}", throwable.getMessage());
+                    } else if (result == null) {
+                        logger.warn("Abike with id {} not found", abikeId);
+                    } else {
+                        logger.info("Successfully updated abike: {}", abikeId);
+                    }
+                });
+        } catch (Exception e) {
+            logger.error("Error processing ride event", e);
         }
     }
 

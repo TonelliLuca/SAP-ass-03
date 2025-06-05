@@ -5,6 +5,9 @@ import application.port.ABikeService;
 import application.port.SimulationRepository;
 import application.port.StationProjectionRepository;
 import domain.events.ABikeArrivedToStation;
+import domain.events.ABikeCallComplete;
+import domain.events.ABikeRequested;
+import domain.events.ABikeUpdate;
 import domain.model.*;
 import domain.service.Simulation;
 import io.vertx.core.Vertx;
@@ -38,6 +41,11 @@ public class ABikeServiceImpl implements ABikeService {
         this.eventPublisher = eventPublisher;
         this.vertx = vertx;
 
+        abikeRepository.findAll().thenAcceptAsync(list -> {
+           list.forEach(abike -> {
+               eventPublisher.publish(new ABikeUpdate(abike));
+           });
+        });
     }
 
     @Override
@@ -57,7 +65,7 @@ public class ABikeServiceImpl implements ABikeService {
     }
 
     @Override
-    public void dockABike(String abikeId) {
+    public void completeCall(String abikeId, String userId) {
         logger.info("Docking ABike with id {}", abikeId);
         ABike abike = abikeRepository.findById(abikeId).join();
         if (abike == null) {
@@ -78,39 +86,45 @@ public class ABikeServiceImpl implements ABikeService {
 
         // Start simulation to move bike to station
         Destination destination = new Destination(nearestStation.location(), nearestStation.id());
-        Simulation simulation = new Simulation(abike, destination, Purpose.TO_STATION, eventPublisher, vertx);
+        Simulation simulation = new Simulation(abike, destination, Purpose.TO_STATION, eventPublisher, vertx, this.abikeRepository);
         simulationRepository.save(simulation);
-        simulation.start();
+        simulation.start().thenAccept(s -> {
+            eventPublisher.publish(new ABikeCallComplete(abikeId, userId));
+        });
     }
 
-    @Override
-    public String callABike(Destination destination) {
+
+    public CompletableFuture<String> callABike(Destination destination) {
         logger.info("Calling ABike with destination {}", destination);
-        // Find nearest station
-        HashSet<Station> stations = stationRepository.getAll().join();
-        Optional<Station> nearestStationOpt = stations.stream()
-                .min(Comparator.comparingDouble(s -> distance(s.location(), destination.position())));
-        if (nearestStationOpt.isEmpty()) {
-            throw new IllegalStateException("No stations available");
-        }
-        Station nearestStation = nearestStationOpt.get();
+        return stationRepository.getAll().thenCombine(
+            abikeRepository.findAll(),
+            (stations, abikes) -> {
+                Optional<Station> nearestStationOpt = stations.stream()
+                    .sorted(Comparator.comparingDouble(s -> distance(s.location(), destination.position())))
+                    .filter(station -> abikes.stream()
+                        .anyMatch(abike -> station.dockedBikes().contains(abike.id()) && abike.state() == ABikeState.AVAILABLE))
+                    .findFirst();
 
-        // Find available ABike at the station (by dockedBikes and AVAILABLE state)
-        HashSet<ABike> abikes = abikeRepository.findAll().join();
-        Optional<ABike> abikeOpt = abikes.stream()
-                .filter(abike -> nearestStation.dockedBikes().contains(abike.id()) && abike.state() == ABikeState.AVAILABLE)
-                .findFirst();
-        if (abikeOpt.isEmpty()) {
-            throw new IllegalStateException("No available ABike at nearest station");
-        }
-        ABike abike = abikeOpt.get();
+                if (nearestStationOpt.isEmpty()) {
+                    throw new IllegalStateException("No available ABike at any station");
+                }
+                Station nearestStation = nearestStationOpt.get();
 
-        // Start simulation
-        Simulation simulation = new Simulation(abike, destination, Purpose.TO_USER, eventPublisher, vertx);
-        simulationRepository.save(simulation);
-        simulation.start();
+                Optional<ABike> abikeOpt = abikes.stream()
+                    .filter(abike -> nearestStation.dockedBikes().contains(abike.id()) && abike.state() == ABikeState.AVAILABLE)
+                    .findFirst();
 
-        return simulation.id;
+                if (abikeOpt.isEmpty()) {
+                    throw new IllegalStateException("No available ABike at nearest station");
+                }
+                ABike abike = abikeOpt.get();
+                eventPublisher.publish(new ABikeRequested(abike.getId(), destination.getId(), nearestStation.getId()));
+                Simulation simulation = new Simulation(abike, destination, Purpose.TO_USER, eventPublisher, vertx, this.abikeRepository);
+                simulationRepository.save(simulation);
+                simulation.start();
+                return simulation.id;
+            }
+        );
     }
 
     private double distance(P2d a, P2d b) {
@@ -135,6 +149,32 @@ public class ABikeServiceImpl implements ABikeService {
             .thenAccept(v -> logger.info("Updated station projection: {}", station))
             .exceptionally(ex -> {
                 logger.error("Failed to update station projection: {}", ex.getMessage());
+                return null;
+            });
+    }
+
+    @Override
+    public CompletableFuture<ABike> updateABike(ABike abike) {
+        return abikeRepository.findById(abike.id())
+            .thenCompose(existing -> {
+                if (existing == null) {
+                    logger.warn("ABike with id {} not found for update", abike.id());
+                    return CompletableFuture.completedFuture(null);
+                }
+                ABike updated = new ABike(
+                    abike.id(),
+                    abike.position(),
+                    abike.batteryLevel(),
+                    abike.state()
+                );
+                return abikeRepository.update(updated)
+                    .thenApply(v -> {
+                        eventPublisher.publish(new ABikeUpdate(updated));
+                        return updated;
+                    });
+            })
+            .exceptionally(ex -> {
+                logger.error("Error updating ABike {}: {}", abike.id(), ex.getMessage());
                 return null;
             });
     }

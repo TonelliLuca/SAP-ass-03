@@ -1,6 +1,8 @@
 package infrastructure.adapter.web;
 
 import application.port.ABikeService;
+import domain.model.Destination;
+import domain.model.P2d;
 import infrastructure.utils.MetricsManager;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -20,6 +22,7 @@ public class RESTABikeAdapter {
 
     public void configureRoutes(Router router) {
         router.post("/api/abikes/create").handler(this::createABike);
+        router.post("/api/callAbike").handler(this::callABike); // Add this line
         router.get("/health").handler(this::healthCheck);
         router.get("/metrics").handler(this::metrics);
     }
@@ -90,5 +93,41 @@ public class RESTABikeAdapter {
                 .end(new JsonObject()
                         .put("error", e.getMessage())
                         .encode());
+    }
+
+
+    private void callABike(RoutingContext ctx) {
+        metricsManager.incrementMethodCounter("callABike");
+        var timer = metricsManager.startTimer();
+
+        try {
+            JsonObject body = ctx.body().asJsonObject();
+            String username = body.getString("username");
+            Double x = body.getDouble("x");
+            Double y = body.getDouble("y");
+
+            if (username == null || x == null || y == null) {
+                metricsManager.recordError(timer, "callABike", new RuntimeException("Invalid input"));
+                sendError(ctx, 400, "Invalid input");
+                return;
+            }
+
+            P2d position = new P2d(x, y);
+            Destination destination = new Destination(position, username);
+
+            abikeService.callABike(destination)
+                .thenAccept(simulationId -> {
+                    sendResponse(ctx, 200, new JsonObject().put("simulationId", simulationId));
+                    metricsManager.recordTimer(timer, "callABike");
+                })
+                .exceptionally(e -> {
+                    metricsManager.recordError(timer, "callABike", e);
+                    handleError(ctx, e);
+                    return null;
+                });
+        } catch (Exception e) {
+            metricsManager.recordError(timer, "callABike", e);
+            handleError(ctx, e);
+        }
     }
 }
