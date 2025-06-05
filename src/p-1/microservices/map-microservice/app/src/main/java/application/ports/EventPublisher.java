@@ -1,10 +1,12 @@
 package application.ports;
 
+import domain.model.ABike;
 import domain.model.Bike;
 import domain.model.EBike;
 import domain.model.Station;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Port representing an event publisher for e-bike updates and user ride events.
@@ -41,4 +43,6 @@ public interface EventPublisher {
     void publishStopRide(String username);
 
     void publishStationsUpdate(List<Station> stations);
+    void publishABikeArrivedToUser(String userId, String abikeId);
+
 }

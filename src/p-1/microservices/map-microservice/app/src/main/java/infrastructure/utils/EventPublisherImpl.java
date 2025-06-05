@@ -64,6 +64,8 @@ public class EventPublisherImpl implements EventPublisher {
         vertx.eventBus().publish("stations.update", stationsJson.encode());
     }
 
+
+
     private JsonObject convertStationToJson(Station station) {
         JsonObject json = new JsonObject();
         json.put("stationId", station.getId());
@@ -73,5 +75,13 @@ public class EventPublisherImpl implements EventPublisher {
         json.put("capacity", station.getCapacity());
         json.put("availableCapacity", station.getAvailableCapacity());
         return json;
+    }
+
+    @Override
+    public void publishABikeArrivedToUser(String userId, String abikeId) {
+        JsonObject json = new JsonObject()
+            .put("event", "ABikeArrivedToUser")
+            .put("abikeId", abikeId);
+        vertx.eventBus().publish(userId, json.encode());
     }
 }

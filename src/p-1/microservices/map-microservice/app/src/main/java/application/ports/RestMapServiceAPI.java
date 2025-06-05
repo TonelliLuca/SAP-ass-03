@@ -35,7 +35,7 @@ public interface RestMapServiceAPI {
      * @param bikeName the name of the e-bike.
      * @return a CompletableFuture that completes when the notification is done.
      */
-    CompletableFuture<Void> notifyStartRide(String username, String bikeName);
+    CompletableFuture<Void> notifyStartRide(String username, String bikeName, String bikeType);
 
     /**
      * Notifies the stop of a ride for a user.
@@ -44,7 +44,7 @@ public interface RestMapServiceAPI {
      * @param bikeName the name of the e-bike.
      * @return a CompletableFuture that completes when the notification is done.
      */
-    CompletableFuture<Void> notifyStopRide(String username, String bikeName);
+    CompletableFuture<Void> notifyStopRide(String username, String bikeName, String bikeType);
 
     /**
      * Retrieves all e-bikes for admin users.
@@ -74,4 +74,5 @@ public interface RestMapServiceAPI {
 
     void updateStation(Station station);
     void getAllStations();
+    void notifyABikeArrivedToUser(String userId, String abikeId);
 }

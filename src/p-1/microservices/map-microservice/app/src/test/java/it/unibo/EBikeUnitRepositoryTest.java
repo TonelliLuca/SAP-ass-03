@@ -1,9 +1,9 @@
 package it.unibo;
 
 import domain.model.P2d;
-import domain.model.EBikeRepositoryImpl;
+import domain.model.BikeRepositoryImpl;
 import domain.model.EBike;
-import domain.model.EBikeState;
+import domain.model.BikeState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,16 +13,16 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EBikeUnitRepositoryTest {
-    private EBikeRepositoryImpl repository;
+    private BikeRepositoryImpl repository;
     private EBike bike1;
     private EBike bike2;
 
     @BeforeEach
     public void setUp() {
-        repository = new EBikeRepositoryImpl();
+        repository = new BikeRepositoryImpl();
 
-        bike1 = new EBike("Bike1", new P2d(0,0), EBikeState.AVAILABLE, 100);
-        bike2 = new EBike("Bike1", new P2d(10,10), EBikeState.AVAILABLE, 100);
+        bike1 = new EBike("Bike1", new P2d(0,0), BikeState.AVAILABLE, 100);
+        bike2 = new EBike("Bike1", new P2d(10,10), BikeState.AVAILABLE, 100);
     }
 
     @Test
@@ -32,7 +32,7 @@ public class EBikeUnitRepositoryTest {
         EBike retrievedBike = repository.getBike("Bike1").get();
         assertNotNull(retrievedBike);
         assertEquals("Bike1", retrievedBike.getBikeName());
-        assertEquals(EBikeState.AVAILABLE, retrievedBike.getState());
+        assertEquals(BikeState.AVAILABLE, retrievedBike.getState());
     }
 
     @Test

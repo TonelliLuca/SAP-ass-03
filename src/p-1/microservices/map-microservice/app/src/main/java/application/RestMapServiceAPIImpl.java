@@ -45,52 +45,62 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
 
     @Override
     public CompletableFuture<Void> updateBike(Bike bike) {
-        logger.debug("Updating eBike: {}", bike.getId());
+        logger.info("Updating Bike: {}", bike.getId());
         return bikeRepository.saveBike(bike)
                 .thenAccept(v -> {
-                    logger.debug("Saved eBike: {}", bike.getId());
+                    logger.info("Saved Bike: {}", bike.getId());
                     bikeRepository.getAllBikes().thenAccept(bikes -> {
-                        logger.debug("Publishing all bikes update, count: {}", bikes.size());
-                        eventPublisher.publishBikesUpdate(bikes);
+                        bikeRepository.getAllMovingAbikes().thenAccept(movingAbikes -> {
+                            bikes.addAll(movingAbikes);
+                            logger.info("Publishing all ebikes + movingAbikes: {}", bikes);
+                            eventPublisher.publishBikesUpdate(bikes);
+                        });
                     });
 
                     bikeRepository.getUsersWithAssignedAndAvailableBikes().thenAccept(usersWithBikeMap -> {
-                        logger.debug("Users with assigned/available bikes: {}", usersWithBikeMap.keySet());
+                        logger.info("Users with assigned/available bikes: {}", usersWithBikeMap.keySet());
                         if(!usersWithBikeMap.isEmpty()){
                             usersWithBikeMap.forEach((username, userBikes) -> {
-                                logger.debug("Publishing user bikes update for user: {}", username);
-                                eventPublisher.publishUserBikesUpdate(userBikes, username);
+                                bikeRepository.getAssignedABike(username).thenAccept(assignedABikes -> {
+                                    assignedABikes.stream()
+                                            .filter(abike -> userBikes.stream().noneMatch(b -> b.getId().equals(abike.getId())))
+                                            .forEach(userBikes::add);
+                                    logger.info("Publishing all assigned ebikes + assigned ABikes: {} for user {}", userBikes, username);
+                                    eventPublisher.publishUserBikesUpdate(userBikes, username);
+                                });
                             });
 
                             registeredUsers.stream()
                                     .filter(user -> !usersWithBikeMap.containsKey(user))
                                     .forEach(user -> bikeRepository.getAvailableBikes().thenAccept(availableBikes -> {
-                                        logger.debug("Publishing available bikes to unassigned user: {}", user);
+                                        logger.info("Publishing available bikes to unassigned user: {}", user);
                                         eventPublisher.publishUserBikesUpdate(availableBikes, user);
                                     }));
                         }
                         else{
                             bikeRepository.getAvailableBikes().thenAccept(availableBikes -> {
-                                logger.debug("Publishing available bikes update, count: {}", availableBikes.size());
+                                logger.info("Publishing available bikes update, count: {}", availableBikes.size());
                                 eventPublisher.publishUserAvailableBikesUpdate(availableBikes);
                             });
                         }
                     });
 
+
                 });
     }
 
     @Override
-    public CompletableFuture<Void> notifyStartRide(String username, String bikeName) {
-         return bikeRepository.getBike(bikeName)
-                 .thenCompose(bike -> bikeRepository.assignBikeToUser(username, bike))
-                 .thenAccept(v -> bikeRepository.getAvailableBikes().thenAccept(eventPublisher::publishUserAvailableBikesUpdate));
+    public CompletableFuture<Void> notifyStartRide(String username, String bikeName, String bikeType) {
+        logger.info("notifyStartRide: username={}, bikeName={} bikeType={}", username, bikeName, bikeType);
+        return bikeRepository.getBike(bikeName, bikeType)
+                 .thenComposeAsync(bike -> bikeRepository.assignBikeToUser(username, bike))
+                 .thenAcceptAsync(v -> bikeRepository.getAvailableBikes().thenAcceptAsync(eventPublisher::publishUserAvailableBikesUpdate));
     }
 
 
     @Override
-    public CompletableFuture<Void> notifyStopRide(String username, String bikeName) {
-        return bikeRepository.getBike(bikeName)
+    public CompletableFuture<Void> notifyStopRide(String username, String bikeName, String bikeType) {
+        return bikeRepository.getBike(bikeName, bikeType)
                 .thenCompose(bike -> bikeRepository.unassignBikeFromUser(username, bike))
                 .thenAccept(v -> {
                     bikeRepository.getAvailableBikes().thenAccept(eventPublisher::publishUserAvailableBikesUpdate);
@@ -152,6 +162,11 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
                 logger.error("Failed to get all stations: {}", ex.getMessage());
                 return null;
             });
+    }
+
+    @Override
+    public void notifyABikeArrivedToUser(String userId, String abikeId) {
+        eventPublisher.publishABikeArrivedToUser(userId, abikeId);
     }
 
 }

@@ -23,7 +23,7 @@ public interface BikeRepository {
      * @param bikeName the name of the e-bike to retrieve.
      * @return a CompletableFuture containing the retrieved e-bike.
      */
-    CompletableFuture<Bike> getBike(String bikeName);
+    CompletableFuture<Bike> getBike(String bikeName, String bikeType);
 
     /**
      * Assigns an e-bike to a user.
@@ -79,5 +79,6 @@ public interface BikeRepository {
      * @return a CompletableFuture containing a list of e-bikes assigned to the user.
      */
     CompletableFuture<List<Bike>> getAllBikes(String username);
-
+    CompletableFuture<List<Bike>> getAssignedABike(String username);
+    CompletableFuture<List<Bike>> getAllMovingAbikes();
 }
