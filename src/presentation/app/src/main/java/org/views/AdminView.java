@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.dialogs.admin.AddEBikeDialog;
 import org.dialogs.admin.RechargeBikeDialog;
+import org.models.ABikeViewModel;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
 import org.verticles.AdminVerticle;
@@ -62,6 +63,7 @@ public class AdminView extends AbstractView {
         vertx.eventBus().consumer("admin.bike.update", message -> {
             JsonArray update = (JsonArray) message.body();
             eBikes.clear();
+            aBikes.clear();
             for (int i = 0; i < update.size(); i++) {
                 JsonObject bikeObj = null;
                 Object element = update.getValue(i);
@@ -71,16 +73,21 @@ public class AdminView extends AbstractView {
                     bikeObj = (JsonObject) element;
                 }
                 if (bikeObj != null) {
+                    String type = bikeObj.getString("type", "").toLowerCase();
                     String id = bikeObj.getString("bikeName", bikeObj.getString("id"));
                     Integer batteryLevel = bikeObj.getInteger("batteryLevel");
                     String stateStr = bikeObj.getString("state");
                     JsonObject location = bikeObj.getJsonObject("position");
                     Double x = location.getDouble("x");
                     Double y = location.getDouble("y");
-                    EBikeViewModel.EBikeState state = EBikeViewModel.EBikeState.valueOf(stateStr);
 
-                    EBikeViewModel bikeModel = new EBikeViewModel(id, x, y, batteryLevel, state);
-                    eBikes.add(bikeModel);
+                    if ("ebike".equals(type)) {
+                        EBikeViewModel.EBikeState state = EBikeViewModel.EBikeState.valueOf(stateStr);
+                        eBikes.add(new EBikeViewModel(id, x, y, batteryLevel, state));
+                    } else if ("abike".equals(type)) {
+                        ABikeViewModel.ABikeState state = ABikeViewModel.ABikeState.valueOf(stateStr);
+                        aBikes.add(new ABikeViewModel(id, x, y, batteryLevel, state));
+                    }
                 } else {
                     log("Invalid bike data: " + element);
                 }

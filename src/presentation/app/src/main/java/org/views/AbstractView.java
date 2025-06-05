@@ -1,6 +1,7 @@
 package org.views;
 
 
+import org.models.ABikeViewModel;
 import org.models.EBikeViewModel;
 import org.models.StationViewModel;
 import org.models.UserViewModel;
@@ -19,7 +20,7 @@ public abstract class AbstractView extends JFrame {
     protected JButton logoutButton;
     protected JPanel buttonPanel;
     protected List<StationViewModel> stations;
-
+    protected List<ABikeViewModel> aBikes;
     protected List<EBikeViewModel> eBikes;
     protected UserViewModel actualUser;
 
@@ -57,6 +58,7 @@ public abstract class AbstractView extends JFrame {
         this.actualUser = actualUser;
         this.eBikes = new CopyOnWriteArrayList<>();
         this.stations = new CopyOnWriteArrayList<>();
+        this.aBikes = new CopyOnWriteArrayList<ABikeViewModel>();
     }
 
     protected void addTopPanelButton(String text, ActionListener actionListener) {
@@ -96,6 +98,16 @@ public abstract class AbstractView extends JFrame {
             g2.drawString("(x: " + bike.x() + ", y: " + bike.y() + ")", x, y + 50);
             g2.drawString("STATUS: " + bike.state(), x, y + 65);
         }
+        for (ABikeViewModel abike : aBikes) {
+            int x = centerX + (int) abike.x();
+            int y = centerY - (int) abike.y();
+            g2.setColor(abike.color());
+            g2.fillOval(x, y, 20, 20);
+            g2.setColor(Color.BLACK);
+            g2.drawString("A-Bike: " + abike.id() + " - battery: " + abike.batteryLevel(), x, y + 35);
+            g2.drawString("(x: " + abike.x() + ", y: " + abike.y() + ")", x, y + 50);
+            g2.drawString("STATUS: " + abike.state(), x, y + 65);
+        }
     }
 
     private void paintUserView(Graphics2D g2) {
@@ -113,6 +125,16 @@ public abstract class AbstractView extends JFrame {
             g2.drawString("(x: " + bike.x() + ", y: " + bike.y() + ")", x, y + 50);
             dy += 15;
         }
+        for (ABikeViewModel abike : aBikes) {
+            int x = centerX + (int) abike.x();
+            int y = centerY - (int) abike.y();
+            g2.setColor(abike.color());
+            g2.fillOval(x, y, 20, 20);
+            g2.setColor(Color.BLACK);
+            g2.drawString("A-Bike: " + abike.id() + " - battery: " + abike.batteryLevel(), x, y + 35);
+            g2.drawString("(x: " + abike.x() + ", y: " + abike.y() + ")", x, y + 50);
+            g2.drawString("STATUS: " + abike.state(), x, y + 65);
+        }
         String credit = "Credit: " + actualUser.credit();
         g2.drawString(credit, 10, 20);
         g2.drawString("AVAILABLE EBIKES: ", 10, 35);
@@ -126,6 +148,12 @@ public abstract class AbstractView extends JFrame {
     public void updateStations(List<StationViewModel> newStations) {
         stations.clear();
         stations.addAll(newStations);
+        updateVisualizerPanel();
+    }
+
+    public void updateABikes(List<ABikeViewModel> newABikes) {
+        aBikes.clear();
+        aBikes.addAll(newABikes);
         updateVisualizerPanel();
     }
 
@@ -156,4 +184,7 @@ public abstract class AbstractView extends JFrame {
     protected void paintUserExtras(Graphics2D g2) {
         // Default: do nothing
     }
+
+
+
 }

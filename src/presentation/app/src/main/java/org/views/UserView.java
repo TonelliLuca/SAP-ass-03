@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import org.dialogs.user.RechargeCreditDialog;
 import org.dialogs.user.StartRideDialog;
 import org.dialogs.user.CallAbikeDialog;
+import org.models.ABikeViewModel;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
 import org.verticles.UserVerticle;
@@ -33,6 +34,7 @@ public class UserView extends AbstractView {
         observeUser();
         observeRideUpdate();
         observeStations();
+        observeABikeArrivedToUser();
         refreshView();
 
     }
@@ -114,6 +116,7 @@ public class UserView extends AbstractView {
         vertx.eventBus().consumer("user.bike.update." + actualUser.username(), message -> {
             JsonArray update = (JsonArray) message.body();
             eBikes.clear();
+            aBikes.clear();
             for (int i = 0; i < update.size(); i++) {
                 JsonObject bikeObj = null;
                 Object element = update.getValue(i);
@@ -123,16 +126,21 @@ public class UserView extends AbstractView {
                     bikeObj = (JsonObject) element;
                 }
                 if (bikeObj != null) {
+                    String type = bikeObj.getString("type", "").toLowerCase();
                     String id = bikeObj.getString("bikeName", bikeObj.getString("id"));
                     Integer batteryLevel = bikeObj.getInteger("batteryLevel");
                     String stateStr = bikeObj.getString("state");
                     JsonObject location = bikeObj.getJsonObject("position");
                     Double x = location.getDouble("x");
                     Double y = location.getDouble("y");
-                    EBikeViewModel.EBikeState state = EBikeViewModel.EBikeState.valueOf(stateStr);
 
-                    EBikeViewModel bikeModel = new EBikeViewModel(id, x, y, batteryLevel, state);
-                    eBikes.add(bikeModel);
+                    if ("ebike".equals(type)) {
+                        EBikeViewModel.EBikeState state = EBikeViewModel.EBikeState.valueOf(stateStr);
+                        eBikes.add(new EBikeViewModel(id, x, y, batteryLevel, state));
+                    } else if ("abike".equals(type)) {
+                        ABikeViewModel.ABikeState state = ABikeViewModel.ABikeState.valueOf(stateStr);
+                        aBikes.add(new ABikeViewModel(id, x, y, batteryLevel, state));
+                    }
                 } else {
                     log("Invalid bike data: " + element);
                 }
@@ -215,5 +223,18 @@ public class UserView extends AbstractView {
             g2.setColor(Color.BLACK);
             g2.drawString("User Call", x + 10, y);
         }
+
+    }
+
+
+    private void observeABikeArrivedToUser() {
+        vertx.eventBus().consumer("user.abike.event." + actualUser.username(), message -> {
+            JsonObject obj = (JsonObject) message.body();
+            if ("ABikeArrivedToUser".equals(obj.getString("event"))) {
+                calledX = null;
+                calledY = null;
+                refreshView();
+            }
+        });
     }
 }
