@@ -3,10 +3,7 @@ package application.service;
 import application.ports.DomainEventPublisher;
 import application.ports.Service;
 import application.ports.StationRepository;
-import domain.events.BikeDockedEvent;
-import domain.events.Event;
-import domain.events.StationRegisteredEvent;
-import domain.events.StationUpdateEvent;
+import domain.events.*;
 import domain.model.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +57,29 @@ public class StationService implements Service {
                     }
                 } else {
                     log.warn("Station {} not found for docking abike {}", stationId, abikeId);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void handleBikeReleased(Event event) {
+        if (event instanceof BikeReleasedEvent releasedEvent) {
+            String stationId = releasedEvent.stationId();
+            String bikeId = releasedEvent.abikeId();
+            stationRepository.findById(stationId).thenAccept(optStation -> {
+                if (optStation.isPresent()) {
+                    Station station = optStation.get();
+                    try {
+                        station.releaseBike(bikeId);
+                        stationRepository.update(station);
+                        eventPublisher.publish(new StationUpdateEvent(station));
+                        log.info("Released abike {} from station {} and published StationUpdateEvent", bikeId, stationId);
+                    } catch (Exception e) {
+                        log.error("Failed to release abike: {}", e.getMessage());
+                    }
+                } else {
+                    log.warn("Station {} not found for releasing abike {}", stationId, bikeId);
                 }
             });
         }
