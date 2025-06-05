@@ -53,16 +53,23 @@ public class UserVerticle extends AbstractVerticle {
 
         httpClient.webSocket(PORT, ADDRESS, "/MAP-MICROSERVICE/observeUserBikes?username=" + username)
             .onSuccess(ws -> {
-                System.out.println("Connected to user bikes updates WebSocket");
-                bikeWebSocket = ws;
-                ws.textMessageHandler(message ->{
-                        if(!message.contains("rideStatus"))
-                            vertx.eventBus().publish("user.bike.update."+username, new JsonArray(message));
-                        else
-                            vertx.eventBus().publish("user.ride.update."+username, new JsonObject(message));
-                });
-
-            });
+                        System.out.println("Connected to user bikes updates WebSocket");
+                        bikeWebSocket = ws;
+                        ws.textMessageHandler(message -> {
+                            log.info(message);
+                            try {
+                                if (message.contains("event")) {
+                                    vertx.eventBus().publish("user.abike.event." + username, new JsonObject(message));
+                                } else if (message.contains("rideStatus")) {
+                                    vertx.eventBus().publish("user.ride.update." + username, new JsonObject(message));
+                                } else {
+                                    vertx.eventBus().publish("user.bike.update." + username, new JsonArray(message));
+                                }
+                            } catch (Exception e) {
+                                log.error("Failed to parse WebSocket message: " + message, e);
+                            }
+                        });
+                    });
 
         httpClient.webSocket(8080, "localhost", "/MAP-MICROSERVICE/observeStations")
                 .onSuccess(ws -> {
