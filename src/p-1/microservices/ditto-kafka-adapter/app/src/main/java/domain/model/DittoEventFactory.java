@@ -1,5 +1,4 @@
-package infrastructure.adapter.ditto;
-
+package domain.model;
 import domain.model.StationUpdateEvent;
 import domain.model.ABikeUpdateEvent;
 
@@ -49,6 +48,41 @@ public class DittoEventFactory {
         Map<String, Object> abike = new HashMap<>();
         abike.put("properties", event.abike());
         value.put("abike", abike);
+        msg.put("value", value);
+        return msg;
+    }
+
+    public Map<String, Object> toDittoCreateMessage(Object event) {
+        if (event instanceof StationUpdateEvent stationEvent) {
+            return toDittoCreateStation(stationEvent);
+        } else if (event instanceof ABikeUpdateEvent abikeEvent) {
+            return toDittoCreateAbike(abikeEvent);
+        } else {
+            throw new IllegalArgumentException("Unsupported event type: " + event.getClass());
+        }
+    }
+
+    private Map<String, Object> toDittoCreateStation(StationUpdateEvent event) {
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("topic", "org.eclipse.ditto/" + event.station().id() + "/things/twin/commands/create");
+        msg.put("headers", new HashMap<>());
+        msg.put("path", "/");
+        Map<String, Object> value = new HashMap<>();
+        value.put("policyId", "org.eclipse.ditto:default-policy"); // <-- use your existing policy ID
+        value.put("features", Map.of("station", Map.of("properties", event.station())));
+        msg.put("value", value);
+        return msg;
+    }
+
+    private Map<String, Object> toDittoCreateAbike(ABikeUpdateEvent event) {
+        String abikeId = event.abike().id();
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("topic", "org.eclipse.ditto/" + abikeId + "/things/twin/commands/create");
+        msg.put("headers", new HashMap<>());
+        msg.put("path", "/");
+        Map<String, Object> value = new HashMap<>();
+        value.put("policyId", "org.eclipse.ditto:default-policy"); // <-- use your existing policy ID
+        value.put("features", Map.of("abike", Map.of("properties", event.abike())));
         msg.put("value", value);
         return msg;
     }

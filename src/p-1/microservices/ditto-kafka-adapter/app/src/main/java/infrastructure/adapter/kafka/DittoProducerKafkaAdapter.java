@@ -22,7 +22,7 @@ public class DittoProducerKafkaAdapter implements DittoProducerPort {
 
     @Override
     public void send(String key, String dittoJson) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, dittoJson);
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key.trim(), dittoJson);
         producer.send(record);
     }
 
