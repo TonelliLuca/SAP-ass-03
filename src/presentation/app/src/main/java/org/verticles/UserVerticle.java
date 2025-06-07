@@ -19,7 +19,7 @@ public class UserVerticle extends AbstractVerticle {
     private WebSocket bikeWebSocket;
     private final Vertx vertx;
     private final String username;
-    private static final int PORT = 8080;
+    private static final int PORT = 8088;
     private static final String ADDRESS = "localhost";
 
     public UserVerticle(Vertx vertx, String username) {
@@ -71,7 +71,7 @@ public class UserVerticle extends AbstractVerticle {
                         });
                     });
 
-        httpClient.webSocket(8080, "localhost", "/MAP-MICROSERVICE/observeStations")
+        httpClient.webSocket(8088, "localhost", "/MAP-MICROSERVICE/observeStations")
                 .onSuccess(ws -> {
                     System.out.println("Connected to stations WebSocket");
                     ws.textMessageHandler(message -> {
