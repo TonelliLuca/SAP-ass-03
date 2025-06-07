@@ -1,0 +1,24 @@
+{
+  "entries": {
+    "nginx:ditto": {
+      "subjects": {
+        "nginx:ditto": { "type": "user" }
+      },
+      "resources": {
+        "policy:/": { "grant": ["READ", "WRITE"], "revoke": [] },
+        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] }
+      },
+      "importable": "implicit"
+    },
+    "ditto:inbound-auth-subject": {
+      "subjects": {
+        "ditto:inbound-auth-subject": { "type": "user" }
+      },
+      "resources": {
+        "policy:/": { "grant": ["READ", "WRITE"], "revoke": [] },
+        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] }
+      },
+      "importable": "implicit"
+    }
+  }
+}

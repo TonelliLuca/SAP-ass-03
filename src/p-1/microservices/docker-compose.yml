@@ -1,4 +1,40 @@
+version: '3.4'
+
 services:
+  # --- MongoDB (shared) ---
+  mongodb:
+    image: docker.io/mongo:latest
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - mongodb
+    command: mongod --storageEngine wiredTiger --noscripting
+    user: mongodb
+    ports:
+      - 27017:27017
+    environment:
+      TZ: Europe/Berlin
+      GLIBC_TUNABLES: glibc.pthread.rseq=0
+    volumes:
+      - mongodb_data:/data/db
+    logging:
+      options:
+        max-size: 50m
+    ulimits:
+      memlock: -1
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # --- Microservices ---
   eureka-server:
     build:
       context: ./service-discovery
@@ -19,32 +55,34 @@ services:
       start_period: 10s
 
   map-microservice:
-      build:
-        context: ./map-microservice
-      ports:
-        - 8081:${MAP_INSTANCE_PORT}
-      networks:
-        - eureka-network
-      depends_on:
-        eureka-server:
-          condition: service_healthy
-        kafka:
-          condition: service_healthy
-      environment:
-        - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
-        - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
-        - EUREKA_PORT=${EUREKA_INSTANCE_PORT}
-        - SERVICE_NAME=${MAP_INSTANCE_HOSTNAME}
-        - SERVICE_PORT=${MAP_INSTANCE_PORT}
-        - ADAPTER_RIDE_PORT=${MAP_ADAPTER_RIDE_PORT}
-        - ADAPTER_EBIKE_PORT=${MAP_ADAPTER_EBIKE_PORT}
-        - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
-      healthcheck:
-        test: ["CMD-SHELL", "curl -f http://localhost:${MAP_INSTANCE_PORT}/health || exit 1"]
-        interval: 10s
-        timeout: 5s
-        retries: 3
-        start_period: 10s
+    build:
+      context: ./map-microservice
+    ports:
+      - 8086:${MAP_INSTANCE_PORT}
+    networks:
+      - eureka-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      ditto-kafka-adapter:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+      - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
+      - EUREKA_PORT=${EUREKA_INSTANCE_PORT}
+      - SERVICE_NAME=${MAP_INSTANCE_HOSTNAME}
+      - SERVICE_PORT=${MAP_INSTANCE_PORT}
+      - ADAPTER_RIDE_PORT=${MAP_ADAPTER_RIDE_PORT}
+      - ADAPTER_EBIKE_PORT=${MAP_ADAPTER_EBIKE_PORT}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${MAP_INSTANCE_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   station-microservice:
     build:
@@ -67,31 +105,6 @@ services:
       - MONGO_COLLECTION=${STATION_MONGODB_COLLECTION}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8083/health" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-
-
-  mongodb:
-    image: mongo:latest
-    ports:
-      - 27017:${MONGODB_INSTANCE_PORT}
-    networks:
-      - eureka-network
-    environment:
-      - GLIBC_TUNABLES=glibc.pthread.rseq=0
-    volumes:
-      - mongodb_data:/data/db
-    command: --wiredTigerCacheSizeGB 1
-    ulimits:
-      memlock: -1
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-    healthcheck:
-      test: mongosh --eval 'db.runCommand("ping").ok' localhost:${MONGODB_INSTANCE_PORT}/test --quiet
       interval: 5s
       timeout: 5s
       retries: 3
@@ -186,8 +199,6 @@ services:
         condition: service_healthy
       map-microservice:
         condition: service_healthy
-
-
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -209,7 +220,7 @@ services:
     build:
       context: ./api-gateway
     ports:
-      - 8080:${API_GATEWAY_EUREKA_INSTANCE_PORT}
+      - 8088:${API_GATEWAY_EUREKA_INSTANCE_PORT}
     networks:
       - eureka-network
     depends_on:
@@ -241,11 +252,10 @@ services:
     networks:
       - eureka-network
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Mount Prometheus configuration file
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
       api-gateway:
         condition: service_healthy
-
 
   # --- Zookeeper ---
   zookeeper:
@@ -272,8 +282,8 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "${KAFKA_EXTERNAL_HOST_PORT}:9092"   # host→broker esterno
-      - "${KAFKA_INTERNAL_HOST_PORT}:29092"  # host→listener interno
+      - "${KAFKA_EXTERNAL_HOST_PORT}:9092"
+      - "${KAFKA_INTERNAL_HOST_PORT}:29092"
     environment:
       - KAFKA_BROKER_ID=${KAFKA_BROKER_ID}
       - KAFKA_ZOOKEEPER_CONNECT=${KAFKA_ZOOKEEPER_CONNECT}
@@ -286,7 +296,6 @@ services:
     networks:
       - eureka-network
 
-  # --- Kafka UI Dashboard ---
   kafka-ui:
     image: ${KAFKA_UI_IMAGE}
     container_name: kafka-ui
@@ -302,13 +311,12 @@ services:
     networks:
       - eureka-network
 
-  # --- Kafka Exporter per Prometheus ---
   kafka-exporter:
     image: ${KAFKA_EXPORTER_IMAGE}
     container_name: kafka-exporter
     depends_on:
-        kafka:
-          condition: service_healthy
+      kafka:
+        condition: service_healthy
     ports:
       - "${KAFKA_EXPORTER_HOST_PORT}:9308"
     command:
@@ -334,7 +342,6 @@ services:
         condition: service_healthy
       ride-microservice:
         condition: service_healthy
-
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
       - EUREKA_HOST=${EUREKA_INSTANCE_HOSTNAME}
@@ -351,10 +358,240 @@ services:
       retries: 3
       start_period: 5s
 
+  ditto-kafka-adapter:
+    build:
+      context: ./ditto-kafka-adapter
+    networks:
+      - eureka-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # --- Eclipse Ditto Stack ---
+  policies:
+    image: docker.io/eclipse/ditto-policies:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - ditto-cluster
+    environment:
+      - TZ=Europe/Berlin
+      - BIND_HOSTNAME=0.0.0.0
+      - JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=180s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=20s -Dpekko.cluster.downing-provider-class=
+      - MONGO_DB_HOSTNAME=mongodb
+    healthcheck:
+      test: curl --fail `hostname`:7626/alive || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
+    logging:
+      options:
+        max-size: 50m
+
+  things:
+    image: docker.io/eclipse/ditto-things:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - ditto-cluster
+    depends_on:
+      - policies
+    environment:
+      - TZ=Europe/Berlin
+      - BIND_HOSTNAME=0.0.0.0
+      - JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=180s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=20s -Dpekko.cluster.downing-provider-class=
+      - MONGO_DB_HOSTNAME=mongodb
+    healthcheck:
+      test: curl --fail `hostname`:7626/alive || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
+    logging:
+      options:
+        max-size: 50m
+
+  things-search:
+    image: docker.io/eclipse/ditto-things-search:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - ditto-cluster
+    depends_on:
+      - policies
+    environment:
+      - TZ=Europe/Berlin
+      - BIND_HOSTNAME=0.0.0.0
+      - JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=180s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=20s -Dpekko.cluster.downing-provider-class=
+      - MONGO_DB_HOSTNAME=mongodb
+    healthcheck:
+      test: curl --fail `hostname`:7626/alive || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
+    logging:
+      options:
+        max-size: 50m
+
+  connectivity:
+    image: docker.io/eclipse/ditto-connectivity:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - ditto-cluster
+    volumes:
+      - ./connection.json:/opt/ditto/connection.json
+    depends_on:
+      - policies
+    environment:
+      - TZ=Europe/Berlin
+      - BIND_HOSTNAME=0.0.0.0
+      - JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=180s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=20s -Dpekko.cluster.downing-provider-class=
+      - MONGO_DB_HOSTNAME=mongodb
+      - DITTO_CONNECTIVITY_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DITTO_CONNECTIVITY_KAFKA_TOPICS=ditto-messages
+
+
+    healthcheck:
+      test: curl --fail `hostname`:7626/alive || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
+    logging:
+      options:
+        max-size: 50m
+
+  gateway:
+    image: docker.io/eclipse/ditto-gateway:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
+    networks:
+      eureka-network:
+        aliases:
+          - ditto-cluster
+    depends_on:
+      - policies
+    ports:
+      - "8081:8080"
+    environment:
+      - TZ=Europe/Berlin
+      - BIND_HOSTNAME=0.0.0.0
+      - ENABLE_PRE_AUTHENTICATION=true
+      - JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=180s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=20s -Dpekko.cluster.downing-provider-class=
+    healthcheck:
+      test: curl --fail `hostname`:7626/alive || exit 1
+      interval: 30s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
+    logging:
+      options:
+        max-size: 50m
+
+  ditto-ui:
+    image: docker.io/eclipse/ditto-ui:${DITTO_VERSION:-latest}
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+    restart: always
+    networks:
+      - eureka-network
+    logging:
+      options:
+        max-size: 10m
+
+  swagger-ui:
+    image: docker.io/swaggerapi/swagger-ui:v5.9.1
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+    restart: always
+    networks:
+      - eureka-network
+    environment:
+      - QUERY_CONFIG_ENABLED=true
+    volumes:
+      - ../../documentation/src/main/resources/openapi:/usr/share/nginx/html/openapi:ro
+      - ../../documentation/src/main/resources/images:/usr/share/nginx/html/images:ro
+      - ./swagger3-index.html:/usr/share/nginx/html/index.html:ro
+    command: nginx -g 'daemon off;'
+    logging:
+      options:
+        max-size: 10m
+
+  nginx:
+    image: docker.io/nginx:1.27-alpine
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+    restart: always
+    networks:
+      - eureka-network
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.htpasswd:/etc/nginx/nginx.htpasswd:ro
+      - ./nginx-cors.conf:/etc/nginx/nginx-cors.conf:ro
+      - ./mime.types:/etc/nginx/mime.types:ro
+      - ./index.html:/etc/nginx/html/index.html:ro
+      - ../../documentation/src/main/resources/images:/etc/nginx/html/images:ro
+      - ../../documentation/src/main/resources/wot:/etc/nginx/html/wot:ro
+    ports:
+      - "${DITTO_EXTERNAL_PORT:-8080}:80"
+    depends_on:
+      - gateway
+      - swagger-ui
+    logging:
+      options:
+        max-size: 10m
+
+volumes:
+  mongodb_data:
+  ditto_log_files:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/ditto
+      o: bind,uid=1000,gid=1000
 
 networks:
   eureka-network:
     driver: bridge
-
-volumes:
-  mongodb_data:

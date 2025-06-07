@@ -1,0 +1,20 @@
+{
+  "connectionType": "kafka",
+  "connectionStatus": "open",
+  "failoverEnabled": true,
+  "uri": "tcp://kafka:29092",
+  "specificConfig": {
+    "bootstrapServers": "kafka:29092",
+    "auto.offset.reset": "latest"
+  },
+  "sources": [
+    {
+      "addresses": ["ditto-messages"],
+      "consumerCount": 1,
+      "qos": 1,
+      "authorizationContext": ["ditto:inbound-auth-subject"],
+      "payloadMapping": ["Ditto"]
+    }
+  ],
+  "targets": []
+}
