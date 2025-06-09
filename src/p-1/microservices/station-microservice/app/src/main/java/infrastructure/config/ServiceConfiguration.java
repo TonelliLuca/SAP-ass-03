@@ -1,43 +1,88 @@
 package infrastructure.config;
 
-import com.mongodb.reactivestreams.client.MongoCollection;
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class ServiceConfiguration {
 
     private static ServiceConfiguration instance;
+    private final Vertx vertx;
+    private JsonObject config;
+    private final ConfigRetriever retriever;
 
-    private final String mongoConnection;
-    private final String mongoDatabase;
-    private final String kafkaBootstrapServers;
-    private final String mongoCollection;
-
-    private ServiceConfiguration() {
-        this.mongoConnection = System.getenv().getOrDefault("MONGO_CONNECTION", "mongodb://localhost:27017");
-        this.mongoDatabase = System.getenv().getOrDefault("MONGO_DATABSE", "stations_db");
-        this.kafkaBootstrapServers = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
-        this.mongoCollection = System.getenv().getOrDefault("MONGO_COLLECTION", "stations");
+    private ServiceConfiguration(Vertx vertx) {
+        this.vertx = vertx;
+        this.retriever = initializeRetriever();
     }
 
-    public static synchronized ServiceConfiguration getInstance() {
+    public static synchronized ServiceConfiguration getInstance(Vertx vertx) {
         if (instance == null) {
-            instance = new ServiceConfiguration();
+            instance = new ServiceConfiguration(vertx);
         }
         return instance;
     }
 
-    public String getMongoConnection() {
-        return mongoConnection;
+    private ConfigRetriever initializeRetriever() {
+        ConfigStoreOptions envStore = new ConfigStoreOptions()
+                .setType("env")
+                .setConfig(new JsonObject()
+                        .put("keys", new JsonArray()
+                                .add("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE")
+                                .add("EUREKA_HOST")
+                                .add("EUREKA_PORT")
+                                .add("SERVICE_NAME")
+                                .add("SERVICE_PORT")
+                                .add("MONGO_CONNECTION")
+                                .add("MONGO_DATABSE")
+                                .add("MONGO_COLLECTION")
+                                .add("KAFKA_BOOTSTRAP_SERVERS")
+                        )
+                );
+        return ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(envStore));
     }
 
-    public String getMongoDatabase() {
-        return mongoDatabase;
+    public Future<JsonObject> load() {
+        return retriever.getConfig()
+                .onSuccess(conf -> {
+                    this.config = conf;
+                    // Listen for changes
+                    retriever.listen(change -> {
+                        this.config = change.getNewConfiguration();
+                        System.out.println("Configuration updated: " + this.config.encodePrettily());
+                    });
+                });
     }
 
-    public String getKafkaBootstrapServers() {
-        return kafkaBootstrapServers;
+    public JsonObject getEurekaConfig() {
+        return new JsonObject()
+                .put("serviceUrl", config.getString("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE", "http://eureka-server:8761/eureka/"))
+                .put("host", config.getString("EUREKA_HOST", "eureka-server"))
+                .put("port", config.getInteger("EUREKA_PORT", 8761));
     }
 
-    public String getMongoCollection() {
-        return mongoCollection;
+    public JsonObject getServiceConfig() {
+        return new JsonObject()
+                .put("name", config.getString("SERVICE_NAME", "station-microservice"))
+                .put("port", config.getInteger("SERVICE_PORT", 8080));
     }
+
+
+
+
+    public JsonObject getMongoConfig() {
+        return new JsonObject()
+                .put("connection_string", config.getString("MONGO_CONNECTION", "mongodb://mongodb:27017"))
+                .put("db_name", config.getString("MONGO_DATABSE", "station_db"))
+                .put("collection_name", config.getString("MONGO_COLLECTION", "stations"));
+    }
+
+    public String getKakaConf() {
+        return config.getString("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092");
+    }
+
 }
