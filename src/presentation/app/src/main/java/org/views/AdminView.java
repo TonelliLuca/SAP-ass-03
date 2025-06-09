@@ -5,9 +5,12 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.dialogs.admin.AddEBikeDialog;
 import org.dialogs.admin.RechargeBikeDialog;
+import org.dialogs.admin.AddStationDialog;
 import org.models.ABikeViewModel;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.verticles.AdminVerticle;
 import org.dialogs.admin.AddABikeDialog;
 import javax.swing.*;
@@ -17,6 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AdminView extends AbstractView {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminView.class);
     private final List<UserViewModel> userList = new CopyOnWriteArrayList<>();
     private final AdminVerticle verticle;
     private final Vertx vertx;
@@ -56,7 +60,27 @@ public class AdminView extends AbstractView {
             rechargeBikeDialog.setVisible(true);
         });
         topPanel.add(rechargeBikeButton);
-
+        JButton addStationButton = new JButton("Create Station");
+        addStationButton.addActionListener(e -> {
+            AddStationDialog dialog = new AddStationDialog(AdminView.this);
+            dialog.setVisible(true);
+            if (dialog.isConfirmed()) {
+                JsonObject stationDetails = new JsonObject()
+                        .put("stationId", dialog.getStationId())
+                        .put("x", dialog.getStationX())
+                        .put("y", dialog.getStationY())
+                        .put("capacity", dialog.getCapacity());
+                log.info(stationDetails.encode());
+                vertx.eventBus().request("admin.station.create", stationDetails, ar -> {
+                    if (ar.succeeded()) {
+                        log("Station created: " + ar.result().body());
+                    } else {
+                        log("Failed to create station: " + ar.cause().getMessage());
+                    }
+                });
+            }
+        });
+        topPanel.add(addStationButton);
     }
 
     private void observeAllBikes() {

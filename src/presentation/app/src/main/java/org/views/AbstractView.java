@@ -5,6 +5,8 @@ import org.models.ABikeViewModel;
 import org.models.EBikeViewModel;
 import org.models.StationViewModel;
 import org.models.UserViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractView extends JFrame {
 
+    private static final Logger log = LoggerFactory.getLogger(AbstractView.class);
     protected JPanel topPanel;
     protected JPanel centralPanel;
     protected JButton logoutButton;
@@ -147,6 +150,7 @@ public abstract class AbstractView extends JFrame {
 
     public void updateStations(List<StationViewModel> newStations) {
         stations.clear();
+        log.info("Updating stations");
         stations.addAll(newStations);
         updateVisualizerPanel();
     }
