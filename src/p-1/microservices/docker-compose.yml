@@ -368,6 +368,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      connectivity:
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
     healthcheck:
@@ -389,6 +391,9 @@ services:
       eureka-network:
         aliases:
           - ditto-cluster
+    depends_on:
+      kafka:
+        condition: service_healthy
     environment:
       - TZ=Europe/Berlin
       - BIND_HOSTNAME=0.0.0.0
