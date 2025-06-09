@@ -27,7 +27,8 @@ public class AddABikeDialog extends AbstractDialog {
         idField = new JTextField();
         stationComboBox = new JComboBox<>();
         for (StationViewModel station : stations) {
-            stationComboBox.addItem(station.stationId());
+            if (station.emptySlots() > 0)
+                stationComboBox.addItem(station.stationId());
         }
         addField("A-Bike Name (ID):", idField);
         addField("Station:", stationComboBox);
