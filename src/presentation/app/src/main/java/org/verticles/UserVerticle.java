@@ -159,6 +159,20 @@ public class UserVerticle extends AbstractVerticle {
                     }
                 });
         });
+
+        vertx.eventBus().consumer("user.call.abike.cancel." + username, message -> {
+            JsonObject req = (JsonObject) message.body();
+            log.info("Received cancel abike request: " + req);
+            webClient.post(PORT, ADDRESS, "/ABIKE-MICROSERVICE/api/cancelAbikeCall")
+                .sendJsonObject(req, ar -> {
+                    if (ar.succeeded() && ar.result().statusCode() == 200) {
+                        message.reply(ar.result().bodyAsString());
+                    } else {
+                        message.fail(500, "Failed to cancel abike call: " +
+                            (ar.cause() != null ? ar.cause().getMessage() : "Unknown error"));
+                    }
+                });
+        });
     }
 
     @Override
