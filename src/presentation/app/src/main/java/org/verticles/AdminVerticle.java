@@ -122,6 +122,19 @@ public class AdminVerticle extends AbstractVerticle {
                     });
         });
 
+        vertx.eventBus().consumer("admin.station.create", message -> {
+            JsonObject stationDetails = (JsonObject) message.body();
+            webClient.post(PORT, ADDRESS, "/STATION-MICROSERVICE/api/stations")
+                .sendJsonObject(stationDetails, ar -> {
+                    if (ar.succeeded() && ar.result().statusCode() == 201) {
+                        message.reply(ar.result().bodyAsJsonObject());
+                    } else {
+                        message.fail(500, "Failed to create station: " +
+                            (ar.cause() != null ? ar.cause().getMessage() : "Unknown error"));
+                    }
+                });
+        });
+
 
     }
 
