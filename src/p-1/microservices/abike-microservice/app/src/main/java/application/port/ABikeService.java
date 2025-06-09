@@ -13,5 +13,5 @@ public interface ABikeService {
     CompletableFuture<Void> saveStationProjection(Station station);
     CompletableFuture<Void> updateStationProjection(Station station);
     CompletableFuture<ABike> updateABike(ABike bikeData);
-
+    CompletableFuture<Void> cancellCall(String userid);
 }

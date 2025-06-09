@@ -1,10 +1,10 @@
 package application.service;
-
+import java.util.List;
+import java.util.ArrayList;
 import application.port.ABikeRepository;
 import application.port.ABikeService;
 import application.port.SimulationRepository;
 import application.port.StationProjectionRepository;
-import domain.events.ABikeArrivedToStation;
 import domain.events.ABikeCallComplete;
 import domain.events.ABikeRequested;
 import domain.events.ABikeUpdate;
@@ -90,6 +90,7 @@ public class ABikeServiceImpl implements ABikeService {
         simulationRepository.save(simulation);
         simulation.start().thenAccept(s -> {
             eventPublisher.publish(new ABikeCallComplete(abikeId, userId));
+            simulationRepository.remove(simulation.id);
         });
     }
 
@@ -121,7 +122,9 @@ public class ABikeServiceImpl implements ABikeService {
                 eventPublisher.publish(new ABikeRequested(abike.getId(), destination.getId(), nearestStation.getId()));
                 Simulation simulation = new Simulation(abike, destination, Purpose.TO_USER, eventPublisher, vertx, this.abikeRepository);
                 simulationRepository.save(simulation);
-                simulation.start();
+                simulation.start().thenAccept(s -> {
+                    simulationRepository.remove(simulation.id);
+                });
                 return simulation.id;
             }
         );
@@ -177,5 +180,22 @@ public class ABikeServiceImpl implements ABikeService {
                 logger.error("Error updating ABike {}: {}", abike.id(), ex.getMessage());
                 return null;
             });
+    }
+
+    @Override
+    public CompletableFuture<Void> cancellCall(String userid) {
+        return simulationRepository.getAll().thenComposeAsync(simulations ->  {
+            Optional<Simulation> simOpt = simulations.stream()
+                    .filter(simulation -> simulation.getPurpose().equals(Purpose.TO_USER) && simulation.getDestination().getId().equals(userid))
+                    .findFirst();
+            if (simOpt.isPresent()) {
+                Simulation sim = simOpt.get();
+                sim.stop();
+                this.completeCall(sim.getAbikeId(), userid);
+                return simulationRepository.remove(sim.id);
+            } else {
+                return CompletableFuture.failedFuture(new IllegalStateException("No simulations found"));
+            }
+        });
     }
 }
