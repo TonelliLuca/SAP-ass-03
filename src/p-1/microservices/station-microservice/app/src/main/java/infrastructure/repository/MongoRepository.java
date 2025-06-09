@@ -22,10 +22,10 @@ public class MongoRepository implements StationRepository {
 
     private final MongoCollection<Document> collection;
 
-    public MongoRepository(MongoClient mongoClient) {
-        ServiceConfiguration config = ServiceConfiguration.getInstance();
-        this.collection = mongoClient.getDatabase(config.getMongoDatabase())
-                                    .getCollection(config.getMongoCollection());
+    public MongoRepository(MongoClient mongoClient, String databaseName, String collectionName) {
+        log.info("Creating mongo collection {}", collectionName);
+        this.collection = mongoClient.getDatabase(databaseName)
+                                    .getCollection(collectionName);
     }
 
     private Document stationToDocument(Station station) {
