@@ -20,6 +20,8 @@ public class UserView extends AbstractView {
     private final Vertx vertx;
     private JButton rideButton;
     private boolean isRiding = false;
+    private boolean abikeCallActive = false;
+    private boolean abikeArrived = false;
     private JButton callABikeButton;
     private Double calledX = null;
     private Double calledY = null;
@@ -42,7 +44,7 @@ public class UserView extends AbstractView {
     private void setupView() {
         topPanel.setLayout(new FlowLayout());
         callABikeButton = new JButton("Call ABike");
-        callABikeButton.addActionListener(event -> openCallAbikeDialog());
+        callABikeButton.addActionListener(event -> handleCallAbikeButton());
         buttonPanel.add(callABikeButton);
         rideButton = new JButton("Start Ride");
         rideButton.addActionListener(e -> toggleRide());
@@ -54,7 +56,7 @@ public class UserView extends AbstractView {
                 rechargeCreditDialog.setVisible(true);
             });
         });
-        updateRideButtonState();
+        updateButtonStates();
     }
 
     private void toggleRide() {
@@ -68,6 +70,7 @@ public class UserView extends AbstractView {
     public void setRiding(boolean isRiding) {
         this.isRiding = isRiding;
         updateRideButtonState();
+        updateButtonStates();
     }
 
     private void updateRideButtonState() {
@@ -104,13 +107,21 @@ public class UserView extends AbstractView {
             JsonObject update = (JsonObject) message.body();
             if (update.containsKey("rideStatus")) {
                 String status = update.getString("rideStatus");
-                if(status.equals("stopped")){
+                if ("started".equals(status)) {
+                    setRiding(true);
+                    abikeArrived = false;
+                    abikeCallActive = false;
+                } else if ("stopped".equals(status)) {
                     setRiding(false);
+                    abikeArrived = false;
+                    abikeCallActive = false;
                 }
+                updateButtonStates();
                 refreshView();
             }
         });
     }
+
 
     private void observeAvailableBikes() {
         vertx.eventBus().consumer("user.bike.update." + actualUser.username(), message -> {
@@ -195,6 +206,9 @@ public class UserView extends AbstractView {
             if (dialog.isConfirmed()) {
                 calledX = dialog.getXCoord();
                 calledY = dialog.getYCoord();
+                abikeCallActive = true;
+                abikeArrived = false;
+                updateButtonStates();
                 JsonObject req = new JsonObject()
                         .put("username", actualUser.username())
                         .put("x", calledX)
@@ -204,6 +218,8 @@ public class UserView extends AbstractView {
                         JOptionPane.showMessageDialog(this, "Abike called successfully");
                     } else {
                         JOptionPane.showMessageDialog(this, "Error calling abike: " + ar.cause().getMessage());
+                        abikeCallActive = false;
+                        updateButtonStates();
                     }
                 });
                 refreshView();
@@ -231,10 +247,62 @@ public class UserView extends AbstractView {
         vertx.eventBus().consumer("user.abike.event." + actualUser.username(), message -> {
             JsonObject obj = (JsonObject) message.body();
             if ("ABikeArrivedToUser".equals(obj.getString("event"))) {
+                abikeArrived = true;
+                abikeCallActive = false;
                 calledX = null;
                 calledY = null;
+                isRiding = true;
+                updateButtonStates();
                 refreshView();
             }
         });
+    }
+
+    private void handleCallAbikeButton() {
+        if (abikeCallActive && !abikeArrived) {
+            // Cancel the ABike call via backend
+            JsonObject req = new JsonObject()
+                    .put("username", actualUser.username());
+            vertx.eventBus().request("user.call.abike.cancel." + actualUser.username(), req, ar -> {
+                SwingUtilities.invokeLater(() -> {
+                    if (ar.succeeded()) {
+                        abikeCallActive = false;
+                        calledX = null;
+                        calledY = null;
+                        updateButtonStates();
+                        refreshView();
+                        JOptionPane.showMessageDialog(this, "ABike call cancelled");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error cancelling ABike call: " + ar.cause().getMessage());
+                    }
+                });
+            });
+        } else {
+            openCallAbikeDialog();
+        }
+    }
+
+    private void updateButtonStates() {
+        if (isRiding) {
+            callABikeButton.setText("Call ABike");
+            callABikeButton.setEnabled(false);
+            rideButton.setText("Stop Ride");
+            rideButton.setEnabled(true);
+        } else if (abikeCallActive && !abikeArrived) {
+            callABikeButton.setText("Delete Call");
+            callABikeButton.setEnabled(true);
+            rideButton.setText("Start Ride");
+            rideButton.setEnabled(false);
+        } else if (abikeArrived) {
+            callABikeButton.setText("Call ABike");
+            callABikeButton.setEnabled(false);
+            rideButton.setText("Start Ride");
+            rideButton.setEnabled(true);
+        } else {
+            callABikeButton.setText("Call ABike");
+            callABikeButton.setEnabled(true);
+            rideButton.setText("Start Ride");
+            rideButton.setEnabled(true);
+        }
     }
 }
