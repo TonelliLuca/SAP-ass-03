@@ -103,8 +103,10 @@ services:
       - MONGO_CONNECTION=${MONGODB_CONNECTION_STRING}
       - MONGO_DATABSE=${STATION_MONGODB_DATABASE}
       - MONGO_COLLECTION=${STATION_MONGODB_COLLECTION}
+      - SERVICE_NAME=${STATION_INSTANCE_HOSTNAME}
+      - SERVICE_PORT=${STATION_INSTANCE_PORT}
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8083/health" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 3
