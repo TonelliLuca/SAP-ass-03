@@ -86,6 +86,18 @@ public class Simulation implements Service {
         publisher.publish(new ABikeUpdate(abike));
     }
 
+    public Destination getDestination() {
+        return destination;
+    }
+
+    public Purpose getPurpose() {
+        return purpose;
+    }
+
+    public String getAbikeId() {
+        return abike.getId();
+    }
+
     public void stop() {
         stopped = true;
     }
