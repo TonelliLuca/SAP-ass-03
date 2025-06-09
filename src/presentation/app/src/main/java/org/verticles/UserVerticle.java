@@ -163,7 +163,7 @@ public class UserVerticle extends AbstractVerticle {
         vertx.eventBus().consumer("user.call.abike.cancel." + username, message -> {
             JsonObject req = (JsonObject) message.body();
             log.info("Received cancel abike request: " + req);
-            webClient.post(PORT, ADDRESS, "/ABIKE-MICROSERVICE/api/cancelAbikeCall")
+            webClient.post(PORT, ADDRESS, "/ABIKE-MICROSERVICE/api/cancelCall")
                 .sendJsonObject(req, ar -> {
                     if (ar.succeeded() && ar.result().statusCode() == 200) {
                         message.reply(ar.result().bodyAsString());
