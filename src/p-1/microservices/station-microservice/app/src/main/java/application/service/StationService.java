@@ -4,11 +4,13 @@ import application.ports.DomainEventPublisher;
 import application.ports.Service;
 import application.ports.StationRepository;
 import domain.events.*;
+import domain.model.P2d;
 import domain.model.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class StationService implements Service {
     private final StationRepository stationRepository;
@@ -83,5 +85,32 @@ public class StationService implements Service {
                 }
             });
         }
+    }
+
+    @Override
+    public CompletableFuture<Void> createStation(Event event) {
+        if (!(event instanceof CreateStationEvent createEvent)) {
+            log.error("Invalid event type for createStation: {}", event.getClass().getName());
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid event type"));
+        }
+
+        Station station = new Station(
+            createEvent.stationId(),
+            new P2d(
+            createEvent.x(),
+            createEvent.y()),
+            createEvent.capacity()
+        );
+
+        return stationRepository.save(station)
+            .thenAcceptAsync(v -> {
+                log.info("Station created: {}", station.getId());
+                eventPublisher.publish(new StationRegisteredEvent(station));
+                log.info("Published StationRegisteredEvent for station: {}", station.getId());
+            })
+            .exceptionally(ex -> {
+                log.error("Failed to create station: {}", ex.getMessage());
+                return null;
+            });
     }
 }
