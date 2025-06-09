@@ -22,7 +22,8 @@ public class RESTABikeAdapter {
 
     public void configureRoutes(Router router) {
         router.post("/api/abikes/create").handler(this::createABike);
-        router.post("/api/callAbike").handler(this::callABike); // Add this line
+        router.post("/api/callAbike").handler(this::callABike);
+        router.post("/api/cancelCall").handler(this::cancellCall);
         router.get("/health").handler(this::healthCheck);
         router.get("/metrics").handler(this::metrics);
     }
@@ -127,6 +128,38 @@ public class RESTABikeAdapter {
                 });
         } catch (Exception e) {
             metricsManager.recordError(timer, "callABike", e);
+            handleError(ctx, e);
+        }
+    }
+
+    private void cancellCall(RoutingContext ctx) {
+        metricsManager.incrementMethodCounter("cancellCall");
+        var timer = metricsManager.startTimer();
+
+        try {
+            JsonObject body = ctx.body().asJsonObject();
+            String username = body.getString("username");
+
+
+            if (username == null) {
+                metricsManager.recordError(timer, "cancellCall", new RuntimeException("Invalid input"));
+                sendError(ctx, 400, "Invalid input");
+                return;
+            }
+
+
+            abikeService.cancellCall(username)
+                .thenAccept(_void -> {
+                    sendResponse(ctx, 200, new JsonObject().put("status", "cancelled"));
+                    metricsManager.recordTimer(timer, "cancellCall");
+                })
+                .exceptionally(e -> {
+                    metricsManager.recordError(timer, "cancellCall", e);
+                    handleError(ctx, e);
+                    return null;
+                });
+        } catch (Exception e) {
+            metricsManager.recordError(timer, "cancellCall", e);
             handleError(ctx, e);
         }
     }
