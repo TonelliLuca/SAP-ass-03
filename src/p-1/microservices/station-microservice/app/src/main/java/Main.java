@@ -6,6 +6,8 @@ import domain.model.P2d;
 import domain.model.Station;
 import infrastructure.adapter.kafka.StationConsumer;
 import infrastructure.adapter.kafka.StationProducer;
+import infrastructure.adapter.web.RESTStationAdapter;
+import infrastructure.adapter.web.StationVerticle;
 import infrastructure.config.ServiceConfiguration;
 import infrastructure.repository.MongoRepository;
 
@@ -14,51 +16,35 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoClient;
 
 import com.sun.net.httpserver.HttpServer;
+import io.vertx.core.Vertx;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Load configuration
-        ServiceConfiguration config = ServiceConfiguration.getInstance();
+        Vertx vertx = Vertx.vertx();
+        ServiceConfiguration config = ServiceConfiguration.getInstance(vertx);
+        config.load().onSuccess(conf -> {
+            // 2. Create MongoDB client using config (using standard driver now)
+            MongoClient mongoClient = MongoClients.create(config.getMongoConfig().getString("connection_string"));
+            StationRepository repo = new MongoRepository(mongoClient, config.getMongoConfig().getString("db_name"), config.getMongoConfig().getString("collection_name"));
 
-        // 2. Create MongoDB client using config (using standard driver now)
-        MongoClient mongoClient = MongoClients.create(config.getMongoConnection());
-        StationRepository repo = new MongoRepository(mongoClient);
+            // 3. Create Kafka producer using config
+            DomainEventPublisher publisher = new StationProducer(config.getKakaConf());
 
-        // 3. Create Kafka producer using config
-        DomainEventPublisher publisher = new StationProducer(config.getKafkaBootstrapServers());
+            // 4. Create service
+            Service service = new StationService(repo, publisher);
+            RESTStationAdapter restAdapter = new RESTStationAdapter(service, vertx);
+            StationVerticle verticle = new StationVerticle(restAdapter, vertx);
+            StationConsumer consumer = new StationConsumer(config.getKakaConf(), service);
+            // 5. Initialize service
+            verticle.init();
+            service.init();
+            consumer.init();
 
-        // 4. Create service
-        Service service = new StationService(repo, publisher);
-        StationConsumer consumer = new StationConsumer(config.getKafkaBootstrapServers(), service);
-        // 5. Initialize service
-        service.init();
-        consumer.init();
-
-        // 6. Start health check server
-        startHealthServer();
-
-        System.out.println("Microservice started.");
-    }
-
-    private static void startHealthServer() {
-        try {
-            int port = Integer.parseInt(System.getenv().getOrDefault("SERVICE_PORT", "8083"));
-            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-            server.createContext("/health", exchange -> {
-                String response = "{\"status\":\"UP\"}";
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, response.length());
-                exchange.getResponseBody().write(response.getBytes());
-                exchange.getResponseBody().close();
-            });
-            server.setExecutor(null);
-            server.start();
-            System.out.println("Health check endpoint available at http://localhost:" + port + "/health");
-        } catch (IOException e) {
-            System.err.println("Failed to start health check server: " + e.getMessage());
-        }
+            System.out.println("Microservice started.");
+        });
     }
 }
+
