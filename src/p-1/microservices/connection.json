@@ -16,5 +16,11 @@
       "payloadMapping": ["Ditto"]
     }
   ],
-  "targets": []
+  "targets": [
+    {
+      "address": "ditto-commands",
+      "authorizationContext": ["nginx:ditto"],
+      "payloadMapping": ["Ditto"]
+    }
+  ]
 }
