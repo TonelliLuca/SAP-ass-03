@@ -6,7 +6,9 @@
       },
       "resources": {
         "policy:/": { "grant": ["READ", "WRITE"], "revoke": [] },
-        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] }
+        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] },
+        "message:/": { "grant": ["READ", "WRITE"], "revoke": [] }
+
       },
       "importable": "implicit"
     },
@@ -16,7 +18,8 @@
       },
       "resources": {
         "policy:/": { "grant": ["READ", "WRITE"], "revoke": [] },
-        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] }
+        "thing:/": { "grant": ["READ", "WRITE"], "revoke": [] },
+        "message:/": { "grant": ["READ", "WRITE"], "revoke": [] }
       },
       "importable": "implicit"
     }
