@@ -13,14 +13,29 @@
       "consumerCount": 1,
       "qos": 1,
       "authorizationContext": ["ditto:inbound-auth-subject"],
-      "payloadMapping": ["Ditto"]
+      "payloadMapping": ["Ditto"],
+      "acknowledgementRequests": {
+        "includes": [],
+        "filter": "fn:delete()"
+      },
+      "replyTarget": {
+        "enabled": true,
+        "address": "ditto-reply",
+        "headerMapping": {
+          "correlation-id": "{{ header:correlation-id }}"
+        },
+        "expectedResponseTypes": ["response", "error"]
+      }
     }
   ],
   "targets": [
     {
-      "address": "ditto-commands",
+      "address": "ditto-commands/event",
       "authorizationContext": ["nginx:ditto"],
-      "payloadMapping": ["Ditto"]
+      "payloadMapping": ["Ditto"],
+      "topics": [
+        "_/_/things/live/messages"
+      ]
     }
   ]
 }
