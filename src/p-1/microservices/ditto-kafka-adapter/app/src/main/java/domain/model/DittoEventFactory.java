@@ -86,4 +86,28 @@ public class DittoEventFactory {
         msg.put("value", value);
         return msg;
     }
+
+
+    public Map<String, Object> toDittoResponseMessage(
+            String thingId,
+            String correlationId,
+            String status,
+            Object payload
+    ) {
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("type", "response");
+        msg.put("status", 200);
+
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("correlation-id", correlationId);
+        msg.put("headers", headers);
+
+        msg.put("path", "/outbox/messages/response");
+
+        Map<String, Object> value = new HashMap<>();
+        value.put("payload", payload);
+        msg.put("value", value);
+
+        return msg;
+    }
 }

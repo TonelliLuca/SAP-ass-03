@@ -3,7 +3,9 @@ package infrastructure.adapter.kafka;
 import application.port.DittoProducerPort;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class DittoProducerKafkaAdapter implements DittoProducerPort {
@@ -22,7 +24,35 @@ public class DittoProducerKafkaAdapter implements DittoProducerPort {
 
     @Override
     public void send(String key, String dittoJson) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key.trim(), dittoJson);
+        ProducerRecord<String, String> record =
+                (key == null || key.trim().isEmpty())
+                        ? new ProducerRecord<>(topic, null, dittoJson)
+                        : new ProducerRecord<>(topic, key.trim(), dittoJson);
+        producer.send(record);
+    }
+
+    @Override
+    public void sendWithCorrelationHeader(String key, String dittoJson) {
+        ProducerRecord<String, String> record =
+                (key == null || key.trim().isEmpty())
+                        ? new ProducerRecord<>(topic, null, dittoJson)
+                        : new ProducerRecord<>(topic, key.trim(), dittoJson);
+
+        // Extract correlation-id from JSON and add as Kafka header
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(dittoJson);
+            String correlationId = root.path("headers").path("correlation-id").asText(null);
+            if (correlationId != null) {
+                record.headers().add(
+                        "correlation-id",
+                        correlationId.getBytes(StandardCharsets.UTF_8)
+                );
+            }
+        } catch (Exception e) {
+            // log or ignore
+        }
+
         producer.send(record);
     }
 

@@ -18,9 +18,9 @@ public class Main {
         // Set up Ditto producer
         String dittoTopic = "ditto-messages"; // or get from config/env
         DittoProducerPort producer = new DittoProducerKafkaAdapter(config.getKafkaBootstrapServers(), dittoTopic);
-
+        DittoProducerPort responseProducer = new DittoProducerKafkaAdapter(config.getKafkaBootstrapServers(), "ditto-reply");
         // Set up translator service
-        DittoTranslatorServicePort service = new DittoTranslatorService(producer);
+        DittoTranslatorServicePort service = new DittoTranslatorService(producer, responseProducer);
 
         // Start event consumers
         EventConsumer consumer = new EventConsumer(config.getKafkaBootstrapServers(), service);

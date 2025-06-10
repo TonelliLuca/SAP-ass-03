@@ -49,23 +49,20 @@ public class GenericKafkaConsumer<T> {
                         try {
                             String json = record.value();
                             logger.info("Raw Kafka message: {}", json);
-                            if (json.trim().startsWith("{") && json.contains("\"map\"")) {
-                                Map<?, ?> wrapper = mapper.readValue(json, Map.class);
-                                if (wrapper.containsKey("map")) {
-                                    Object inner = wrapper.get("map");
-                                    // Always serialize inner to JSON string, even if it's a Vert.x JsonObject
-                                    json = mapper.writeValueAsString(inner);
-                                    logger.info("Unwrapped 'map' field: {}", json);
-                                }
-                            }
-                            T value = mapper.readValue(json, type);
-                            handler.accept(record.key(), value);
                             if (type == String.class) {
-                                value = type.cast(record.value());
+                                handler.accept(record.key(), type.cast(json));
                             } else {
-                                value = mapper.readValue(record.value(), type);
+                                if (json.trim().startsWith("{") && json.contains("\"map\"")) {
+                                    Map<?, ?> wrapper = mapper.readValue(json, Map.class);
+                                    if (wrapper.containsKey("map")) {
+                                        Object inner = wrapper.get("map");
+                                        json = mapper.writeValueAsString(inner);
+                                        logger.info("Unwrapped 'map' field: {}", json);
+                                    }
+                                }
+                                T value = mapper.readValue(json, type);
+                                handler.accept(record.key(), value);
                             }
-                            handler.accept(record.key(), value);
                         } catch (Exception e) {
                             logger.error("Error processing record: {}", e.getMessage(), e);
                         }

@@ -12,12 +12,14 @@ import java.util.Set;
 
 public class DittoTranslatorService implements DittoTranslatorServicePort {
     private final DittoProducerPort producerPort;
+    private final DittoProducerPort dittoResponseProducer;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Set<String> knownIds = new HashSet<>();
     private final Logger logger = LoggerFactory.getLogger(DittoTranslatorService.class);
 
-    public DittoTranslatorService(DittoProducerPort producerPort) {
+    public DittoTranslatorService(DittoProducerPort producerPort, DittoProducerPort dittoResponseProducer) {
         this.producerPort = producerPort;
+        this.dittoResponseProducer = dittoResponseProducer;
     }
 
     @Override
@@ -42,6 +44,19 @@ public class DittoTranslatorService implements DittoTranslatorServicePort {
             producerPort.send(id, json);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize Ditto message", e);
+        }
+    }
+
+    @Override
+    public void sendDittoResponse(String thingId, String correlationId, String status, Object payload, String replyTarget) {
+        try {
+            Map<String, Object> response = DittoEventFactory.getInstance()
+                        .toDittoResponseMessage(thingId, correlationId, status, payload);
+            String json = objectMapper.writeValueAsString(response);
+            dittoResponseProducer.sendWithCorrelationHeader( correlationId, json);
+            logger.info("Sent Ditto response: " + json);
+        } catch (Exception e) {
+            logger.error("Failed to send Ditto response", e);
         }
     }
 
