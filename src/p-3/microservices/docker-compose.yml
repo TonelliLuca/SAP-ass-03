@@ -10,7 +10,7 @@ services:
           memory: 512m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - mongodb
     command: mongod --storageEngine wiredTiger --noscripting
@@ -41,7 +41,7 @@ services:
     ports:
       - 8761:${EUREKA_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     environment:
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=${EUREKA_CLIENT_REGISTER_WITH_EUREKA}
       - EUREKA_CLIENT_FETCH_REGISTRY=${EUREKA_CLIENT_FETCH_REGISTRY}
@@ -60,7 +60,7 @@ services:
     ports:
       - 8086:${MAP_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -88,7 +88,7 @@ services:
     build:
       context: ./station-microservice
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -118,7 +118,7 @@ services:
     ports:
       - 8082:${EBIKE_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -155,7 +155,7 @@ services:
     ports:
       - 8083:${RIDE_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -189,7 +189,7 @@ services:
     ports:
       - 8084:${USER_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -224,7 +224,7 @@ services:
     ports:
       - 8088:${API_GATEWAY_EUREKA_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -252,7 +252,7 @@ services:
     ports:
       - 9090:${PROMETHEUS_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
@@ -269,7 +269,7 @@ services:
       - ZOOKEEPER_CLIENT_PORT=${ZOOKEEPER_CLIENT_PORT}
       - ZOOKEEPER_TICK_TIME=${ZOOKEEPER_TICK_TIME}
     networks:
-      - eureka-network
+      - eureka-network-1
 
   # --- Kafka Broker ---
   kafka:
@@ -297,7 +297,7 @@ services:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
     networks:
-      - eureka-network
+      - eureka-network-1
 
   kafka-ui:
     image: ${KAFKA_UI_IMAGE}
@@ -312,7 +312,7 @@ services:
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=${KAFKA_UI_BOOTSTRAP_SERVERS}
       - KAFKA_CLUSTERS_0_SCHEMAREGISTRY=${KAFKA_UI_SCHEMAREGISTRY_URL}
     networks:
-      - eureka-network
+      - eureka-network-1
 
   kafka-exporter:
     image: ${KAFKA_EXPORTER_IMAGE}
@@ -325,7 +325,7 @@ services:
     command:
       - "--kafka.server=${KAFKA_EXPORTER_SERVER}"
     networks:
-      - eureka-network
+      - eureka-network-1
 
   abike-microservice:
     build:
@@ -333,7 +333,7 @@ services:
     ports:
       - 8085:${ABIKE_INSTANCE_PORT}
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -365,7 +365,7 @@ services:
     build:
       context: ./ditto-kafka-adapter
     networks:
-      - eureka-network
+      - eureka-network-1
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -391,7 +391,7 @@ services:
           memory: 512m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - ditto-cluster
     depends_on:
@@ -420,7 +420,7 @@ services:
           memory: 512m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - ditto-cluster
     depends_on:
@@ -448,7 +448,7 @@ services:
           memory: 512m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - ditto-cluster
     depends_on:
@@ -476,7 +476,7 @@ services:
           memory: 768m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - ditto-cluster
     volumes:
@@ -510,7 +510,7 @@ services:
           memory: 512m
     restart: always
     networks:
-      eureka-network:
+      eureka-network-1:
         aliases:
           - ditto-cluster
     depends_on:
@@ -540,7 +540,7 @@ services:
           memory: 32m
     restart: always
     networks:
-      - eureka-network
+      - eureka-network-1
     logging:
       options:
         max-size: 10m
@@ -553,7 +553,7 @@ services:
           memory: 32m
     restart: always
     networks:
-      - eureka-network
+      - eureka-network-1
     environment:
       - QUERY_CONFIG_ENABLED=true
     volumes:
@@ -573,7 +573,7 @@ services:
           memory: 32m
     restart: always
     networks:
-      - eureka-network
+      - eureka-network-1
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx.htpasswd:/etc/nginx/nginx.htpasswd:ro
@@ -601,5 +601,5 @@ volumes:
       o: bind,uid=1000,gid=1000
 
 networks:
-  eureka-network:
+  eureka-network-1:
     driver: bridge
