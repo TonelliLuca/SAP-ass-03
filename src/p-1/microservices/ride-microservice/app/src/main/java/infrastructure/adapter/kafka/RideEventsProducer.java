@@ -2,6 +2,9 @@ package infrastructure.adapter.kafka;
 
 import application.ports.EventPublisher;
 import application.ports.RideEventsProducerPort;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import domain.event.Event;
+import domain.event.RideUpdateEvent;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -9,82 +12,44 @@ import org.slf4j.LoggerFactory;
 
 public class RideEventsProducer implements RideEventsProducerPort {
     private static final Logger logger = LoggerFactory.getLogger(RideEventsProducer.class);
-    private final GenericKafkaProducer<JsonObject> rideProducer;
+    private final GenericKafkaProducer<String> rideProducer;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Vertx vertx;
 
     public RideEventsProducer(String bootstrapServers, Vertx vertx) {
         this.rideProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-events");
-        logger.info("RideEventsProducer initialized with bootstrap servers: {}", bootstrapServers);
         this.vertx = vertx;
+        logger.info("RideEventsProducer initialized with bootstrap servers: {}", bootstrapServers);
     }
 
     @Override
-    public void init(){
+    public void init() {
         vertx.eventBus().consumer(EventPublisher.RIDE_UPDATE, message -> {
-            if (message.body() instanceof JsonObject update) {
-                this.publishRideUpdate(update);
+            if (message.body() instanceof RideUpdateEvent update) {
+                this.publishUpdate(update);
             }
         });
-
+        logger.info("RideEventsProducer init() called");
     }
 
     @Override
-    public void publishRideStart(String bikeId, String userId) {
-        logger.info("Publishing ride start event: bike={}, user={}", bikeId, userId);
-        JsonObject bikeJson = new JsonObject()
-                .put("id", bikeId)
-                .put("bikeName", bikeId);  // Include both fields for compatibility
-
-        JsonObject userJson = new JsonObject()
-                .put("username", userId);
-
-        JsonObject rideJson = new JsonObject()
-                .put("bike", bikeJson)
-                .put("user", userJson);
-
-        JsonObject payload = new JsonObject()
-                .put("status", "START")
-                .put("ride", rideJson);  // Add consistent ride wrapper
-
-        publishEvent(payload, "ride_started");
+    public void publishUpdate(Event event) {
+        if (event == null) {
+            logger.warn("Attempted to publish null event");
+            return;
+        }
+        try {
+            String json = objectMapper.writeValueAsString(event);
+            String key = event.getClass().getSimpleName();
+            rideProducer.send(key, json);
+            logger.info("Published ride event [{}]: {}", key, json);
+        } catch (Exception e) {
+            logger.error("Failed to publish ride event", e);
+        }
     }
 
-    @Override
-    public void publishRideUpdate(JsonObject update) {
-        logger.info("Publishing ride update event: {}", update.encodePrettily());
-        publishEvent(update, "ride_updated");
+    public void close() {
+        rideProducer.close();
+        logger.info("RideEventsProducer closed");
     }
-
-    @Override
-    public void publishRideEnd(String bikeId, String userId) {
-        logger.info("Publishing ride end event: bike={}, user={}", bikeId, userId);
-        JsonObject bikeJson = new JsonObject()
-                .put("id", bikeId)
-                .put("bikeName", bikeId);  // Include both fields for compatibility
-
-        JsonObject userJson = new JsonObject()
-                .put("username", userId);
-
-        JsonObject rideJson = new JsonObject()
-                .put("bike", bikeJson)
-                .put("user", userJson);
-
-        JsonObject payload = new JsonObject()
-                .put("status", "STOP")
-                .put("ride", rideJson);  // Add consistent ride wrapper
-
-        publishEvent(payload, "ride_ended");
-    }
-
-    private void publishEvent(JsonObject payload, String eventType) {
-        JsonObject event = new JsonObject()
-                .put("type", eventType)
-                .put("timestamp", System.currentTimeMillis())
-                .put("payload", payload);
-
-        rideProducer.send("ride-" + System.currentTimeMillis(), event);
-        logger.debug("Published event: {}", event.encode());
-    }
-
-
 }

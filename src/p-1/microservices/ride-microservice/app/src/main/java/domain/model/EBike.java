@@ -41,6 +41,8 @@ public class EBike implements Aggregate<String>{
         }
     }
 
+    public synchronized double getSpeed() { return speed; }
+    public synchronized void setSpeed(double speed) { this.speed = speed; }
     @Override
     public String toString() {
         return String.format("EBike{id='%s', location=%s, batteryLevel=%d%%, state='%s'}",

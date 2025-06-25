@@ -1,7 +1,10 @@
-package domain.model;
+package infrastructure.repository;
 
 import application.ports.EventPublisher;
+import application.ports.RideRepository;
 import ddd.Repository;
+import domain.model.Ride;
+import domain.model.RideSimulation;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ConcurrentHashSet;
 

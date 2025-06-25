@@ -2,6 +2,8 @@ package domain.model;
 
 import application.ports.EventPublisher;
 import ddd.Service;
+import domain.event.RideUpdateEvent;
+import domain.event.UserUpdateEvent;
 import io.vertx.core.Vertx;
 
 
@@ -94,12 +96,13 @@ public class RideSimulation implements Service {
             bike.decreaseBattery(BATTERY_DECREASE);
             user.decreaseCredit(CREDIT_DECREASE);
 
-            publisher.publishRideUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel(), user.getId(), user.getCredit(), ride.getId());
+            publisher.publishUpdate(new RideUpdateEvent(this.id, user.getId(), user.getCredit(), bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel()));
         }
     }
 
     private void completeSimulation() {
-        publisher.publishRideUpdate(ride.getEbike().getId(), ride.getEbike().getLocation().x(), ride.getEbike().getLocation().y(), ride.getEbike().getState().toString(), ride.getEbike().getBatteryLevel(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getId());
+        publisher.publishUpdate(new RideUpdateEvent(ride.getId(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getEbike().getId(), ride.getEbike().getLocation().x(), ride.getEbike().getLocation().y(), ride.getEbike().getState().toString(), ride.getEbike().getBatteryLevel()));
+
     }
 
     public void stopSimulation() {

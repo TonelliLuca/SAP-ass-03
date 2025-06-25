@@ -1,6 +1,8 @@
 package infrastructure.adapter.web;
 
 import application.ports.RestRideServiceAPI;
+import domain.event.RequestRideEndEvent;
+import domain.event.RideStartEvent;
 import infrastructure.utils.MetricsManager;
 import infrastructure.config.ServiceConfiguration;
 import io.vertx.core.AbstractVerticle;
@@ -72,7 +74,7 @@ public class RideServiceVerticle extends AbstractVerticle {
             String user = body.getString("user");
             String bike = body.getString("bike");
 
-            rideService.startRide(user, bike).thenAccept(v -> {
+            rideService.startRide(new RideStartEvent(user, bike)).thenAccept(v -> {
                 ctx.response().setStatusCode(200).end("Ride started");
                 metricsManager.recordTimer(timer, "startRide");
             }).exceptionally(ex -> {
@@ -94,7 +96,7 @@ public class RideServiceVerticle extends AbstractVerticle {
             JsonObject body = ctx.body().asJsonObject();
             String username = body.getString("username");
 
-            rideService.stopRide(username).thenAccept(v -> {
+            rideService.stopRide(new RequestRideEndEvent(username)).thenAccept(v -> {
                 ctx.response().setStatusCode(200).end("Ride stopped");
                 metricsManager.recordTimer(timer, "stopRide");
             }).exceptionally(ex -> {
