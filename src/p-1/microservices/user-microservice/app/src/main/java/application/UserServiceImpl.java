@@ -1,145 +1,211 @@
 package application;
 
-import application.ports.UserServiceAPI;
-import application.ports.UserRepository;
-import application.ports.UserProducerPort;
-import application.ports.UserEventPublisher;
-
+import application.ports.*;
+import domain.event.*;
 import domain.model.User;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class UserServiceImpl implements UserServiceAPI {
 
-    private final UserRepository repository;
-    private final UserProducerPort userProducer;
-    private final UserEventPublisher userEventPublisher;
+    private final UserEventStoreRepository eventStore;
+    private final UserEventPublisher eventPublisher;
+    private final UserProducerPort kafkaProducer;
+    private final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    public UserServiceImpl(UserEventStoreRepository eventStore, UserEventPublisher eventPublisher, UserProducerPort kafkaProducer) {
+        this.eventStore = eventStore;
+        this.eventPublisher = eventPublisher;
+        this.kafkaProducer = kafkaProducer;
 
-
-    public UserServiceImpl(UserRepository repository, UserEventPublisher publisher, UserProducerPort userProducer) {
-        this.repository = repository;
-        this.userProducer = userProducer;
-        this.userEventPublisher = publisher;
-        // Initialize by sending all existing users to Kafka (similar to EBike pattern)
-        repository.findAll().thenAccept(userProducer::sendAllUserUpdate);
     }
 
-    @Override
-    public CompletableFuture<JsonObject> signIn(String username) {
-        return repository.findByUsername(username).thenApply(user -> {
-            if (user.isPresent()) {
-                return user.get();
-            } else {
-                System.out.println("User not found");
+
+
+    // Helper: Rebuild user state from events
+    private Optional<User> rebuildUserState(List<Event> events) {
+        logger.info("Rebuilding user state for events {}", events);
+        User user = null;
+        for (Event event : events) {
+            if (event instanceof UserCreatedEvent e) {
+                user = new User(e.username(), e.type(), 100);
+            } else if (event instanceof UserUpdateEvent e && user != null) {
+                user = e.user();
+            } else if (event instanceof RechargeCreditEvent e && user != null) {
+                // Assuming User has a method to add credit
+                user = new User(user.getId(), user.getType(), user.getCredit() + e.amount());
             }
-            return null;
-        });
-    }
-
-    @Override
-    public CompletableFuture<JsonObject> signUp(String username, User.UserType type) {
-        return repository.findByUsername(username).thenCompose(optionalUser -> {
-            if (optionalUser.isPresent()) {
-                CompletableFuture<JsonObject> future = new CompletableFuture<>();
-                future.completeExceptionally(new RuntimeException("User already exists"));
-                return future;
-            } else {
-                int credit = 100;
-                JsonObject user = new JsonObject()
-                        .put("username", username)
-                        .put("type", type.toString())
-                        .put("credit", credit);
-
-                return repository.save(user).thenApply(v -> {
-                    userProducer.sendUpdate(user);
-                    userEventPublisher.publishUserUpdate(username, user);
-                    userEventPublisher.publishAllUsersUpdates(user);
-                    return user;
-                });
-            }
-        });
-    }
-
-    @Override
-    public CompletableFuture<Optional<JsonObject>> getUserByUsername(String username) {
-        return repository.findByUsername(username);
-    }
-
-    @Override
-    public CompletableFuture<JsonObject> updateUser(JsonObject user) {
-        System.out.println("Updating user: " + user);
-        String username = user.getString("username");
-        if (username == null || username.trim().isEmpty()) {
-            CompletableFuture<JsonObject> future = new CompletableFuture<>();
-            future.completeExceptionally(new IllegalArgumentException("Invalid username"));
-            return future;
         }
+        logger.info("User {} rebuilt", user);
+        return Optional.ofNullable(user);
+    }
 
-        return repository.findByUsername(username).thenCompose(optionalUser -> {
-            if (optionalUser.isPresent()) {
-                JsonObject existingUser = optionalUser.get();
-                if (user.containsKey("credit")) {
-                    int newCredit = user.getInteger("credit");
-                    existingUser.put("credit", newCredit);
+    @Override
+    public CompletableFuture<User> signIn(Event event) {
+        String username = ((UserSingInEvent) event).username();
+        return eventStore.getEventsByUsername(username)
+            .thenApply(events -> {
+                if (events.isEmpty()) {
+                    System.err.println("No events found for username: " + username);
                 }
-                return repository.update(existingUser).thenApply(v -> {
-                    userProducer.sendUpdate(existingUser);
-                    userEventPublisher.publishUserUpdate(username, existingUser);
-                    userEventPublisher.publishAllUsersUpdates(existingUser);
-                    return existingUser;
-                });
-            } else {
-                CompletableFuture<JsonObject> future = new CompletableFuture<>();
-                future.completeExceptionally(new RuntimeException("User not found"));
-                return future;
-            }
-        });
+                return rebuildUserState(events);
+            })
+            .thenCompose(optUser -> {
+                if (optUser.isPresent()) {
+                    return eventStore.saveEvent(event).thenApply(v -> optUser.get());
+                } else {
+                    CompletableFuture<User> f = new CompletableFuture<>();
+                    f.completeExceptionally(new RuntimeException("User not found for username: " + username));
+                    return f;
+                }
+            });
     }
 
     @Override
-    public CompletableFuture<JsonObject> rechargeCredit(String username, int creditToAdd) {
-        return repository.findByUsername(username).thenCompose(optionalUser -> {
-            if (optionalUser.isPresent()) {
-                JsonObject user = optionalUser.get();
-                int currentCredit = user.getInteger("credit");
-                user.put("credit", currentCredit + creditToAdd);
-                return repository.update(user).thenApply(v -> {
-                    userProducer.sendUpdate(user);
-                    userEventPublisher.publishUserUpdate(username, user);
-                    userEventPublisher.publishAllUsersUpdates(user);
-                    return user;
-                });
-            }
-            return CompletableFuture.completedFuture(null);
-        });
+    public CompletableFuture<User> signUp(Event event) {
+        UserCreatedEvent created = (UserCreatedEvent) event;
+        return eventStore.getEventsByUsername(created.username())
+            .thenCompose(events -> {
+                if (!events.isEmpty()) {
+                    CompletableFuture<User> f = new CompletableFuture<>();
+                    f.completeExceptionally(new RuntimeException("User already exists"));
+                    return f;
+                }
+                return eventStore.saveEvent(event)
+                        .thenApply(v -> new User(created.username(), created.type(), 100))
+                        .thenCompose(user -> {
+                            UserUpdateEvent updateEvent = new UserUpdateEvent(user);
+                            return eventStore.saveEvent(updateEvent)
+                                .thenApply(v2 -> {
+                                    eventPublisher.publishUserUpdate(user.getId(), updateEvent);
+                                    eventPublisher.publishAllUsersUpdates(updateEvent);
+                                    kafkaProducer.sendUpdate(updateEvent);
+                                    return user;
+                                });
+                        });
+            });
     }
 
     @Override
-    public CompletableFuture<JsonObject> decreaseCredit(String username, int creditToDecrease) {
-        return repository.findByUsername(username).thenCompose(optionalUser -> {
-            if (optionalUser.isPresent()) {
-                JsonObject user = optionalUser.get();
-                int newCredit = Math.max(user.getInteger("credit") - creditToDecrease, 0);
-                user.put("credit", newCredit);
-                return repository.update(user).thenApply(v -> {
-                    userProducer.sendUpdate(user);
-                    userEventPublisher.publishUserUpdate(username, user);
-                    userEventPublisher.publishAllUsersUpdates(user);
-                    return user;
-                });
-            }
-            return CompletableFuture.completedFuture(null);
-        });
+    public CompletableFuture<Optional<User>> getUserByUsername(String username) {
+        return eventStore.getEventsByUsername(username)
+            .thenApply(this::rebuildUserState);
     }
 
     @Override
-    public CompletableFuture<JsonArray> getAllUsers() {
-        return repository.findAll().thenApply(users -> {
-            System.out.println("Users: " + users);
-            return users;
+    public CompletableFuture<User> updateUser(Event event) {
+        RequestUserUpdateEvent update = (RequestUserUpdateEvent) event;
+        String username = update.id();
+        return eventStore.getEventsByUsername(username)
+            .thenApply(this::rebuildUserState)
+            .thenCompose(optUser -> {
+                if (optUser.isEmpty()) {
+                    CompletableFuture<User> f = new CompletableFuture<>();
+                    f.completeExceptionally(new RuntimeException("User not found"));
+                    return f;
+                }
+                UserUpdateEvent updateEvent = new UserUpdateEvent(new User(optUser.get().getId(), optUser.get().getType(), update.credit()));
+                return eventStore.saveEvent(event)
+                    .thenApply(v -> updateEvent.user())
+                    .thenApply(user -> {
+                        eventPublisher.publishUserUpdate(user.getId(), updateEvent);
+                        eventPublisher.publishAllUsersUpdates(updateEvent);
+                        kafkaProducer.sendUpdate(updateEvent);
+                        return user;
+                    });
+            });
+    }
+
+    @Override
+    public CompletableFuture<User> rechargeCredit(Event event) {
+        RechargeCreditEvent recharge = (RechargeCreditEvent) event;
+        String username = recharge.username();
+        return eventStore.getEventsByUsername(username)
+                .thenApply(this::rebuildUserState)
+                .thenCompose(optUser -> {
+                    if (optUser.isEmpty()) {
+                        CompletableFuture<User> f = new CompletableFuture<>();
+                        f.completeExceptionally(new RuntimeException("User not found"));
+                        return f;
+                    }
+                    User user = optUser.get();
+                    User updated = new User(user.getId(), user.getType(), user.getCredit() + recharge.amount());
+                    UserUpdateEvent updateEvent = new UserUpdateEvent(updated);
+
+                    return eventStore.saveEvent(recharge)
+                            .thenCompose(v -> eventStore.saveEvent(updateEvent))
+                            .thenApply(v -> updated)
+                            .thenApply(u -> {
+                                eventPublisher.publishUserUpdate(u.getId(), updateEvent);
+                                eventPublisher.publishAllUsersUpdates(updateEvent);
+                                kafkaProducer.sendUpdate(updateEvent);
+                                return u;
+                            });
+                });
+    }
+
+
+    public CompletableFuture<List<User>> getAllUsers() {
+        return eventStore.getAllEvents()
+                .thenApply(events -> {
+                    logger.info("Fetched {} events from repo", events.size());
+
+                    // Log ogni evento e tipo
+                    for (Event event : events) {
+                        logger.info("Event: {}, type: {}", event, event == null ? "null" : event.getClass().getSimpleName());
+                    }
+
+                    Map<String, List<Event>> groupedByUser = events.stream()
+                            .collect(Collectors.groupingBy(event -> {
+                                logger.info("Grouping event: {}", event);
+                                if (event instanceof UserCreatedEvent) {
+                                    return ((UserCreatedEvent) event).username();
+                                } else if (event instanceof UserUpdateEvent) {
+                                    return ((UserUpdateEvent) event).user().getId();
+                                } else if (event instanceof RechargeCreditEvent) {
+                                    return ((RechargeCreditEvent) event).username();
+                                } else {
+                                    logger.error("Unknown event type: {}", event);
+                                    throw new IllegalArgumentException("Unknown event type: " + event);
+                                }
+                            }));
+
+                    logger.info("Grouped events: {}", groupedByUser.keySet());
+
+                    List<User> users = groupedByUser.values().stream()
+                            .map(userEvents -> {
+                                logger.info("User events before sort: {}", userEvents);
+                                userEvents.sort(Comparator.comparing(Event::getTimestamp));
+                                logger.info("User events after sort: {}", userEvents);
+                                return rebuildUserState(userEvents);
+                            })
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .collect(Collectors.toList());
+                    logger.info("Rebuilt {} users", users.size());
+                    return users;
+                })
+                .exceptionally(ex -> {
+                    logger.error("Exception during getAllUsers", ex);
+                    return List.of();
+                });
+    }
+
+
+
+    @Override
+    public void init() {
+        logger.info("Initializing user service");
+        this.getAllUsers().thenAccept(users -> {
+            users.forEach(user -> {
+                logger.info(user.toString());
+                UserUpdateEvent event = new UserUpdateEvent(user);
+                kafkaProducer.sendUpdate(event);
+            });
+            logger.info("UserService initialized");
         });
     }
 }
