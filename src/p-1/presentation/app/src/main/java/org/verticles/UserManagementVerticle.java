@@ -4,11 +4,14 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserManagementVerticle extends AbstractVerticle {
 
     private final WebClient webClient;
     private final Vertx vertx;
+    private final Logger log = LoggerFactory.getLogger(UserManagementVerticle.class);
 
     public UserManagementVerticle(Vertx vertx) {
         this.vertx = vertx;
@@ -32,6 +35,7 @@ public class UserManagementVerticle extends AbstractVerticle {
             webClient.post(8080, "localhost", "/USER-MICROSERVICE/api/users/signin")
                     .sendJsonObject(requestPayload, ar -> {
                         if (ar.succeeded() && ar.result().statusCode() == 200) {
+                            log.info("Response received: " + ar.result().body());
                             JsonObject response = ar.result().bodyAsJsonObject();
                             message.reply(response);
                         } else {
