@@ -19,7 +19,7 @@ spec:
           command: [ 'sh', '-c', 'until nc -z kafka-broker-1 29092; do echo waiting for kafka; sleep 2; done;' ]
       containers:
         - name: kafka-ui
-          image: provectuslabs/kafka-ui:latest
+          image: provectuslabs/kafka-ui:v0.7.2
           ports: [{ containerPort: 8080 }]
           env:
             - name: KAFKA_CLUSTERS_0_NAME

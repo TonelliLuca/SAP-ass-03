@@ -18,7 +18,7 @@ spec:
           command: [ 'sh', '-c', 'until nc -z zookeeper-service 2181; do echo waiting for zookeeper; sleep 2; done;' ]
       containers:
         - name: kafka
-          image: confluentinc/cp-kafka:latest
+          image: confluentinc/cp-kafka:7.9.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9092
