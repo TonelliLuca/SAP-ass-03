@@ -7,8 +7,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.WebSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdminVerticle extends AbstractVerticle {
+    private static final Logger log = LoggerFactory.getLogger(AdminVerticle.class);
     private final WebClient webClient;
     private final HttpClient httpClient;
     private WebSocket userWebSocket;
@@ -51,7 +54,10 @@ public class AdminVerticle extends AbstractVerticle {
     }
 
     private void handleUserUpdate(String message) {
+        log.info("AdminVerticle handleUserUpdate message: " + message);
         JsonObject update = new JsonObject(message);
+        if(update.containsKey("user"))
+            update = update.getJsonObject("user");
         vertx.eventBus().publish("admin.user.update", update);
     }
 

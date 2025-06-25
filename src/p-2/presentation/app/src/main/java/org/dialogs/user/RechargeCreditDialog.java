@@ -3,6 +3,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.dialogs.AbstractDialog;
 import org.models.UserViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -12,7 +14,7 @@ public class RechargeCreditDialog extends AbstractDialog {
     private JTextField creditAmountField;
     private final Vertx vertx;
     private final UserViewModel user;
-
+    private final Logger logger =  LoggerFactory.getLogger(RechargeCreditDialog.class);
     public RechargeCreditDialog(JFrame parent, Vertx vertx, UserViewModel user) {
         super(parent, "Recharge Credit");
         this.vertx = vertx;
@@ -40,6 +42,7 @@ public class RechargeCreditDialog extends AbstractDialog {
 
             vertx.eventBus().request("user.update.recharge" + user.username(), creditDetails, reply -> {
                 if (reply.succeeded()) {
+                    logger.info("Recharge credit successful");
                     JOptionPane.showMessageDialog(this, "Credit recharged successfully");
                     vertx.eventBus().publish("user.update.recharge", reply.result().body());
                 } else {

@@ -7,6 +7,8 @@ import org.dialogs.admin.AddEBikeDialog;
 import org.dialogs.admin.RechargeBikeDialog;
 import org.models.EBikeViewModel;
 import org.models.UserViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.verticles.AdminVerticle;
 
 import javax.swing.*;
@@ -16,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AdminView extends AbstractView {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminView.class);
     private final List<UserViewModel> userList = new CopyOnWriteArrayList<>();
     private final AdminVerticle verticle;
     private final Vertx vertx;
@@ -79,6 +82,7 @@ public class AdminView extends AbstractView {
 
     private void observeAllUsers() {
         vertx.eventBus().consumer("admin.user.update", message -> {
+            log.info("Received update request: " + message.body());
             JsonObject update = (JsonObject) message.body();
             String username = update.getString("username");
             String type = update.getString("type");

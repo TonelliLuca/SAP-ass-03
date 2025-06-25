@@ -3,12 +3,15 @@ package org.dialogs.admin;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.dialogs.AbstractDialog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 
 public class AddEBikeDialog extends AbstractDialog {
 
+    private static final Logger log = LoggerFactory.getLogger(AddEBikeDialog.class);
     private JTextField idField;
     private JTextField xCoordField;
     private JTextField yCoordField;
@@ -44,6 +47,7 @@ public class AddEBikeDialog extends AbstractDialog {
                     .put("y", yCoord);
 
             vertx.eventBus().request("admin.bike.create", bikeDetails, reply -> {
+                log.info(reply.result().body().toString());
                 if (reply.succeeded()) {
                     JOptionPane.showMessageDialog(this, "E-Bike added successfully");
                 } else {

@@ -7,9 +7,12 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserVerticle extends AbstractVerticle {
 
+    private static final Logger log = LoggerFactory.getLogger(UserVerticle.class);
     private final WebClient webClient;
     private final HttpClient httpClient;
     private WebSocket userWebSocket;
@@ -64,7 +67,9 @@ public class UserVerticle extends AbstractVerticle {
 
     private void handleUserUpdate(String message) {
         JsonObject update = new JsonObject(message);
-        String username = update.getString("username");
+        log.info("UserVerticle handleUserUpdate update: " + update);
+        JsonObject userJson = update.getJsonObject("user");
+        String username = userJson.getString("username");
         vertx.eventBus().publish("user.update." + username, update);
     }
 
@@ -76,6 +81,8 @@ public class UserVerticle extends AbstractVerticle {
             webClient.patch(PORT, ADDRESS, "/USER-MICROSERVICE/api/users/" + username + "/recharge")
                 .sendJsonObject(creditDetails, ar -> {
                     if (ar.succeeded() && ar.result().statusCode() == 200) {
+                        log.info("UserVerticle handleUserUpdate recharge successful");
+                        log.info("message: " + ar.result().bodyAsJsonObject());
                         message.reply(ar.result().bodyAsJsonObject());
                     } else {
                         message.fail(500, "Failed to recharge credit: " +
