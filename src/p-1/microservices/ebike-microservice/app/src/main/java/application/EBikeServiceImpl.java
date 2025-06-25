@@ -3,91 +3,115 @@ package application;
 import application.ports.EBikeRepository;
 import application.ports.EBikeServiceAPI;
 import application.ports.EbikeProducerPort;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import domain.event.*;
+import domain.model.EBike;
+import domain.model.EBikeState;
+import domain.model.P2d;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class EBikeServiceImpl implements EBikeServiceAPI {
 
     private final EBikeRepository repository;
-    private final EbikeProducerPort mapCommunicationAdapter;
+    private final EbikeProducerPort producer;
 
-    public EBikeServiceImpl(EBikeRepository repository, EbikeProducerPort mapCommunicationAdapter) {
+    public EBikeServiceImpl(EBikeRepository repository, EbikeProducerPort producer) {
         this.repository = repository;
-        this.mapCommunicationAdapter = mapCommunicationAdapter;
-        repository.findAll().thenAccept(mapCommunicationAdapter::sendAllUpdates);
+        this.producer = producer;
+
+        repository.findAll().thenAccept(ebikes -> {
+            ebikes.forEach(e -> producer.sendUpdate(new EBikeUpdateEvent(e)));
+        });
     }
 
     @Override
-    public CompletableFuture<JsonObject> createEBike(
-            String id,
-            float x,
-            float y
-    ) {
-        JsonObject ebike = new JsonObject()
-                .put("id", id)
-                .put("state", "AVAILABLE")
-                .put("batteryLevel", 100)
-                .put("location", new JsonObject().put("x", x).put("y", y));
-        mapCommunicationAdapter.sendUpdate(ebike);
-        return repository.save(ebike).thenApply(v -> ebike);
-    }
-
-    @Override
-    public CompletableFuture<Optional<JsonObject>> getEBike(String id) {
-        return repository.findById(id);
-    }
-
-    @Override
-    public CompletableFuture<JsonObject> rechargeEBike(String id) {
-        return repository
-                .findById(id)
-                .thenCompose(optionalEbike -> {
-                    if (optionalEbike.isPresent()) {
-                        JsonObject ebike = optionalEbike.get();
-                        ebike.put("batteryLevel", 100).put("state", "AVAILABLE");
-                        mapCommunicationAdapter.sendUpdate(ebike);
-                        return repository.update(ebike).thenApply(v -> ebike);
-                    }
-                    return CompletableFuture.completedFuture(null);
+    public CompletableFuture<EBike> createEBike(Event event) {
+        if (!(event instanceof EBikeCreateEvent e)) {
+            CompletableFuture<EBike> future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalArgumentException("Event type mismatch"));
+            return future;
+        }
+        EBike ebike = new EBike(
+                e.ebikeId(),
+                new P2d(e.x(), e.y()),
+                EBikeState.AVAILABLE,
+                100
+        );
+        return repository.save(ebike)
+                .thenApply(v -> {
+                    producer.sendUpdate(new EBikeUpdateEvent(ebike));
+                    return ebike;
                 });
     }
 
-   @Override
-    public CompletableFuture<JsonObject> updateEBike(JsonObject ebike) {
-        if (ebike.containsKey("batteryLevel")) {
-            int newBattery = ebike.getInteger("batteryLevel");
-            int currentBattery = ebike.getInteger("batteryLevel");
-            if (newBattery < currentBattery) {
-                ebike.put("batteryLevel", newBattery);
-                if (newBattery == 0) {
-                    ebike.put("state", "MAINTENANCE");
-                }
-            }
+    @Override
+    public CompletableFuture<EBike> rechargeEBike(Event event) {
+        if (!(event instanceof EBikeRechargeEvent e)) {
+            CompletableFuture<EBike> future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalArgumentException("Event type mismatch"));
+            return future;
         }
-        if (ebike.containsKey("state")) {
-            ebike.put("state", ebike.getString("state"));
-        }
-        if (ebike.containsKey("location")) {
-            JsonObject location = ebike.getJsonObject("location");
-            // Unwrap nested "map" fields
-            while (location != null && location.containsKey("map")) {
-                location = location.getJsonObject("map");
-            }
-            ebike.put("location", location);
-        }
-        return repository.update(ebike).thenCompose(v ->
-                repository.findById(ebike.getString("id")).thenApply(updatedEbike -> {
-                    mapCommunicationAdapter.sendUpdate(updatedEbike.orElse(ebike));
-                    return ebike;
-                })
-        );
+        String ebikeId = e.ebikeId();
+        return repository.findById(ebikeId)
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        CompletableFuture<EBike> f = new CompletableFuture<>();
+                        f.completeExceptionally(new RuntimeException("eBike not found"));
+                        return f;
+                    }
+                    EBike ebike = opt.get();
+                    EBike updated = new EBike(
+                            ebike.getId(),
+                            ebike.getLocation(),
+                            EBikeState.AVAILABLE,
+                            100
+                    );
+                    return repository.update(updated).thenApply(v -> {
+                        producer.sendUpdate(new EBikeUpdateEvent(updated));
+                        return updated;
+                    });
+                });
     }
 
     @Override
-    public CompletableFuture<JsonArray> getAllEBikes() {
+    public CompletableFuture<EBike> updateEBike(Event event) {
+        if (!(event instanceof RequestEBikeUpdateEvent e)) {
+            CompletableFuture<EBike> future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalArgumentException("Event type mismatch"));
+            return future;
+        }
+        EBike update = new EBike(
+            e.bikeId(),
+            new P2d(e.bikeX(), e.bikeY()),
+            EBikeState.valueOf(e.bikeState()),
+            e.bikeBattery()
+        );
+        return repository.findById(e.bikeId())
+                .thenCompose(opt -> {
+                    if (opt.isEmpty()) {
+                        CompletableFuture<EBike> f = new CompletableFuture<>();
+                        f.completeExceptionally(new RuntimeException("eBike not found"));
+                        return f;
+                    }
+                    EBike ebike = opt.get();
+                    int battery = update.getBatteryLevel();
+                    EBikeState state = battery == 0 ? EBikeState.MAINTENANCE : update.getState();
+                    EBike updated = new EBike(
+                            ebike.getId(),
+                            new P2d(update.getLocation().getX(), update.getLocation().getY()),
+                            state,
+                            battery
+                    );
+                    return repository.update(updated).thenApply(v -> {
+                        producer.sendUpdate(new EBikeUpdateEvent(updated));
+                        return updated;
+                    });
+                });
+    }
+
+    @Override
+    public CompletableFuture<List<EBike>> getAllEBikes() {
         return repository.findAll();
     }
 }

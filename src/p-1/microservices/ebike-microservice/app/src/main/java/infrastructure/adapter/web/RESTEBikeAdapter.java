@@ -1,12 +1,17 @@
 package infrastructure.adapter.web;
 
 import application.ports.EBikeServiceAPI;
+import domain.event.EBikeCreateEvent;
+import domain.event.EBikeRechargeEvent;
 import infrastructure.utils.MetricsManager;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class RESTEBikeAdapter {
     private static final Logger logger = LoggerFactory.getLogger(RESTEBikeAdapter.class);
@@ -48,9 +53,11 @@ public class RESTEBikeAdapter {
                 return;
             }
 
-            ebikeService.createEBike(id, x, y)
+            ebikeService.createEBike(new EBikeCreateEvent(id, x, y))
                     .thenAccept(result -> {
-                        sendResponse(ctx, 201, result);
+                        JsonObject ebikeJson = JsonObject.mapFrom(result);
+                        logger.info(ebikeJson.encodePrettily());
+                        sendResponse(ctx, 201, ebikeJson.encode());
                         metricsManager.recordTimer(timer, "createEBike");
                     }
                     )
@@ -75,10 +82,11 @@ public class RESTEBikeAdapter {
             return;
         }
 
-        ebikeService.rechargeEBike(id)
+        ebikeService.rechargeEBike(new EBikeRechargeEvent(id))
                 .thenAccept(result -> {
                     if (result != null) {
-                        sendResponse(ctx, 200, result);
+                        JsonObject ebikeJson = JsonObject.mapFrom(result);
+                        sendResponse(ctx, 200, ebikeJson.encode());
                         metricsManager.recordTimer(timer, "rechargeEBike");
                     } else {
                         ctx.response().setStatusCode(404).end();
@@ -97,7 +105,8 @@ public class RESTEBikeAdapter {
         var timer = metricsManager.startTimer();
         ebikeService.getAllEBikes()
                 .thenAccept(result -> {
-                    sendResponse(ctx, 200, result);
+                    JsonArray userJson = new JsonArray(result);
+                    sendResponse(ctx, 200, userJson.encode());
                     metricsManager.recordTimer(timer, "getAllEBikes");
                 })
                 .exceptionally(e -> {
