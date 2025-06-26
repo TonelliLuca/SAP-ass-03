@@ -1,4 +1,4 @@
 package domain.model;
 
-public record ABikeUpdateEvent(ABike abike, String type, long timestamp) {
+public record ABikeUpdateEvent(String id, ABike abike, String type, String timestamp) {
 }
