@@ -5,25 +5,26 @@ import domain.event.Event;
 import java.util.concurrent.CompletableFuture;
 
 /**
-* Port representing the REST API for domain operations in the Application.
-* Provides methods for starting and stopping rides for users and e-bikes.
-*/
+ * Interface representing the REST API for ride-related domain operations.
+ * This API provides methods to start and stop rides for users and e-bikes.
+ */
 public interface RestRideServiceAPI {
 
     /**
-    * Starts a ride for a specific user and e-bike.
-    *
-    * @param userId the ID of the user.
-    * @param bikeId the ID of the e-bike.
-    * @return a CompletableFuture that completes when the ride is started.
-    */
+     * Starts a ride for a specific user and e-bike.
+     *
+     * @param event the event containing details about the ride.
+     *              The event should include the user ID and bike ID.
+     * @return a CompletableFuture that completes when the ride is successfully started.
+     */
     CompletableFuture<Void> startRide(Event event);
 
     /**
-    * Stops a ride for a specific user.
-    *
-    * @param userId the ID of the user.
-    * @return a CompletableFuture that completes when the ride is stopped.
-    */
+     * Stops a ride for a specific user.
+     *
+     * @param event the event containing details about the ride to be stopped.
+     *              The event should include the user ID and ride details.
+     * @return a CompletableFuture that completes when the ride is successfully stopped.
+     */
     CompletableFuture<Void> stopRide(Event event);
 }
