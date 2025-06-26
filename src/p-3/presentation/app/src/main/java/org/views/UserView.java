@@ -164,8 +164,9 @@ public class UserView extends AbstractView {
         vertx.eventBus().consumer("user.update." + actualUser.username(), message -> {
             JsonObject update = (JsonObject) message.body();
 
-            String username = update.getString("username");
-            int credit = update.getInteger("credit");
+            JsonObject userJson = update.getJsonObject("user");
+            String username = userJson.getString("username");
+            int credit = userJson.getInteger("credit");
             if (username.equals(actualUser.username())) {
                 actualUser = actualUser.updateCredit(credit);
             }
