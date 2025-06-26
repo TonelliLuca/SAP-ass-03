@@ -13,4 +13,4 @@ management:
       show-details: always
 
 server:
-  port: 8761
+  port: ${EUREKA_INSTANCE_PORT}
