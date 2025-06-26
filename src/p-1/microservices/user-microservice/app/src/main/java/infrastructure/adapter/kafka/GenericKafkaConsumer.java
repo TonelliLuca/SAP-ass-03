@@ -2,7 +2,10 @@ package infrastructure.adapter.kafka;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
@@ -32,7 +35,7 @@ public class GenericKafkaConsumer<T> {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         this.kafkaConsumer = new KafkaConsumer<>(props);
         kafkaConsumer.subscribe(Collections.singletonList(topic));
         logger.info("Subscribed to topic: {}", topic);
@@ -45,7 +48,12 @@ public class GenericKafkaConsumer<T> {
                     ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(500));
                     for (ConsumerRecord<String, String> record : records) {
                         try {
-                            T value = mapper.readValue(record.value(), type);
+                            T value;
+                            if (type == String.class) {
+                                value = type.cast(record.value());
+                            } else {
+                                value = mapper.readValue(record.value(), type);
+                            }
                             handler.accept(record.key(), value);
                         } catch (Exception e) {
                             logger.error("Error processing record: {}", e.getMessage(), e);
