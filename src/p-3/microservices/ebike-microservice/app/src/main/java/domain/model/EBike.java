@@ -26,4 +26,8 @@ public class EBike implements Aggregate<String>, Serializable {
                 id, location, batteryLevel, state);
     }
 
+    public EBikeState getState() { return state; }
+    public int getBatteryLevel() { return batteryLevel; }
+    public P2d getLocation() { return location; }
+
 }

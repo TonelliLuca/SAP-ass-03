@@ -1,14 +1,17 @@
 package infrastructure.adapter.kafka;
 
 import application.ports.EBikeServiceAPI;
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import domain.event.RequestEBikeUpdateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RideUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(RideUpdatesConsumer.class);
     private final EBikeServiceAPI ebikeService;
-    private final GenericKafkaConsumer<JsonObject> consumer;
+    private final GenericKafkaConsumer<String> consumer;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public RideUpdatesConsumer(EBikeServiceAPI ebikeService, String bootstrapServers) {
         this.ebikeService = ebikeService;
@@ -16,7 +19,7 @@ public class RideUpdatesConsumer {
             bootstrapServers,
             "ebike-service-group",
             "ride-ebike-events",
-            JsonObject.class
+            String.class
         );
         logger.info("RideUpdatesConsumer created with bootstrap servers: {}", bootstrapServers);
     }
@@ -26,54 +29,24 @@ public class RideUpdatesConsumer {
         logger.info("RideUpdatesConsumer started - listening for e-bike updates from ride service");
     }
 
-    private void processRideEvent(String key, JsonObject event) {
+    private void processRideEvent(String key, String eventJson) {
         try {
-            logger.info("Received ride event: {}", event.encodePrettily());
-            JsonObject payload = event.getJsonObject("payload");
-            if (payload == null) {
-                logger.error("Invalid ride event: missing payload");
+            if (!"RideUpdateEBikeEvent".equals(key)) {
                 return;
             }
+            JsonNode node = objectMapper.readTree(eventJson);
 
-            if (payload.containsKey("map")) {
-                payload = payload.getJsonObject("map");
-            }
+            String bikeId = node.get("bikeId").asText();
+            double bikeX = node.get("bikeX").asDouble();
+            double bikeY = node.get("bikeY").asDouble();
+            String bikeState = node.get("bikeState").asText();
+            int bikeBattery = node.get("bikeBattery").asInt();
 
-            JsonObject rideData = payload.getJsonObject("ride");
-            if (rideData == null) {
-                logger.error("Invalid ride event: missing ride data");
-                return;
-            }
+            RequestEBikeUpdateEvent ebikeUpdateEvent = new RequestEBikeUpdateEvent(
+                bikeId, bikeX, bikeY, bikeState, bikeBattery
+            );
 
-            JsonObject bikeData = rideData.getJsonObject("map").getJsonObject("bike");
-            if (bikeData != null && bikeData.containsKey("map")) {
-                bikeData = bikeData.getJsonObject("map");
-            }
-
-            if (bikeData == null) {
-                logger.error("Invalid ride event: missing bike data");
-                return;
-            }
-
-            String bikeType = bikeData.getString("type");
-            if (!"ebike".equalsIgnoreCase(bikeType)) {
-                logger.info("Skipping non-ebike ride event (type={})", bikeType);
-                return;
-            }
-
-            String bikeId = bikeData.getString("id", bikeData.getString("bikeName"));
-            if (bikeId == null) {
-                logger.error("Invalid ride event: missing bike identifier");
-                return;
-            }
-
-            logger.info("Processing update for e-bike: {}", bikeId);
-
-            if (!bikeData.containsKey("id")) {
-                bikeData.put("id", bikeId);
-            }
-
-            ebikeService.updateEBike(bikeData)
+            ebikeService.updateEBike(ebikeUpdateEvent)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         logger.error("Failed to update e-bike: {}", throwable.getMessage());
@@ -84,9 +57,7 @@ public class RideUpdatesConsumer {
                     }
                 });
         } catch (Exception e) {
-            logger.error("Error processing ride event", e);
+            logger.error("Error processing RideUpdateEvent", e);
         }
     }
-
-
 }
