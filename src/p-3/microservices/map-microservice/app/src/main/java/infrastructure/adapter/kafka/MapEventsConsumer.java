@@ -1,6 +1,9 @@
 package infrastructure.adapter.kafka;
 
 import application.ports.RestMapServiceAPI;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import domain.model.EBike;
 import domain.model.BikeFactory;
 import domain.model.BikeState;
@@ -15,10 +18,11 @@ public class MapEventsConsumer {
 
     private final RestMapServiceAPI mapService;
     private final GenericKafkaConsumer<String> stationConsumer;
-    private final GenericKafkaConsumer<JsonObject> rideAbikeConsumer;
-    private final GenericKafkaConsumer<JsonObject> rideEBikeConsumer;
-    private final GenericKafkaConsumer<JsonObject> bikeConsumer;
-    private final GenericKafkaConsumer<JsonObject> abikeConsumer;
+    private final GenericKafkaConsumer<String> rideAbikeConsumer;
+    private final GenericKafkaConsumer<String> rideEBikeConsumer;
+    private final GenericKafkaConsumer<String> bikeConsumer;
+    private final GenericKafkaConsumer<String> abikeConsumer;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public MapEventsConsumer(RestMapServiceAPI mapService, String bootstrapServers) {
         this.mapService = mapService;
@@ -26,16 +30,16 @@ public class MapEventsConsumer {
             bootstrapServers, "map-service-station-group", "station-events", String.class
         );
         this.rideAbikeConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "map-service-ride-abike-group", "ride-abike-events", JsonObject.class
+            bootstrapServers, "map-service-ride-abike-group", "ride-abike-events", String.class
         );
         this.rideEBikeConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "map-service-ride-ebike-group", "ride-ebike-events", JsonObject.class
+            bootstrapServers, "map-service-ride-ebike-group", "ride-ebike-events", String.class
         );
         this.bikeConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "map-service-ebike-group", "ebike-events", JsonObject.class
+            bootstrapServers, "map-service-ebike-group", "ebike-events", String.class
         );
         this.abikeConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "map-service-abike-group", "abike-events", JsonObject.class
+            bootstrapServers, "map-service-abike-group", "abike-events", String.class
         );
         logger.info("MapEventsConsumer created with bootstrap servers: {}", bootstrapServers);
     }
@@ -52,170 +56,105 @@ public class MapEventsConsumer {
     private void processStationEvent(String key, String eventJson) {
         try {
             logger.info("Received station event: {} with key: {}", eventJson, key);
-            Station station = null;
             if ("StationUpdateEvent".equals(key) || "StationRegisteredEvent".equals(key)) {
-                JsonObject event = new JsonObject(eventJson);
-                JsonObject stationObj = event.getJsonObject("station");
-                if (stationObj != null) {
-                    String stationId = stationObj.getString("id");
-                    JsonObject location = stationObj.getJsonObject("location");
-                    int capacity = stationObj.getInteger("capacity", 0);
-                    int availableCapacity = stationObj.getInteger("availableCapacity", 0);
-                    if (stationId != null && location != null) {
-                        float x = location.getFloat("x", 0.0f);
-                        float y = location.getFloat("y", 0.0f);
-                        station = new Station(stationId, new P2d(x, y), capacity, availableCapacity);
+                JsonNode eventNode = mapper.readTree(eventJson);
+                JsonNode stationNode = eventNode.get("station");
+                if (stationNode != NullNode.getInstance()) {
+                    String stationId = stationNode.get("id").asText();
+                    JsonNode locationNode = stationNode.get("location");
+                    int capacity = stationNode.get("capacity").asInt();
+                    int availableCapacity = stationNode.get("availableCapacity").asInt();
+
+                    if (!stationId.isEmpty() && locationNode != NullNode.getInstance()) {
+                        double x = locationNode.get("x").asDouble();
+                        double y = locationNode.get("y").asDouble();
+                        Station station = new Station(stationId, new P2d(x, y), capacity, availableCapacity);
+                        mapService.updateStation(station);
                     }
                 }
-            }
-            if (station != null) {
-                mapService.updateStation(station);
-            } else {
-                logger.error("Invalid station event: missing required fields");
             }
         } catch (Exception e) {
             logger.error("Error processing station event: {}", e.getMessage(), e);
         }
     }
 
-    private void processRideEvent(String key, JsonObject event) {
+    private void processRideEvent(String key, String event) {
         try {
-            logger.info("Received ride event: {}", event.encodePrettily());
-            JsonObject payload = event.getJsonObject("payload");
-            if (payload == null) {
-                logger.error("Invalid ride event: missing payload");
-                return;
-            }
-            JsonObject mapPayload = payload.getJsonObject("map");
-            if (mapPayload == null) {
-                logger.error("Invalid ride event: missing map in payload");
-                return;
-            }
-
-            String status = mapPayload.getString("status");
-            JsonObject rideWrapper = mapPayload.getJsonObject("ride");
-            if (rideWrapper == null) {
-                logger.error("Invalid ride event: missing ride data");
-                return;
-            }
-            JsonObject rideData = rideWrapper.getJsonObject("map");
-            if (rideData == null) {
-                logger.error("Invalid ride event: missing ride map");
-                return;
-            }
-
-            JsonObject bikeWrapper = rideData.getJsonObject("bike");
-            JsonObject userWrapper = rideData.getJsonObject("user");
-            if (bikeWrapper == null || userWrapper == null) {
-                logger.error("Invalid ride event: missing bike or user data");
-                return;
-            }
-            JsonObject bikeData = bikeWrapper.getJsonObject("map");
-            JsonObject userData = userWrapper.getJsonObject("map");
-            if (bikeData == null || userData == null) {
-                logger.error("Invalid ride event: missing bike or user map");
-                return;
-            }
-
-            String username = userData.getString("username");
-            String bikeId = bikeData.getString("id");
-            String bikeType = bikeData.getString("type");
-            if (bikeId == null) {
-                logger.error("Invalid ride event: missing bike identifier");
-                return;
-            }
-
-            logger.debug("Processing ride event - status: {}, user: {}, bike: {}, type: {}", status, username, bikeId, bikeType);
-
-            switch (status) {
-                case "START" -> {
-                    if (!"abike".equalsIgnoreCase(bikeType)) {
-                            mapService.notifyStartRide(username, bikeId, bikeType)
-                            .whenComplete((result, error) -> {
-                                if (error != null) {
-                                    logger.error("Failed to process ride start event: {}", error.getMessage());
-                                } else {
-                                    logger.info("Successfully processed ride start for user {} and bike {}", username, bikeId);
-                                }
-                            });
-                    } else {
-                        logger.info("START event for abike {}: not from user", bikeId);
-                        // Optionally, trigger other logic for abike here
+            logger.info("Received ride event: {}", event);
+            JsonNode eventNode = mapper.readTree(event);
+            switch(key){
+                case "RideStartEvent": {
+                    String username = eventNode.get("username").asText();
+                    String bikeId = eventNode.get("bikeId").asText();
+                    String type = eventNode.get("type").asText();
+                    if (type.equals("ebike")) {
+                        mapService.notifyStartRide(username, bikeId, type)
+                                .whenComplete((result, error) -> {
+                                    if (error != null) {
+                                        logger.error("Failed to process ride start event: {}", error.getMessage());
+                                    } else {
+                                        logger.info("Successfully processed ride start for user {} and bike {}", username, bikeId);
+                                    }
+                                });
                     }
+                    break;
                 }
-                case "STOP" -> {
-                    if (!"abike".equalsIgnoreCase(bikeType)) {
-                        mapService.notifyStopRide(username, bikeId,  bikeType)
-                            .whenComplete((result, error) -> {
-                                if (error != null) {
-                                    logger.error("Failed to process ride stop event: {}", error.getMessage());
-                                } else {
-                                    logger.info("Successfully processed ride stop for user {} and bike {}", username, bikeId);
-                                }
-                            });
-                    } else {
-                        logger.info("STOP event for abike {}: not unbinding from user, waiting for return to station", bikeId);
-                        // Optionally, trigger other logic for abike here
+                case "RideStopEvent": {
+                    String username = eventNode.get("username").asText();
+                    String bikeId = eventNode.get("bikeId").asText();
+                    String type = eventNode.get("type").asText();
+                    if (type.equals("ebike")) {
+                        mapService.notifyStopRide(username, bikeId, type)
+                                .whenComplete((result, error) -> {
+                                    if (error != null) {
+                                        logger.error("Failed to process ride stop event: {}", error.getMessage());
+                                    } else {
+                                        logger.info("Successfully processed ride stop for user {} and bike {}", username, bikeId);
+                                    }
+                                });
                     }
+                    break;
                 }
-                case "INFO" ->
-                    logger.info("Received INFO ride event  IGNORED");
-                case null, default -> logger.info("Received unknown ride status update - no action needed");
+
             }
         } catch (Exception e) {
             logger.error("Error processing ride event", e);
         }
     }
 
-    private void processEBikeEvent(String key, JsonObject event) {
+    private void processEBikeEvent(String key, String eventJson) {
         try {
-            logger.debug("Received bike event: {}", event.encodePrettily());
-            String type = event.getString("type");
-
-            if ("ebike_updated".equals(type)) {
-                JsonObject bikeData = event.getJsonObject("payload");
-                if (bikeData == null) {
-                    logger.error("Invalid bike update: missing bike data");
-                    return;
-                }
-                processEBikeUpdate(bikeData);
-            } else if ("ebikes_batch_updated".equals(type)) {
-                logger.info("Processing batch bike update");
-                try {
-                    if (event.getJsonObject("payload") != null) {
-                        event.getJsonObject("payload").getJsonArray("list").forEach(bike -> {
-                            if (bike instanceof JsonObject) {
-                                processEBikeUpdate((JsonObject) bike);
-                            }
-                        });
-                    } else {
-                        logger.error("Invalid batch update: payload is not a JsonArray");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error processing batch update", e);
-                }
-            } else {
-                logger.warn("Unknown bike event type: {}", type);
+            if (!"EBikeUpdateEvent".equals(key)) {
+                logger.debug("Ignored bike event with key: {}", key);
+                return;
             }
+            logger.info("Received EBikeEvent: {}", eventJson);
+            JsonNode event = mapper.readTree(eventJson);
+            JsonNode ebikeData = event.get("ebike");
+            if (ebikeData == null) {
+                logger.error("Invalid bike update: missing ebike data");
+                return;
+            }
+            processEBikeUpdate(ebikeData);
         } catch (Exception e) {
             logger.error("Error processing bike event", e);
         }
     }
 
-    private void processEBikeUpdate(JsonObject bikeData) {
+    private void processEBikeUpdate(JsonNode bikeData) {
         try {
-            logger.info("Received bike update: {}", bikeData.encodePrettily());
-            bikeData = bikeData.getJsonObject("map");
-            String bikeName = bikeData.getString("id");
+            logger.info("Received bike update: {}", bikeData.toPrettyString());
+            String bikeName = bikeData.get("id").asText();
             if (bikeName == null) {
                 logger.error("Invalid bike update: missing bike identifier");
                 return;
             }
 
-            float x = bikeData.getJsonObject("location").getJsonObject("map").getFloat("x", 0.0f);
-            float y = bikeData.getJsonObject("location").getJsonObject("map").getFloat("y", 0.0f);
-            int batteryLevel = bikeData.getInteger("batteryLevel", 100);
-            BikeState state = BikeState.valueOf(bikeData.getString("state", "AVAILABLE"));
+            JsonNode location = bikeData.get("location");
+            float x = location.get("x").floatValue();
+            float y = location.get("y").floatValue();
+            int batteryLevel = bikeData.has("batteryLevel") ? bikeData.get("batteryLevel").asInt() : 100;
+            BikeState state = BikeState.valueOf(bikeData.has("state") ? bikeData.get("state").asText() : "AVAILABLE");
             EBike bike = BikeFactory.getInstance().createEBike(bikeName, x, y, state, batteryLevel);
 
             mapService.updateBike(bike)
@@ -231,73 +170,56 @@ public class MapEventsConsumer {
         }
     }
 
-    private void processABikeEvent(String key, JsonObject event) {
+    private void processABikeEvent(String key, String event) {
         try {
-            JsonObject mapObj = event.getJsonObject("map");
-            if (mapObj == null) {
 
-                // Fallback: maybe the event itself is the ABike event
-                mapObj = event;
-            }
-            String type = mapObj.getString("type");
-            if ("ABikeRequested".equals(type)) {
-                String abikeId = mapObj.getString("abikeId");
-                String username = mapObj.getString("username");
-                logger.info("Received ABikeRequested: abikeId={}, username={}", abikeId, username);
-                mapService.notifyStartRide(username, abikeId, "abike");
-            } else if ("ABikeUpdate".equals(type)) {
-                JsonObject abikeData = mapObj.getJsonObject("abike");
-                if (abikeData == null) {
-                    logger.error("Invalid ABikeUpdate: missing abike data");
-                    return;
+            JsonNode eventNode = mapper.readTree(event);
+            switch(key){
+                case "ABikeRequested": {
+                    String abikeId = eventNode.get("abikeId").asText();
+                    String username = eventNode.get("username").asText();
+                    logger.info("Received ABikeRequested: abikeId={}, username={}", abikeId, username);
+                    mapService.notifyStartRide(username, abikeId, "abike");
+                    break;
                 }
-                String abikeId = abikeData.getString("id");
-                JsonObject position = abikeData.getJsonObject("position");
-                if (position == null) {
-                    logger.error("Invalid ABikeUpdate: missing position for abikeId={}", abikeId);
-                    return;
+                case "ABikeUpdate": {
+                    JsonNode abikeData = eventNode.get("abike");
+                    String bikeId = abikeData.get("id").asText();
+                    String state = abikeData.get("state").asText();
+                    JsonNode location = abikeData.get("position");
+                    float x = location.get("x").floatValue();
+                    float y = location.get("y").floatValue();
+                    int batteryLevel = abikeData.get("batteryLevel").asInt();
+                    var abike = BikeFactory.getInstance().createABike(bikeId, x, y, BikeState.valueOf(state), batteryLevel);
+                    mapService.updateBike(abike)
+                            .whenComplete((result, error) -> {
+                                if (error != null) {
+                                    logger.error("Failed to update abike {}: {}", bikeId, error.getMessage());
+                                } else {
+                                    logger.info("Successfully updated abike {}", bikeId);
+                                }
+                            });
+                    break;
                 }
-                float x = position.getFloat("x", 0.0f);
-                float y = position.getFloat("y", 0.0f);
-                int batteryLevel = abikeData.getInteger("batteryLevel", 100);
-                String stateStr = abikeData.getString("state", "AVAILABLE");
-                BikeState state = BikeState.valueOf(stateStr);
-
-                var abike = BikeFactory.getInstance().createABike(abikeId, x, y, state, batteryLevel);
-                logger.info("Successfully updated ABike: {}", abikeId);
-                mapService.updateBike(abike)
-                    .whenComplete((result, error) -> {
-                        if (error != null) {
-                            logger.error("Failed to update abike {}: {}", abikeId, error.getMessage());
-                        } else {
-                            logger.info("Successfully updated abike {}", abikeId);
-                        }
-                    });
-            } else if ("ABikeArrivedToUser".equals(type)) {
-                String abikeId = mapObj.getString("abikeId");
-                String userId = mapObj.getString("userId");
-                logger.info("Received ABikeArrivedToUser: abikeId={}, userId={}", abikeId, userId);
-                mapService.notifyStartRide(userId, abikeId, "abike")
-                        .whenComplete((result, error) -> {
-                            if (error != null) {
-                                logger.error("Failed to assign abike {} to user {}: {}", abikeId, userId, error.getMessage());
-                            } else {
-                                logger.info("Successfully assigned abike {} to user {}", abikeId, userId);
-                            }
-                        });
-                mapService.notifyABikeArrivedToUser(userId, abikeId);
-            } else if ("ABikeCallComplete".equals(type)) {
-                String abikeId = mapObj.getString("bikeId");
-                String userId = mapObj.getString("userId");
-                logger.info("Received ABikeCallComplete: abikeId={}, userId={}", abikeId, userId);
-                mapService.notifyStopRide(userId, abikeId, "abike")
-                        .whenComplete((result, error) -> {
-                            if (error != null) {
-                                logger.error("Failed to process ABikeCallComplete stop ride: {}", error.getMessage());
-                            } else {
-                                logger.info("Successfully processed ABikeCallComplete stop ride for user {} and abike {}", userId, abikeId);
-                            }
-                        });
+                case "ABikeArrivedToUser": {
+                    String abikeId = eventNode.get("abikeId").asText();
+                    String userId = eventNode.get("userId").asText();
+                    mapService.notifyABikeArrivedToUser(userId, abikeId);
+                    break;
+                }
+                case "ABikeCallComplete": {
+                    String bikeId = eventNode.get("bikeId").asText();
+                    String userId = eventNode.get("userId").asText();
+                    mapService.notifyStopRide(userId, bikeId, "abike")
+                            .whenComplete((result, error) -> {
+                                if (error != null) {
+                                    logger.error("Failed to process ABikeCallComplete stop ride: {}", error.getMessage());
+                                } else {
+                                    logger.info("Successfully processed ABikeCallComplete stop ride for user {} and abike {}", userId, bikeId);
+                                }
+                            });
+                    break;
+                }
             }
         } catch (Exception e) {
             logger.error("Error processing ABike event", e);
