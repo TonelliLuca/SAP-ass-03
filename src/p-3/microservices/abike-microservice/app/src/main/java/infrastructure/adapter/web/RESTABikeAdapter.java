@@ -1,6 +1,9 @@
 package infrastructure.adapter.web;
 
 import application.port.ABikeService;
+import domain.event.ABikeCreateEvent;
+import domain.event.CallAbikeEvent;
+import domain.event.CancellCallRequest;
 import domain.model.Destination;
 import domain.model.P2d;
 import infrastructure.utils.MetricsManager;
@@ -49,7 +52,7 @@ public class RESTABikeAdapter {
                 return;
             }
 
-            abikeService.createABike(abikeId, stationId)
+            abikeService.createABike(new ABikeCreateEvent(abikeId, stationId))
                     .thenAccept(result -> {
                         sendResponse(ctx, 201, new JsonObject().put("status", "created"));
                         metricsManager.recordTimer(timer, "createABike");
@@ -113,10 +116,9 @@ public class RESTABikeAdapter {
                 return;
             }
 
-            P2d position = new P2d(x, y);
-            Destination destination = new Destination(position, username);
 
-            abikeService.callABike(destination)
+
+            abikeService.callABike(new CallAbikeEvent(x, y, username))
                 .thenAccept(simulationId -> {
                     sendResponse(ctx, 200, new JsonObject().put("simulationId", simulationId));
                     metricsManager.recordTimer(timer, "callABike");
@@ -148,7 +150,7 @@ public class RESTABikeAdapter {
             }
 
 
-            abikeService.cancellCall(username)
+            abikeService.cancellCall(new CancellCallRequest(username))
                 .thenAccept(_void -> {
                     sendResponse(ctx, 200, new JsonObject().put("status", "cancelled"));
                     metricsManager.recordTimer(timer, "cancellCall");

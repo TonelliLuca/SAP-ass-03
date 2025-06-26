@@ -2,7 +2,6 @@ package infrastructure.adapter.kafka;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vertx.core.json.JsonObject;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -26,6 +25,8 @@ public class GenericKafkaConsumer<T> {
 
     public GenericKafkaConsumer(String bootstrapServers, String groupId, String topic, Class<T> type) {
         this.type = type;
+
+        // Configure Jackson to ignore unknown properties
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -34,7 +35,7 @@ public class GenericKafkaConsumer<T> {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         this.kafkaConsumer = new KafkaConsumer<>(props);
         kafkaConsumer.subscribe(Collections.singletonList(topic));
         logger.info("Subscribed to topic: {}", topic);
@@ -50,8 +51,6 @@ public class GenericKafkaConsumer<T> {
                             T value;
                             if (type == String.class) {
                                 value = type.cast(record.value());
-                            } else if (type == JsonObject.class) {
-                                value = type.cast(new JsonObject(record.value()));
                             } else {
                                 value = mapper.readValue(record.value(), type);
                             }
