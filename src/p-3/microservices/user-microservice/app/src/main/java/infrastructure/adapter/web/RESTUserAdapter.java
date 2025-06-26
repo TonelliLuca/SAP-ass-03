@@ -1,6 +1,9 @@
 package infrastructure.adapter.web;
 
 import application.ports.UserServiceAPI;
+import domain.event.RechargeCreditEvent;
+import domain.event.UserCreatedEvent;
+import domain.event.UserSingInEvent;
 import domain.model.User;
 import infrastructure.utils.MetricsManager;
 import io.vertx.core.Vertx;
@@ -51,9 +54,10 @@ public class RESTUserAdapter {
                 return;
             }
 
-            userService.signIn(username)
+            userService.signIn(new UserSingInEvent(username))
                     .thenAccept(result -> {
-                        sendResponse(ctx, 200, result);
+                        JsonObject userJson = JsonObject.mapFrom(result);
+                        sendResponse(ctx, 200, userJson.encode());
                         metricsManager.recordTimer(timer, "signIn");
                     })
                     .exceptionally(e -> {
@@ -81,7 +85,7 @@ public class RESTUserAdapter {
             String username = body.getString("username");
             String type = body.getString("type");
 
-           userService.signUp(username, User.UserType.valueOf(type))
+           userService.signUp(new UserCreatedEvent(username, type))
                     .thenAccept(result -> {
                         sendResponse(ctx, 201, result);
                         metricsManager.recordTimer(timer, "signUp");
@@ -113,10 +117,11 @@ public class RESTUserAdapter {
         }
         int creditToAdd = body.getInteger("creditToAdd");
 
-        userService.rechargeCredit(username, creditToAdd)
+        userService.rechargeCredit(new RechargeCreditEvent(username, creditToAdd))
                 .thenAccept(result -> {
                     if (result != null) {
-                        sendResponse(ctx, 200, result);
+                        JsonObject userJson = JsonObject.mapFrom(result);
+                        sendResponse(ctx, 200, userJson.encode());
                         metricsManager.recordTimer(timer, "rechargeCredit");
                     } else {
                         ctx.response().setStatusCode(404).end();
@@ -142,13 +147,18 @@ public class RESTUserAdapter {
             if (webSocketAsyncResult.succeeded()) {
                 var webSocket = webSocketAsyncResult.result();
                 userService.getAllUsers().thenAccept(users -> {
-                    for (int i = 0; i < users.size(); i++) {
-                        JsonObject user = users.getJsonObject(i);
-                        webSocket.writeTextMessage(user.encode());
-                    }
+                    logger.info("Observing all users");
+                    users.forEach(user -> {
+                        JsonObject userJson = JsonObject.mapFrom(user);
+                        logger.info(userJson.toString());
+                        webSocket.writeTextMessage(userJson.encode());
+                    });
+                    logger.info("All users observed");
+
+
                 });
                 var consumer = vertx.eventBus().consumer("users.update", message -> {
-                    webSocket.writeTextMessage(message.body().toString());
+                    webSocket.writeTextMessage((String)message.body());
                 });
                 webSocket.closeHandler(v -> consumer.unregister());
                 webSocket.exceptionHandler(err -> consumer.unregister());
@@ -164,8 +174,9 @@ public class RESTUserAdapter {
             if (webSocketAsyncResult.succeeded()) {
                 var webSocket = webSocketAsyncResult.result();
                 var consumer = vertx.eventBus().consumer(username, message -> {
-                    webSocket.writeTextMessage(message.body().toString());
+                    webSocket.writeTextMessage((String) message.body());
                 });
+
 
                 webSocket.closeHandler(v -> consumer.unregister());
                 webSocket.exceptionHandler(err -> consumer.unregister());

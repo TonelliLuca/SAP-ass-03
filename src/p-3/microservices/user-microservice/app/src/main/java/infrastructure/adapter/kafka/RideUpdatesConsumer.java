@@ -1,85 +1,83 @@
 package infrastructure.adapter.kafka;
 
 import application.ports.UserServiceAPI;
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import domain.event.*;
+import domain.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
 
 public class RideUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(RideUpdatesConsumer.class);
     private final UserServiceAPI userService;
-    private final GenericKafkaConsumer<JsonObject> consumer;
+    private final GenericKafkaConsumer<String> consumerEbike;
+    private final GenericKafkaConsumer<String> consumerAbike;
+    private final GenericKafkaConsumer<String> consumerAbikeEvent;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public RideUpdatesConsumer(UserServiceAPI userService, String bootstrapServers) {
         this.userService = userService;
-        this.consumer = new GenericKafkaConsumer<>(
+        this.consumerEbike = new GenericKafkaConsumer<>(
             bootstrapServers,
-            "user-service-group",
-            "ride-events",
-            JsonObject.class
+            "user-service-group"+UUID.randomUUID(),
+            "ride-ebike-events",
+            String.class
+        );
+        this.consumerAbike = new GenericKafkaConsumer<>(
+                bootstrapServers,
+                "user-service-group"+ UUID.randomUUID(),
+                "ride-abike-events",
+                String.class
+        );
+
+        this.consumerAbikeEvent = new GenericKafkaConsumer<>(
+                bootstrapServers,
+                "user-service-group"+ UUID.randomUUID(),
+                "abike-events",
+                String.class
         );
         logger.info("RideUpdatesConsumer created with bootstrap servers: {}", bootstrapServers);
     }
 
     public void init() {
-        consumer.start(this::processUserUpdate);
+        consumerEbike.start(this::processUserUpdate);
+        consumerAbike.start(this::processUserUpdate);
+        consumerAbikeEvent.start(this::processAbikeUpdate);
         logger.info("RideUpdatesConsumer started - listening for user updates from ride service");
     }
 
-
-    private void processUserUpdate(String key, JsonObject event) {
+    private void processAbikeUpdate(String key, String eventJson) {
         try {
-            logger.info("Received user update event: {}", event.encodePrettily());
-            //String type = event.getString("type");
-            JsonObject payload = event.getJsonObject("payload");
-
-            if (payload == null) {
-                logger.error("Invalid ride update: missing payload");
-                return;
+            if (key.equals("CallAbikeEvent")) {
+                var eventJsonNode = objectMapper.readTree(eventJson);
+                var destination = eventJsonNode.get("destination");
+                var id = destination.get("id").asText();
+                userService.abikeRequested(new UserRequestedAbike(id));
             }
+        }catch (Exception e){
+            logger.error(e.getMessage());
+        }
+    }
 
-            if (payload.containsKey("map")) {
-                payload = payload.getJsonObject("map");
+    private void processUserUpdate(String key, String eventJson) {
+        try {
+            if ("RideUpdateABikeEvent".equals(key) || "RideUpdateEBikeEvent".equals(key)) {
+                // Deserialize RideUpdateEvent
+                logger.info("Updating form ride event: {}", eventJson);
+                var rideUpdateNode = objectMapper.readTree(eventJson);
+                String userId = rideUpdateNode.get("userId").asText();
+                int userCredit = rideUpdateNode.get("userCredit").asInt();
+
+
+                // Call userService.updateUser
+                userService.updateUser(new RequestUserUpdateEvent(userId, userCredit));
+                logger.info("Processed RideUpdateEvent and triggered UserUpdateEvent for userId={}", userId);
             }
-
-            JsonObject rideData = payload.getJsonObject("ride");
-            if (rideData == null) {
-                logger.error("Invalid e-bike update: missing ride data");
-                return;
-            }
-
-            JsonObject userData = rideData.getJsonObject("map").getJsonObject("user");
-            // Unwrap "map" if present (as in ONGOING messages)
-            if (userData != null && userData.containsKey("map")) {
-                userData = userData.getJsonObject("map");
-            }
-
-            if (userData == null) {
-                logger.error("Invalid user update: missing user data");
-                return;
-            }
-
-            String username = userData.getString("username");
-            if (username == null) {
-                logger.error("Invalid user update: missing username");
-                return;
-            }
-
-            logger.info("Processing update for user: {}", username);
-
-            userService.updateUser(userData)
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        logger.error("Failed to update user: {}", throwable.getMessage());
-                    } else if (result == null) {
-                        logger.warn("User with id {} not found", username);
-                    } else {
-                        logger.info("Successfully updated user: {}", username);
-                    }
-                });
         } catch (Exception e) {
             logger.error("Error processing user update", e);
         }
     }
-
 }

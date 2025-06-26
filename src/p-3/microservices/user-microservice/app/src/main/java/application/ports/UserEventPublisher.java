@@ -1,25 +1,26 @@
 package application.ports;
 
-import io.vertx.core.json.JsonObject;
+import domain.event.Event;
 
 /**
- * Port representing an event publisher for user updates.
- */
+* Interface representing an event publisher for user updates.
+* This port is responsible for publishing user-related events to external systems or services.
+*/
 public interface UserEventPublisher {
 
-    /**
-     * Publishes an update for a user.
-     *
-     * @param username the username of the user.
-     * @param user a JsonObject representing the user update.
-     */
-    void publishUserUpdate(String username, JsonObject user);
+ /**
+  * Publishes an update for a specific user.
+  *
+  * @param username the username of the user whose update is being published.
+  * @param event the event containing the user update details.
+  */
+ void publishUserUpdate(String username, Event event);
 
-    /**
-     * Publishes updates for all users.
-     *
-     * @param users a JsonObject containing updates for all users.
-     */
-    void publishAllUsersUpdates(JsonObject users);
+ /**
+  * Publishes updates for all users.
+  *
+  * @param event the event containing updates for all users.
+  */
+ void publishAllUsersUpdates(Event event);
 
 }

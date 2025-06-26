@@ -1,9 +1,18 @@
 package application.ports;
 
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import domain.event.Event;
 
+
+/**
+ * Interface for the User Producer Port.
+ * Provides methods for sending user-related updates to external systems or services.
+ */
 public interface UserProducerPort {
-    public void sendUpdate(JsonObject update);
-    public void sendAllUserUpdate(JsonArray updates);
+
+    /**
+     * Sends an update event to the external system.
+     *
+     * @param update the event containing the update details
+     */
+    void sendUpdate(Event update);
 }
