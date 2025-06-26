@@ -220,6 +220,8 @@ public class UserView extends AbstractView {
                     } else {
                         JOptionPane.showMessageDialog(this, "Error calling abike: " + ar.cause().getMessage());
                         abikeCallActive = false;
+                        calledX = null;
+                        calledY = null;
                         updateButtonStates();
                     }
                 });
