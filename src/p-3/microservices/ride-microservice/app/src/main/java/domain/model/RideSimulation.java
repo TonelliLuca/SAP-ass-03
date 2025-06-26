@@ -2,6 +2,8 @@ package domain.model;
 
 import application.ports.EventPublisher;
 import ddd.Service;
+import domain.event.RideUpdateABikeEvent;
+import domain.event.RideUpdateEBikeEvent;
 import io.vertx.core.Vertx;
 
 
@@ -93,13 +95,30 @@ public class RideSimulation implements Service {
 
             bike.decreaseBattery(BATTERY_DECREASE);
             user.decreaseCredit(CREDIT_DECREASE);
-
-            publisher.publishRideUpdate(bike.getId(), bike.getLocation().x(), bike.getLocation().y(), bike.getState().toString(), bike.getBatteryLevel(), user.getId(), user.getCredit(), ride.getId(), bike.getType());
+            if ("abike".equals(ride.getBike().getType())) {
+                   publisher.publishUpdate(new RideUpdateABikeEvent(
+                       ride.getId(), user.getId(), user.getCredit(), bike.getId(),
+                       bike.getLocation().x(), bike.getLocation().y(), bike.getState().name(), bike.getBatteryLevel()
+                   ));
+               } else {
+                   publisher.publishUpdate(new RideUpdateEBikeEvent(
+                       ride.getId(), user.getId(), user.getCredit(), bike.getId(),
+                       bike.getLocation().x(), bike.getLocation().y(), bike.getState().name(), bike.getBatteryLevel()
+                   ));
+               }
         }
     }
 
     private void completeSimulation() {
-        publisher.publishRideUpdate(ride.getBike().getId(), ride.getBike().getLocation().x(), ride.getBike().getLocation().y(), ride.getBike().getState().toString(), ride.getBike().getBatteryLevel(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getId(), ride.getBike().getType() );
+        if ("abike".equals(ride.getBike().getType())) {
+            publisher.publishUpdate(new RideUpdateABikeEvent(
+                    ride.getId(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getBike().getId(), ride.getBike().getLocation().x(), ride.getBike().getLocation().y(), ride.getBike().getState().name(), ride.getBike().getBatteryLevel()
+            ));
+        } else {
+            publisher.publishUpdate(new RideUpdateEBikeEvent(
+                    ride.getId(), ride.getUser().getId(), ride.getUser().getCredit(), ride.getBike().getId(), ride.getBike().getLocation().x(), ride.getBike().getLocation().y(), ride.getBike().getState().name(), ride.getBike().getBatteryLevel()
+            ));
+        }
     }
 
     public void stopSimulation() {

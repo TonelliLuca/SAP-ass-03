@@ -37,6 +37,7 @@ public class Main {
             // Create and initialize projection updates consumer
             ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
                     bootstrapServers,
+                    localProjections,
                     service
                     );
             updatesConsumer.init();

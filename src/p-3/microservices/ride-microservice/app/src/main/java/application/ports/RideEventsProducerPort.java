@@ -1,11 +1,20 @@
 package application.ports;
 
 
-import io.vertx.core.json.JsonObject;
+import domain.event.Event;
 
 public interface RideEventsProducerPort {
-    void publishRideStart(String bikeId, String userId, String bikeType);
-    void publishRideUpdate(JsonObject update);
-    void publishRideEnd(String bikeId, String userId, String bikeType);
+
+    /**
+     * Publishes an update event related to a ride.
+     *
+     * @param event the event containing ride update details
+     */
+    void publishUpdate(Event event);
+
+    /**
+     * Initializes the Ride Events Producer Port.
+     * This method can be used to set up necessary configurations or resources.
+     */
     void init();
 }

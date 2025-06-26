@@ -1,7 +1,12 @@
 package application;
 
 import application.ports.*;
+import domain.event.Event;
+import domain.event.RequestRideEndEvent;
+import domain.event.RideStartEvent;
+import domain.event.RideStopEvent;
 import domain.model.*;
+import infrastructure.repository.RideRepositoryImpl;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -31,7 +36,16 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
 
 
     @Override
-    public CompletableFuture<Void> startRide(String userId, String bikeId, String bikeType) {
+    public CompletableFuture<Void> startRide(Event event) {
+        if(!(event instanceof RideStartEvent rideStartEvent)) {
+            logger.error("Invalid event type");
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid event type"));
+        }
+
+        String userId = rideStartEvent.username();
+        String bikeId = rideStartEvent.bikeId();
+        String bikeType = rideStartEvent.type();
+
         logger.info("Starting ride for user: {} and bike: {}", userId, bikeId);
 
         CompletableFuture<Bike> bikeFuture = projectionRepository.getBike(bikeId, bikeType);
@@ -82,12 +96,12 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
                 rideRepository.addRide(ride);
                 logger.info("Ride created: {}", ride.getId());
 
-                rideEventsProducer.publishRideStart(bikeId, userId, ride.getBike().getType());
+                rideEventsProducer.publishUpdate(event);
 
                 rideRepository.getRideSimulation(ride.getId()).startSimulation().whenComplete((result, throwable) -> {
                     if (throwable == null) {
                         logger.info("Ride simulation completed successfully: {}", ride.getId());
-                        rideEventsProducer.publishRideEnd(bikeId, userId, ride.getBike().getType());
+                        rideEventsProducer.publishUpdate(new RideStopEvent(userId, bikeId, ride.getBike().getType()));
                         rideRepository.removeRide(ride);
                     } else {
                         logger.error("Error during ride simulation: {}", throwable.getMessage());
@@ -99,7 +113,12 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
     }
 
     @Override
-    public CompletableFuture<Void> stopRide(String userId) {
+    public CompletableFuture<Void> stopRide(Event event) {
+        if (!(event instanceof RequestRideEndEvent rideEndEvent)) {
+            logger.error("Invalid event type for stopRide");
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid event type"));
+        }
+        String userId = rideEndEvent.username();
         logger.info("Stopping ride for user: {}", userId);
         return CompletableFuture.supplyAsync(() -> rideRepository.getRideSimulationByUserId(userId))
                 .thenCompose(rideSimulation -> {
@@ -107,7 +126,7 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
                         String bikeId = rideSimulation.getRide().getBike().getId();
                         logger.info("Found active ride for user: {}, bike: {}", userId, bikeId);
                         rideSimulation.stopSimulationManually();
-                        rideEventsProducer.publishRideEnd(bikeId, userId, rideSimulation.getRide().getBike().getType());
+                        rideEventsProducer.publishUpdate(new RideStopEvent(userId, bikeId, rideSimulation.getRide().getBike().getType()));
                         return CompletableFuture.completedFuture(null);
                     }
                     logger.error("No active ride found for user: {}", userId);
@@ -115,15 +134,5 @@ public class RestRideServiceAPIImpl implements RestRideServiceAPI {
                 });
     }
 
-    @Override
-    public CompletableFuture<Void> handleUserProjectionUpdate(JsonObject userData) {
-        return projectionRepository.updateUser(userData);
-    }
 
-    @Override
-    public CompletableFuture<Void> handleBikeProjectionUpdate(JsonObject bikeData, String bikeType) {
-        bikeData.put("type", bikeType);
-        logger.info("Handling bike projection update for bike :{}",bikeData);
-        return projectionRepository.updateBike(bikeData);
-    }
 }

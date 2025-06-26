@@ -1,14 +1,17 @@
 package application.ports;
 
+import domain.event.ABikeUpdateEvent;
+import domain.event.EBikeUpdateEvent;
+import domain.event.UserUpdateEvent;
 import domain.model.Bike;
 import domain.model.User;
-import io.vertx.core.json.JsonObject;
 
 import java.util.concurrent.CompletableFuture;
 
 public interface ProjectionRepositoryPort {
+    CompletableFuture<Void> appendUserEvent(UserUpdateEvent event);
+    CompletableFuture<Void> appendEBikeEvent(EBikeUpdateEvent event);
+    CompletableFuture<Void> appendABikeEvent(ABikeUpdateEvent event);
     CompletableFuture<Bike> getBike(String id, String bikeType);
-    CompletableFuture<Void> updateBike(JsonObject ebikeJson);
-    CompletableFuture<Void> updateUser(JsonObject userJson);
-    CompletableFuture<User> getUser(String username) ;
+    CompletableFuture<User> getUser(String username);
 }
