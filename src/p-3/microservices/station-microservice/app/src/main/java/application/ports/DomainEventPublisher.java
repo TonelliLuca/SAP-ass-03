@@ -1,6 +1,6 @@
 package application.ports;
 
-import domain.events.Event;
+import domain.event.Event;
 
 public interface DomainEventPublisher {
     void publish(Event event);

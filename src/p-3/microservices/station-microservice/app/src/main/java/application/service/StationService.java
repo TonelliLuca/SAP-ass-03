@@ -3,13 +3,12 @@ package application.service;
 import application.ports.DomainEventPublisher;
 import application.ports.Service;
 import application.ports.StationRepository;
-import domain.events.*;
+import domain.event.*;
 import domain.model.P2d;
 import domain.model.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class StationService implements Service {

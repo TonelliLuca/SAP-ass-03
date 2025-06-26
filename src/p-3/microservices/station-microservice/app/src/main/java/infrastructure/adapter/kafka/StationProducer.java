@@ -2,7 +2,7 @@ package infrastructure.adapter.kafka;
 
 import application.ports.DomainEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import domain.events.Event;
+import domain.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

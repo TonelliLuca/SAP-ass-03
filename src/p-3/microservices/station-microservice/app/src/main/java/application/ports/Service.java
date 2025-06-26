@@ -1,6 +1,6 @@
 package application.ports;
 
-import domain.events.Event;
+import domain.event.Event;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -1,10 +1,9 @@
 package infrastructure.adapter.kafka;
 
-import application.ports.DomainEventPublisher;
 import application.ports.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import domain.events.BikeDockedEvent;
-import domain.events.BikeReleasedEvent;
+import domain.event.BikeDockedEvent;
+import domain.event.BikeReleasedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,25 +29,21 @@ public class StationConsumer {
     private void processAbikeEvent(String key, String value) {
         try {
             if ("ABikeArrivedToStation".equals(key)) {
-                // Parse the JSON and extract the "map" node
+
                 var root = mapper.readTree(value);
-                var mapNode = root.get("map");
-                if (mapNode != null) {
-                    // Map the "map" node to your event class
-                    BikeDockedEvent event = mapper.treeToValue(mapNode, BikeDockedEvent.class);
-                    stationService.handleABikeArrivedToStation(event);
-                    log.info("Processed ABikeArrivedToStation event: {}", value);
-                } else {
-                    log.warn("No 'map' field found in event: {}", value);
-                }
+                String bikeId = root.get("bikeId").asText();
+                String stationId = root.get("stationId").asText();
+                BikeDockedEvent event = new BikeDockedEvent(bikeId, stationId);
+                stationService.handleABikeArrivedToStation(event);
+                log.info("Processed ABikeArrivedToStation event: {}", value);
+
             }else if("ABikeRequested".equals(key)) {
                 var root = mapper.readTree(value);
-                var mapNode = root.get("map");
-                if (mapNode != null) {
-                    BikeReleasedEvent event = mapper.treeToValue(mapNode, BikeReleasedEvent.class);
-                    stationService.handleBikeReleased(event);
-                    log.info("Processed ABikeReleasedEvent event: {}", value);
-                }
+                String bikeId = root.get("abikeId").asText();
+                String stationId = root.get("stationId").asText();
+                BikeReleasedEvent event = new  BikeReleasedEvent(bikeId, stationId);
+                stationService.handleBikeReleased(event);
+
             }
         } catch (Exception e) {
             log.error("Error processing abike event: {}", e.getMessage(), e);

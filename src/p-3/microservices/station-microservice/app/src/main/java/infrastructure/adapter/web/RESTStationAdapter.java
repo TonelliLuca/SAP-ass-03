@@ -1,7 +1,7 @@
 package infrastructure.adapter.web;
 
 import application.ports.Service;
-import domain.events.CreateStationEvent;
+import domain.event.CreateStationEvent;
 import infrastructure.utils.MetricsManager;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
