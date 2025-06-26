@@ -76,6 +76,8 @@ public class AdminVerticle extends AbstractVerticle {
 
     private void handleUserUpdate(String message) {
         JsonObject update = new JsonObject(message);
+        if(update.containsKey("user"))
+            update = update.getJsonObject("user");
         vertx.eventBus().publish("admin.user.update", update);
     }
 

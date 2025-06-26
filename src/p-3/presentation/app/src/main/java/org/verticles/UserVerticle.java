@@ -93,7 +93,8 @@ public class UserVerticle extends AbstractVerticle {
 
     private void handleUserUpdate(String message) {
         JsonObject update = new JsonObject(message);
-        String username = update.getString("username");
+        JsonObject userJson = update.getJsonObject("user");
+        String username = userJson.getString("username");
         vertx.eventBus().publish("user.update." + username, update);
     }
 
