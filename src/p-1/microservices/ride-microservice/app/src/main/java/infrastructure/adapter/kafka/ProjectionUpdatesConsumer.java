@@ -1,41 +1,40 @@
 package infrastructure.adapter.kafka;
 
 import application.ports.ProjectionRepositoryPort;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.event.EBikeUpdateEvent;
 import domain.event.UserUpdateEvent;
 import domain.model.EBikeState;
 import domain.model.P2d;
+import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ProjectionUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(ProjectionUpdatesConsumer.class);
 
-    private final GenericKafkaConsumer<String> userConsumer;
-    private final GenericKafkaConsumer<String> ebikeConsumer;
+    private final AvroKafkaConsumer userConsumer;
+    private final AvroKafkaConsumer ebikeConsumer;
     private final ProjectionRepositoryPort projectionRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProjectionUpdatesConsumer(
             String bootstrapServers,
+            String schemaRegistryUrl,
             ProjectionRepositoryPort projectionRepository) {
 
         this.projectionRepository = projectionRepository;
 
-        this.userConsumer = new GenericKafkaConsumer<>(
+        this.userConsumer = new AvroKafkaConsumer(
                 bootstrapServers,
+                schemaRegistryUrl,
                 "ride-service-user-group",
-                "user-events",
-                String.class
+                "user-events"
         );
 
-        this.ebikeConsumer = new GenericKafkaConsumer<>(
+        this.ebikeConsumer = new AvroKafkaConsumer(
                 bootstrapServers,
+                schemaRegistryUrl,
                 "ride-service-ebike-group",
-                "ebike-events",
-                String.class
+                "ebike-events"
         );
 
         logger.info("ProjectionUpdatesConsumer created");
@@ -47,21 +46,22 @@ public class ProjectionUpdatesConsumer {
         logger.info("ProjectionUpdatesConsumer started");
     }
 
-    private void processUserEvent(String key, String message) {
-        if (!"UserUpdateEvent".equals(key)) {
-            logger.debug("Ignored user event with key: {}", key);
+    private void processUserEvent(String key, GenericRecord event) {
+        String schemaName = event.getSchema().getName();
+        if (!"UserUpdateEventAvro".equals(schemaName)) {
+            logger.debug("Ignored user event with schema: {}", schemaName);
             return;
         }
         try {
-            logger.info("Received user event: {}", message);
+            logger.info("Received user event: {}", event);
 
-            JsonNode node = objectMapper.readTree(message);
-            String id = node.get("id").asText();
-            String timestamp = node.get("timestamp").asText();
+            // Flat extraction
+            String id = event.get("id").toString();
+            String timestamp = event.get("timestamp").toString();
 
-            JsonNode userNode = node.get("user");
-            String username = userNode.get("username").asText();
-            int credit = userNode.get("credit").asInt();
+            GenericRecord userNode = (GenericRecord) event.get("user");
+            String username = userNode.get("username").toString();
+            int credit = (Integer) userNode.get("credit");
 
             UserUpdateEvent flatEvent = new UserUpdateEvent(id, username, credit, timestamp);
 
@@ -78,25 +78,24 @@ public class ProjectionUpdatesConsumer {
         }
     }
 
-    private void processEbikeEvent(String key, String message) {
-        if (!"EBikeUpdateEvent".equals(key)) {
-            logger.debug("Ignored ebike event with key: {}", key);
+    private void processEbikeEvent(String key, GenericRecord event) {
+        String schemaName = event.getSchema().getName();
+        if (!"EBikeUpdateEventAvro".equals(schemaName)) {
+            logger.debug("Ignored ebike event with schema: {}", schemaName);
             return;
         }
         try {
-            logger.info("Received ebike event: {}", message);
+            logger.info("Received ebike event: {}", event);
 
-            JsonNode node = objectMapper.readTree(message);
-            String id = node.get("id").asText();
-            String timestamp = node.get("timestamp").asText();
+            String id = event.get("id").toString();
+            String timestamp = event.get("timestamp").toString();
 
-            JsonNode ebikeNode = node.get("ebike");
-            String bikeId = ebikeNode.get("id").asText();
-            String stateStr = ebikeNode.get("state").asText();
-            int batteryLevel = ebikeNode.get("batteryLevel").asInt();
-            JsonNode locationNode = ebikeNode.get("location");
-            double x = locationNode.get("x").asDouble();
-            double y = locationNode.get("y").asDouble();
+            GenericRecord ebikeNode = (GenericRecord) event.get("ebike");
+            String bikeId = ebikeNode.get("id").toString();
+            String stateStr = ebikeNode.get("state").toString();
+            int batteryLevel = (Integer) ebikeNode.get("batteryLevel");
+            double x = (Double) ebikeNode.get("locationX");
+            double y = (Double) ebikeNode.get("locationY");
 
             EBikeUpdateEvent flatEvent = new EBikeUpdateEvent(
                     id,

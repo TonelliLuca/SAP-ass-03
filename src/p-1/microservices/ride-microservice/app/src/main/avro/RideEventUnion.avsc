@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "RideEventUnion",
+  "namespace": "events.avro",
+  "fields": [
+    {
+      "name": "payload",
+      "type": [
+        "events.avro.RideStartEventAvro",
+        "events.avro.RideStopEventAvro",
+        "events.avro.RideUpdateEventAvro"
+      ]
+    }
+  ]
+}

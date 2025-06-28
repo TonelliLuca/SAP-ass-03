@@ -22,11 +22,12 @@ public class Main {
             ProjectionRepositoryPort localProjections = new LocalProjectionRepository();
 
             // Create Kafka event producer
-            RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, vertx);
+            RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, "http://schema-registry:8081", vertx);
 
             // Create and initialize projection updates consumer
             ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
                 bootstrapServers,
+                    "http://schema-registry:8081",
                 localProjections
             );
             updatesConsumer.init();
@@ -43,6 +44,7 @@ public class Main {
             RideServiceVerticle rideServiceVerticle = new RideServiceVerticle(service, vertx);
             rideServiceVerticle.init();
             producer.init();
+            updatesConsumer.init();
             System.out.println("Ride microservice started successfully");
         });
     }
