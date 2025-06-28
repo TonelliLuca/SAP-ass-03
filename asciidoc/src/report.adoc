@@ -13,4 +13,4 @@
 :diagramsdir: svg
 
 include::chapters/header.adoc[]
-
+include::chapters/objective.adoc[]
