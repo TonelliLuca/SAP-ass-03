@@ -1,6 +1,6 @@
 University of Bologna
 
-Master Degree in Computer Science and Engineering - Software Architecture and Platforms - Assignment 03
+Master Degree in Computer Science and Engineering - Software Architecture and Platforms
 
 
 '''
