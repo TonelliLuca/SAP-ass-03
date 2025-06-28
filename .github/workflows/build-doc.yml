@@ -84,4 +84,4 @@ jobs:
           git commit -m "docs: Update documentation for gh-pages"
           git push origin gh-pages
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
