@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "UserUpdateEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "user", "type": {
+      "type": "record",
+      "name": "User",
+      "fields": [
+        { "name": "username", "type": "string" },
+        { "name": "credit", "type": "int" }
+      ]
+    }},
+    { "name": "timestamp", "type": "string" }
+  ]
+}
