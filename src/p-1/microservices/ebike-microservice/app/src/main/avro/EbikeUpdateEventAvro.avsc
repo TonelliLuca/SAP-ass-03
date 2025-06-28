@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "EBikeUpdateEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "ebike", "type": {
+      "type": "record",
+      "name": "EBike",
+      "fields": [
+        {"name": "id", "type": "string"},
+        {"name": "locationX", "type": "double"},
+        {"name": "locationY", "type": "double"},
+        {"name": "state", "type": "string"},
+        {"name": "batteryLevel", "type": "int"}
+      ]
+    }},
+    {"name": "timestamp", "type": "string"}
+  ]
+}
