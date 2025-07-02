@@ -591,6 +591,21 @@ services:
       options:
         max-size: 10m
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.9.1
+    container_name: schema-registry
+    ports:
+      - "${SCHEMA_REGISTRY_HOST_PORT}:8091"
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka:29092
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8091
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - eureka-network-1
+
 volumes:
   mongodb_data:
   ditto_log_files:
