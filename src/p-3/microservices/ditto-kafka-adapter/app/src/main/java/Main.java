@@ -23,8 +23,8 @@ public class Main {
         DittoTranslatorServicePort service = new DittoTranslatorService(producer, responseProducer);
 
         // Start event consumers
-        EventConsumer consumer = new EventConsumer(config.getKafkaBootstrapServers(), service);
-
+        EventConsumer consumer = new EventConsumer(config.getKafkaBootstrapServers(), "http://schema-registry:8091" , service);
+        consumer.init();
         startHealthServer();
         // Keep main thread alive
         System.out.println("Ditto Kafka Adapter is running...");
