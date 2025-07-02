@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserServiceAPI {
 
     @Override
     public CompletableFuture<User> signIn(Event event) {
-        String username = ((UserSingInEvent) event).username();
+        String username = ((UserSignInEvent) event).username();
         return eventStore.getEventsByUsername(username)
             .thenApply(events -> {
                 if (events.isEmpty()) {
@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserServiceAPI {
                                     return ((RechargeCreditEvent) event).username();
                                 } else {
                                     logger.error("Unknown event type: {}", event);
-                                    throw new IllegalArgumentException("Unknown event type: " + event);
+                                    return null;
                                 }
                             }));
 

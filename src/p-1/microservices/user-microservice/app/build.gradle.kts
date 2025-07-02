@@ -56,7 +56,6 @@ dependencies {
 avro {
     stringType.set("String") // Buona pratica per Java
     fieldVisibility.set("PUBLIC") // Default, meglio NON cambiare
-    // src/main/avro è il default path degli .avsc
 }
 
 application {
