@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "StationRegisteredEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "station", "type": {
+      "type": "record",
+      "name": "Station",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "location", "type": {
+          "type": "record",
+          "name": "P2d",
+          "fields": [
+            { "name": "x", "type": "double" },
+            { "name": "y", "type": "double" }
+          ]
+        }},
+        { "name": "capacity", "type": "int" },
+        { "name": "dockedBikes", "type": { "type": "array", "items": "string" } }
+      ]
+    }},
+    { "name": "timestamp", "type": "string" }
+  ]
+}

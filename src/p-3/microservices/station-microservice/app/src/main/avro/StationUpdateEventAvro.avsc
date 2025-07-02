@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "StationUpdateEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "station", "type": "events.avro.Station" },
+    { "name": "timestamp", "type": "string" }
+  ]
+}

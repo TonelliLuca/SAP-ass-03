@@ -31,13 +31,13 @@ public class Main {
             StationRepository repo = new MongoRepository(mongoClient, config.getMongoConfig().getString("db_name"), config.getMongoConfig().getString("collection_name"));
 
             // 3. Create Kafka producer using config
-            DomainEventPublisher publisher = new StationProducer(config.getKakaConf());
+            DomainEventPublisher publisher = new StationProducer(config.getKakaConf(), "http://schema-registry:8091");
 
             // 4. Create service
             Service service = new StationService(repo, publisher);
             RESTStationAdapter restAdapter = new RESTStationAdapter(service, vertx);
             StationVerticle verticle = new StationVerticle(restAdapter, vertx);
-            StationConsumer consumer = new StationConsumer(config.getKakaConf(), service);
+            StationConsumer consumer = new StationConsumer(config.getKakaConf(), "http://schema-registry:8091", service);
             // 5. Initialize service
             verticle.init();
             service.init();

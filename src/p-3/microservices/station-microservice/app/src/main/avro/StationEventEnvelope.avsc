@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "StationEventsEnvelope",
+  "namespace": "events.avro",
+  "fields": [
+    {
+      "name": "event",
+      "type": [
+        "events.avro.StationRegisteredEventAvro",
+        "events.avro.StationUpdateEventAvro"
+      ]
+    }
+  ]
+}

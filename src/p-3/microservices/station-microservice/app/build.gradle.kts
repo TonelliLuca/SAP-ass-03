@@ -1,17 +1,21 @@
 plugins {
-    // Apply the application plugin to add support for building a CLI application in Java.
     java
     application
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"   // AVRO PLUGIN
 }
 
-java{
+java {
     // Use Java 21.
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }
 
 repositories {
     mavenCentral()
+    maven("https://packages.confluent.io/maven/")   // Confluent per Avro Serializer
 }
 
 dependencies {
@@ -41,8 +45,10 @@ dependencies {
     implementation("io.micrometer:micrometer-core:1.12.3")
     implementation("io.micrometer:micrometer-registry-prometheus:1.12.3")
     implementation("io.vertx:vertx-micrometer-metrics:4.4.0")
-    // Kafka Client
+    // Kafka + Avro + Schema Registry
     implementation("org.apache.kafka:kafka-clients:3.9.0")
+    implementation("org.apache.avro:avro:1.11.3")
+    implementation("io.confluent:kafka-avro-serializer:7.5.0")
 
     // Jackson per JSON fallback
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
@@ -53,6 +59,12 @@ dependencies {
 
     // MongoDB
     implementation("org.mongodb:mongodb-driver-sync:4.11.1") // Add this line for standard MongoDB driver
+}
+
+avro {
+    stringType.set("String") // Buona pratica per Java
+    fieldVisibility.set("PUBLIC") // Default, meglio NON cambiare
+    // src/main/avro è il default path degli .avsc
 }
 
 tasks.test {
