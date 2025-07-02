@@ -1,0 +1,28 @@
+== Package P-1: Microservizi Event-Driven
+
+Il package P-1 rappresenta il nucleo centrale del progetto, fornendo un'implementazione completa dell'applicazione E-Bike tramite un'architettura basata su microservizi event-driven. La soluzione riprende l'impostazione dell'https://github.com/TonelliLuca/SAP-ass-02[Assignment 02], evolvendola e rafforzandola attraverso l’adozione di nuove tecnologie e scelte architetturali orientate a scalabilità, flessibilità e robustezza.
+
+=== Visione Architetturale
+
+L'architettura si basa sulla comunicazione asincrona tra microservizi tramite eventi, con Apache Kafka utilizzato come broker centrale. Ogni microservizio è stato progettato secondo il principio del *single writer*: ciascun servizio produce gli eventi relativi al proprio dominio, diventando così la fonte di verità per quell’ambito e semplificando la gestione della consistenza e della tracciabilità degli stati nel sistema.
+
+Per la definizione e l’evoluzione degli eventi, sono stati adottati Apache Avro e Confluent Schema Registry, così che ogni evento scambiato su Kafka rispetti uno schema esplicito e condiviso, mantenendo compatibilità tra servizi anche in caso di evoluzione futura dei dati. L’approccio garantisce che producer e consumer siano sempre allineati sul significato e la struttura delle informazioni trasmesse.
+
+Dal punto di vista della struttura interna, ogni microservizio segue un ciclo preciso: riceve eventi da Kafka, li elabora applicando la propria logica di business, aggiorna lo stato locale e, quando necessario, pubblica nuovi eventi verso gli altri servizi. Questo pattern permette a ciascun componente di essere autonomo ma coordinato con il resto del sistema, mantenendo basso l’accoppiamento tra le parti.
+
+Vert.x è stato mantenuto come framework principale sia per la gestione delle API REST (sincrone), sia per health check, caricamento configurazioni tramite variabili d’ambiente, interazione con MongoDB e gestione dell’event bus interno di alcuni servizi. In questo modo si differenzia chiaramente il canale delle chiamate API (esterne/sincrone) dalla comunicazione asincrona (interna/eventi).
+
+Per il monitoraggio del sistema è stata mantenuta l’integrazione con Prometheus, che consente di raccogliere metriche in tempo reale da tutti i microservizi e agevola l’analisi delle performance o l’individuazione di anomalie operative. Completano l’architettura l’API Gateway (punto di accesso centralizzato) e il Service Discovery (Eureka), che garantisce la registrazione e scoperta dinamica dei servizi all’interno del sistema distribuito.
+
+=== Dettaglio dei microservizi
+
+==== EBike Microservice
+
+
+
+
+
+
+
+
+
