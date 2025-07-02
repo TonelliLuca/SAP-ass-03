@@ -19,7 +19,7 @@ public class Main {
             //BikeUpdateAdapter bikeUpdateAdapter = new BikeUpdateAdapter(service, vertx);
             //RideUpdateAdapter rideUpdateAdapter = new RideUpdateAdapter(service, vertx);
             String bootstrapServers = config.getKakaConf();
-            MapEventsConsumer consumer = new MapEventsConsumer(service, bootstrapServers);
+            MapEventsConsumer consumer = new MapEventsConsumer(service, bootstrapServers,  "http://schema-registry:8091");
 
             mapServiceVerticle.init();
             consumer.init();
