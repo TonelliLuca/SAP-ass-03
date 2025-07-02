@@ -462,13 +462,44 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </tr>
 </tbody>
 </table>
-<!-- toc disabled -->
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_obiettivi_e_descrizione">1. Obiettivi e Descrizione</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_obiettivi_e_descrizione">1. Obiettivi e Descrizione</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il presente assignment ha l’obiettivo di estendere e trasformare il sistema di bike sharing sviluppato negli assignment precedenti, applicando i principi dell’architettura a microservizi basata su event-driven design. L’elaborato si concentra sull’evoluzione di un progetto già modellato secondo Domain Driven Design (DDD), adottando un’architettura distribuita in grado di favorire scalabilità, resilienza e indipendenza dei singoli componenti.</p>
+</div>
+<div class="paragraph">
+<p>A partire dall’analisi di dominio e dal modello già sviluppato nell’Assignment 2 – di cui si rimanda al report ufficiale disponibile all’indirizzo <a href="https://github.com/TonelliLuca/SAP-ass-02/blob/main/doc/asciidoc/doc/assets/docs/report.pdf" class="bare">https://github.com/TonelliLuca/SAP-ass-02/blob/main/doc/asciidoc/doc/assets/docs/report.pdf</a> – il lavoro si focalizza sulle attività di refactoring architetturale e sulle scelte progettuali che abilitano la comunicazione asincrona tra servizi, la suddivisione delle responsabilità, e la gestione delle interazioni tramite eventi di dominio.</p>
+</div>
+<div class="paragraph">
+<p>Per rispondere in modo strutturato ai requisiti dell’Assignment 3, il progetto è stato suddiviso in tre package principali:
+- <code>p-1</code>: contiene la trasformazione del sistema in una soluzione a microservizi event-driven, mantenendo la coerenza con il dominio originale.
+- <code>p-2</code>: Definisce un deployment del sistema sviluppato nel punto precedente utilizzando Kubernetes.
+- <code>p-3</code>: Estende le funzionalità sviluppate in p-1 introducendo la gestione delle a-bike, delle stazioni e una prima integrazione di digital twin, in linea con le direttive dell’assignment.</p>
+</div>
+<div class="paragraph">
+<p>Questa organizzazione riflette la volontà di separare logicamente le diverse fasi e aree di sviluppo, facilitando la leggibilità, la manutenzione e la tracciabilità degli avanzamenti progettuali.</p>
+</div>
+<div class="paragraph">
+<p>Nel seguito del report verranno dettagliate le scelte architetturali, le principali differenze rispetto alla soluzione originaria, e le motivazioni a supporto delle strategie adottate.</p>
+</div>
+<div class="paragraph">
+<p>include::chapters/p-1.adoc</p>
+</div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-06-28 18:15:03 UTC
+Last updated 2025-07-02 15:52:52 UTC
 </div>
 </div>
 </body>
