@@ -22,7 +22,7 @@ public class Main {
             ProjectionRepositoryPort localProjections = new LocalProjectionRepository();
 
             // Create Kafka event producer
-            RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, vertx);
+            RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, "http://schema-registry:8091", vertx);
 
 
 
@@ -37,6 +37,7 @@ public class Main {
             // Create and initialize projection updates consumer
             ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
                     bootstrapServers,
+                    "http://schema-registry:8091",
                     localProjections,
                     service
                     );

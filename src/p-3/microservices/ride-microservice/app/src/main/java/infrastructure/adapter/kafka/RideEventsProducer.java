@@ -2,24 +2,30 @@ package infrastructure.adapter.kafka;
 
 import application.ports.EventPublisher;
 import application.ports.RideEventsProducerPort;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.event.*;
+import events.avro.*;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.vertx.core.Vertx;
+import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
+
 public class RideEventsProducer implements RideEventsProducerPort {
     private static final Logger logger = LoggerFactory.getLogger(RideEventsProducer.class);
-    private final GenericKafkaProducer<String> rideEBikeProducer;
-    private final GenericKafkaProducer<String> rideABikeProducer;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final KafkaProducer<String, Object> producer;
     private final Vertx vertx;
 
-    public RideEventsProducer(String bootstrapServers, Vertx vertx) {
-        this.rideEBikeProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-ebike-events");
-        this.rideABikeProducer = new GenericKafkaProducer<>(bootstrapServers, "ride-abike-events");
-        logger.info("RideEventsProducer initialized with bootstrap servers: {}", bootstrapServers);
+    public RideEventsProducer(String bootstrapServers, String schemaRegistryUrl, Vertx vertx) {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+        props.put("schema.registry.url", schemaRegistryUrl);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        this.producer = new KafkaProducer<>(props);
         this.vertx = vertx;
     }
 
@@ -41,35 +47,135 @@ public class RideEventsProducer implements RideEventsProducerPort {
             logger.warn("Attempted to publish null event");
             return;
         }
+
         try {
-            String json = objectMapper.writeValueAsString(event);
-            String key = event.getClass().getSimpleName();
-            if(event instanceof RideUpdateABikeEvent){
-                rideABikeProducer.send(key, json);
-            }else if(event instanceof RideUpdateEBikeEvent){
-                rideEBikeProducer.send(key, json);
-            }else if(event instanceof RideStartEvent start) {
-                if(start.type().equals("abike")){
-                    rideABikeProducer.send(key, json);
-                }else {
-                    rideEBikeProducer.send(key, json);
+            RideEventsEnvelope envelope = null;
+            String key;
+
+            // --- Mapping by instance and type ---
+            if (event instanceof RideUpdateABikeEvent e) {
+                envelope = RideEventsEnvelope.newBuilder()
+                        .setEvent(toAvro(e))
+                        .build();
+                key = e.bikeId()+":"+e.userId();
+            } else if (event instanceof RideUpdateEBikeEvent e) {
+                envelope = RideEventsEnvelope.newBuilder()
+                        .setEvent(toAvro(e))
+                        .build();
+                key = e.bikeId()+":"+e.userId();
+            } else if (event instanceof RideStartEvent e) {
+                // Se vuoi togliere type dal dominio, crea RideStartABikeEvent e RideStartEBikeEvent domain separati
+                if (e.type().equalsIgnoreCase("abike")) {
+                    envelope = RideEventsEnvelope.newBuilder()
+                            .setEvent(toAvroStartABike(e))
+                            .build();
+                } else {
+                    envelope = RideEventsEnvelope.newBuilder()
+                            .setEvent(toAvroStartEBike(e))
+                            .build();
                 }
-            }else if(event instanceof RideStopEvent stop) {
-                if(stop.type().equals("abike")){
-                    rideABikeProducer.send(key, json);
-                }else {
-                    rideEBikeProducer.send(key, json);
+                key = e.bikeId()+":"+e.username();
+            } else if (event instanceof RideStopEvent e) {
+                if (e.type().equalsIgnoreCase("abike")) {
+                    envelope = RideEventsEnvelope.newBuilder()
+                            .setEvent(toAvroStopABike(e))
+                            .build();
+                } else {
+                    envelope = RideEventsEnvelope.newBuilder()
+                            .setEvent(toAvroStopEBike(e))
+                            .build();
                 }
+                key = e.bikeId()+":"+e.username();
+            } else {
+                key = null;
             }
-            logger.info("Published ride event [{}]: {}", key, json);
+
+            if (envelope != null) {
+                ProducerRecord<String, Object> record = new ProducerRecord<>("ride-events", key, envelope);
+                producer.send(record, (metadata, exception) -> {
+                    if (exception != null) {
+                        logger.error("Error sending ride event to Kafka", exception);
+                    } else {
+                        logger.info("Published ride event [{}] to ride-events offset={}", key, metadata.offset());
+                    }
+                });
+            }
+
         } catch (Exception e) {
             logger.error("Failed to publish ride event", e);
         }
     }
 
+    // ------ MAPPING METHODS --------
+
+    private RideStartABikeEventAvro toAvroStartABike(RideStartEvent e) {
+        return RideStartABikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setUsername(e.username())
+                .setBikeId(e.bikeId())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
+    private RideStartEBikeEventAvro toAvroStartEBike(RideStartEvent e) {
+        return RideStartEBikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setUsername(e.username())
+                .setBikeId(e.bikeId())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
+    private RideStopABikeEventAvro toAvroStopABike(RideStopEvent e) {
+        return RideStopABikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setUsername(e.username())
+                .setBikeId(e.bikeId())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
+    private RideStopEBikeEventAvro toAvroStopEBike(RideStopEvent e) {
+        return RideStopEBikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setUsername(e.username())
+                .setBikeId(e.bikeId())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
+    private RideUpdateABikeEventAvro toAvro(RideUpdateABikeEvent e) {
+        return RideUpdateABikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setRideId(e.rideId())
+                .setUserId(e.userId())
+                .setUserCredit(e.userCredit())
+                .setBikeId(e.bikeId())
+                .setBikeX(e.bikeX())
+                .setBikeY(e.bikeY())
+                .setBikeState(e.bikeState())
+                .setBikeBattery(e.bikeBattery())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
+    private RideUpdateEBikeEventAvro toAvro(RideUpdateEBikeEvent e) {
+        return RideUpdateEBikeEventAvro.newBuilder()
+                .setId(e.id())
+                .setRideId(e.rideId())
+                .setUserId(e.userId())
+                .setUserCredit(e.userCredit())
+                .setBikeId(e.bikeId())
+                .setBikeX(e.bikeX())
+                .setBikeY(e.bikeY())
+                .setBikeState(e.bikeState())
+                .setBikeBattery(e.bikeBattery())
+                .setTimestamp(e.timestamp())
+                .build();
+    }
+
     public void close() {
-        rideEBikeProducer.close();
-        rideABikeProducer.close();
+        producer.close();
         logger.info("RideEventsProducer closed");
     }
 }

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "RideStopEBikeEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "username", "type": "string" },
+    { "name": "bikeId", "type": "string" },
+    { "name": "timestamp", "type": "string" }
+  ]
+}

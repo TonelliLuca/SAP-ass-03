@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "RideEventsEnvelope",
+  "namespace": "events.avro",
+  "fields": [
+    {
+      "name": "event",
+      "type": [
+        "events.avro.RideStartABikeEventAvro",
+        "events.avro.RideStartEBikeEventAvro",
+        "events.avro.RideStopABikeEventAvro",
+        "events.avro.RideStopEBikeEventAvro",
+        "events.avro.RideUpdateABikeEventAvro",
+        "events.avro.RideUpdateEBikeEventAvro"
+      ]
+    }
+  ]
+}

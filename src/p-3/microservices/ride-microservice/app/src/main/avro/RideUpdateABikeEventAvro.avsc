@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "RideUpdateABikeEventAvro",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "rideId", "type": "string" },
+    { "name": "userId", "type": "string" },
+    { "name": "userCredit", "type": "int" },
+    { "name": "bikeId", "type": "string" },
+    { "name": "bikeX", "type": "double" },
+    { "name": "bikeY", "type": "double" },
+    { "name": "bikeState", "type": "string" },
+    { "name": "bikeBattery", "type": "int" },
+    { "name": "timestamp", "type": "string" }
+  ]
+}
