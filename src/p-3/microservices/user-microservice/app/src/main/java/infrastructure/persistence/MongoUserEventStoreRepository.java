@@ -3,6 +3,7 @@ package infrastructure.persistence;
 import application.ports.UserEventStoreRepository;
 import domain.event.Event;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import domain.event.UserSignInEvent;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import org.slf4j.Logger;
@@ -110,7 +111,7 @@ public class MongoUserEventStoreRepository implements UserEventStoreRepository {
                 case "UserUpdateEvent" -> mapper.readValue(json, domain.event.UserUpdateEvent.class);
                 case "RechargeCreditEvent" -> mapper.readValue(json, domain.event.RechargeCreditEvent.class);
                 case "RequestUserUpdateEvent" -> mapper.readValue(json, domain.event.RequestUserUpdateEvent.class);
-                case "UserSingInEvent" -> mapper.readValue(json, domain.event.UserSingInEvent.class);
+                case "UserSingInEvent" -> mapper.readValue(json, UserSignInEvent.class);
                 case "UserRequestedAbike" -> mapper.readValue(json, domain.event.UserRequestedAbike.class);
                 default -> {
                     logger.warn("Unknown eventType '{}' in document: {}", eventType, json);

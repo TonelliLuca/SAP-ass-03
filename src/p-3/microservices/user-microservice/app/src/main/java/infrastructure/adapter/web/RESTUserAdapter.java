@@ -3,8 +3,7 @@ package infrastructure.adapter.web;
 import application.ports.UserServiceAPI;
 import domain.event.RechargeCreditEvent;
 import domain.event.UserCreatedEvent;
-import domain.event.UserSingInEvent;
-import domain.model.User;
+import domain.event.UserSignInEvent;
 import infrastructure.utils.MetricsManager;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -54,7 +53,7 @@ public class RESTUserAdapter {
                 return;
             }
 
-            userService.signIn(new UserSingInEvent(username))
+            userService.signIn(new UserSignInEvent(username))
                     .thenAccept(result -> {
                         JsonObject userJson = JsonObject.mapFrom(result);
                         sendResponse(ctx, 200, userJson.encode());

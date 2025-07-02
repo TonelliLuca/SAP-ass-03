@@ -28,11 +28,11 @@ public class Main {
             MongoClient mongoClient = MongoClient.create(vertx, config.getMongoConfig());
             UserEventStoreRepository repository = new MongoUserEventStoreRepository(mongoClient);
             UserEventPublisher UserEventPublisher = new UserEventPublisherImpl(vertx);
-            UserProducerPort producer = new UserUpdatesProducer(bootstrapServers);
+            UserProducerPort producer = new UserUpdatesProducer(bootstrapServers, "http://schema-registry:8091");
             UserServiceAPI service = new UserServiceImpl(repository, UserEventPublisher, producer);
             RESTUserAdapter controller = new RESTUserAdapter(service, vertx);
             UserVerticle userVerticle = new UserVerticle(controller, vertx);
-            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers);
+            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers, "http://schema-registry:8091");
             userVerticle.init();
             consumer.init();
             service.init();
