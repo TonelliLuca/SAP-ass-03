@@ -26,6 +26,7 @@ kubectl apply -f ./k8s/configMap.yaml
 echo "Deploying infrastructure..."
 kubectl apply -f ./k8s/kafka/zookeeper.yaml
 kubectl apply -f ./k8s/kafka/kafka-broker-1.yaml
+kubectl apply -f ./k8s/kafka/schema-registry.yaml
 kubectl apply -f ./k8s/mongodb.yaml
 kubectl apply -f ./k8s/prometheus.yaml
 kubectl apply -f ./k8s/api-gateway.yaml
@@ -40,13 +41,8 @@ kubectl apply -f ./k8s/map-microservice.yaml
 echo "Deploying Kafka UI"
 kubectl apply -f ./k8s/kafka/kafka-ui.yaml
 
-echo "==== Deployment complete. Checking status... ===="
-kubectl get pods -n sap-assignment
-
 echo "==== Minikube IP address ===="
 minikube ip
 
-echo "Services are available at:"
-echo "API Gateway: http://$(minikube ip):30080"
-echo "Kafka UI: http://$(minikube ip):30090"
-echo "Prometheus: http://$(minikube ip):30100"
+echo "==== Deployment complete. Checking status... ===="
+watch kubectl get pods -n sap-assignment
