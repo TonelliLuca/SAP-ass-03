@@ -1,9 +1,6 @@
 package infrastructure.adapter.kafka;
 
 import application.port.ABikeService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.event.ABikeCallComplete;
 import domain.event.ABikeUpdate;
 import domain.event.RequestStationUpdate;
@@ -12,125 +9,123 @@ import domain.model.ABikeState;
 import domain.model.P2d;
 import domain.model.Station;
 import io.vertx.core.json.JsonObject;
+import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashSet;
+import java.util.UUID;
 
 public class ABikeProjectionUpdatesConsumer {
     private static final Logger logger = LoggerFactory.getLogger(ABikeProjectionUpdatesConsumer.class);
 
-    private final GenericKafkaConsumer<String> stationConsumer;
-    private final GenericKafkaConsumer<String> rideConsumer;
+    private final AvroKafkaConsumer stationConsumer;
+    private final AvroKafkaConsumer rideConsumer;
     private final ABikeService abikeService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ABikeProjectionUpdatesConsumer(JsonObject config, ABikeService abikeService) {
-        String bootstrapServers = config.getString("bootstrapServers", "kafka:29092");
+    public ABikeProjectionUpdatesConsumer(String bootstrapServers, String schemaRegistryUrl, ABikeService abikeService) {
         this.abikeService = abikeService;
-        this.stationConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "abike-service-station-group", "station-events", String.class);
-        this.rideConsumer = new GenericKafkaConsumer<>(
-            bootstrapServers, "abike-service-ride-group", "ride-abike-events", String.class);
+        this.stationConsumer = new AvroKafkaConsumer(
+                bootstrapServers, schemaRegistryUrl, "abike-service-station-group-" + UUID.randomUUID(), "station-events");
+        this.rideConsumer = new AvroKafkaConsumer(
+                bootstrapServers, schemaRegistryUrl, "abike-service-ride-group-" + UUID.randomUUID(), "ride-events");
     }
 
     public void init() {
         stationConsumer.start(this::processStationEvent);
         rideConsumer.start(this::processRideEvent);
-        logger.info("ABikeProjectionUpdatesConsumer started");
+        logger.info("ABikeProjectionUpdatesConsumer started (Avro mode)");
     }
 
-    private void processStationEvent(String key, String eventJson) {
+    private void processStationEvent(String key, GenericRecord envelopeRecord) {
         try {
-            logger.info("Received station event: {} with key: {}", eventJson, key);
-            if ("StationRegisteredEvent".equals(key)) {
-                Station station = deserializeStation(eventJson);
-                abikeService.saveStationProjection(new RequestStationUpdate(station));
-            } else if ("StationUpdateEvent".equals(key)) {
-                Station station = deserializeStation(eventJson);
-                abikeService.updateStationProjection(new  RequestStationUpdate(station));
+            GenericRecord eventRecord = (GenericRecord) envelopeRecord.get("event");
+            if (eventRecord == null) {
+                logger.warn("Station envelope senza campo event, skippato");
+                return;
+            }
+            String schemaName = eventRecord.getSchema().getName();
+
+            if ("StationRegisteredEventAvro".equals(schemaName) || "StationUpdateEventAvro".equals(schemaName)) {
+                GenericRecord stationNode = (GenericRecord) eventRecord.get("station");
+                String stationId = stationNode.get("id").toString();
+                GenericRecord locationNode = (GenericRecord) stationNode.get("location");
+                double x = (Double) locationNode.get("x");
+                double y = (Double) locationNode.get("y");
+                int capacity = (Integer) stationNode.get("capacity");
+
+                // Leggi dockedBikes
+                @SuppressWarnings("unchecked")
+                java.util.Collection<CharSequence> dockedBikesCol = (java.util.Collection<CharSequence>) stationNode.get("dockedBikes");
+                HashSet<String> dockedBikes = new HashSet<>();
+                if (dockedBikesCol != null) {
+                    dockedBikesCol.forEach(c -> dockedBikes.add(c.toString()));
+                }
+
+                Station station = new Station(stationId, new P2d(x, y), dockedBikes, capacity);
+                if ("StationRegisteredEventAvro".equals(schemaName)) {
+                    abikeService.saveStationProjection(new RequestStationUpdate(station));
+                } else {
+                    abikeService.updateStationProjection(new RequestStationUpdate(station));
+                }
+                logger.info("Processed {} for stationId={}", schemaName, stationId);
+            } else {
+                logger.debug("Ignored station event schema: {}", schemaName);
             }
         } catch (Exception e) {
             logger.error("Error processing station event: {}", e.getMessage(), e);
         }
     }
 
-    private Station deserializeStation(String eventJson) {
+    private void processRideEvent(String key, GenericRecord envelopeRecord) {
         try {
-            JsonNode node = objectMapper.readTree(eventJson);
-            JsonNode stationNode = node.get("station");
-            String stationId = stationNode.get("id").asText();
-            JsonNode locationNode = stationNode.get("location");
-            int capacity = stationNode.get("capacity").asInt();
-            HashSet<String> dockedBikes = new HashSet<>();
-            if (stationNode.has("dockedBikes") && stationNode.get("dockedBikes").isArray()) {
-                for (JsonNode bikeIdNode : stationNode.get("dockedBikes")) {
-                    dockedBikes.add(bikeIdNode.asText());
-                }
+            GenericRecord eventRecord = (GenericRecord) envelopeRecord.get("event");
+            if (eventRecord == null) {
+                logger.warn("Ride envelope senza campo event, skippato");
+                return;
             }
-            double x = locationNode.get("x").asDouble();
-            double y = locationNode.get("y").asDouble();
-            P2d location = new P2d(x, y);
-            return new Station(stationId, location, dockedBikes, capacity);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
+            String schemaName = eventRecord.getSchema().getName();
 
-
-    private void processRideEvent(String key, String event) {
-        try {
-            logger.warn("Received ride event: {} with key: {}", event, key);
-            switch(key) {
-            case "RideUpdateABikeEvent":
-                JsonNode rideUpdateNode = objectMapper.readTree(event);
-                String bikeId = rideUpdateNode.get("bikeId").asText();
-                double bikeX = rideUpdateNode.get("bikeX").asDouble();
-                double bikeY = rideUpdateNode.get("bikeY").asDouble();
-                String bikeState = rideUpdateNode.get("bikeState").asText();
-                int bikeBattery = rideUpdateNode.get("bikeBattery").asInt();
-
-                ABikeUpdate update = new ABikeUpdate(new ABike(bikeId, new P2d(bikeX, bikeY), bikeBattery, ABikeState.valueOf(bikeState)));
-                abikeService.updateABike(update)
-                        .whenComplete((result, throwable) -> {
-                            if (throwable != null) {
-                                logger.error("Failed to update abike: {}", throwable.getMessage());
-                            } else if (result == null) {
-                                logger.warn("Abike with id {} not found", bikeId);
-                            } else {
-                                logger.info("Successfully updated abike: {}", bikeId);
-                            }
-                        });
-                break;
-
-            case "RideStopEvent":
-                JsonNode rideStopNode = objectMapper.readTree(event);
-                String userId = rideStopNode.get("username").asText();
-                String stopBikeId = rideStopNode.get("bikeId").asText();
-                String type = rideStopNode.get("type").asText();
-                if (type.equals("abike")) {
+            switch (schemaName) {
+                case "RideUpdateABikeEventAvro": {
+                    String bikeId = eventRecord.get("bikeId").toString();
+                    double bikeX = (Double) eventRecord.get("bikeX");
+                    double bikeY = (Double) eventRecord.get("bikeY");
+                    String bikeState = eventRecord.get("bikeState").toString();
+                    int bikeBattery = (Integer) eventRecord.get("bikeBattery");
+                    ABikeUpdate update = new ABikeUpdate(new ABike(
+                            bikeId,
+                            new P2d(bikeX, bikeY),
+                            bikeBattery,
+                            ABikeState.valueOf(bikeState)
+                    ));
+                    abikeService.updateABike(update)
+                            .whenComplete((result, throwable) -> {
+                                if (throwable != null) {
+                                    logger.error("Failed to update abike: {}", throwable.getMessage());
+                                } else if (result == null) {
+                                    logger.warn("Abike with id {} not found", bikeId);
+                                } else {
+                                    logger.info("Successfully updated abike: {}", bikeId);
+                                }
+                            });
+                    break;
+                }
+                case "RideStopABikeEventAvro": {
+                    String userId = eventRecord.get("username").toString();
+                    String stopBikeId = eventRecord.get("bikeId").toString();
                     abikeService.completeCall(new ABikeCallComplete(stopBikeId, userId));
+                    break;
                 }
-                break;
+                default:
+                    logger.debug("Ignored ride event schema: {}", schemaName);
             }
-
-
         } catch (Exception e) {
             logger.error("Error processing ride event", e);
         }
     }
 
-    private ABike mapJsonToABike(JsonObject abikeData) {
-        String id = abikeData.getString("id");
-        int batteryLevel = abikeData.getInteger("batteryLevel");
-        ABikeState state = ABikeState.valueOf(abikeData.getString("state"));
-        JsonObject pos = abikeData.getJsonObject("position");
-        P2d position = new P2d(pos.getDouble("x"), pos.getDouble("y"));
-        String stationId = abikeData.getString("stationId");
-        return new ABike(id, position, batteryLevel, state);
-    }
-
     public void stop() {
-        // Optionally implement stop logic for consumers
+        stationConsumer.stop();
+        rideConsumer.stop();
     }
 }

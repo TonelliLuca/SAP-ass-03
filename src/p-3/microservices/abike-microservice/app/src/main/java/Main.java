@@ -3,7 +3,7 @@ import application.port.EventPublisher;
 import application.port.SimulationRepository;
 import application.port.StationProjectionRepository;
 import application.service.ABikeServiceImpl;
-import infrastructure.adapter.kafka.ABikeEventPublisher;
+import infrastructure.adapter.kafka.ABikeEventsProducer;
 import infrastructure.adapter.kafka.ABikeProjectionUpdatesConsumer;
 import infrastructure.adapter.web.ABikeVerticle;
 import infrastructure.adapter.web.RESTABikeAdapter;
@@ -25,7 +25,7 @@ public class Main {
             StationProjectionRepository stationRepository = new StationProjectionInMemoryRepository();
             SimulationRepository simulationRepository = new SimulationInMemoryRepository();
             String bootstrapServers = config.getKakaConf();
-            EventPublisher eventPublisher = new ABikeEventPublisher(bootstrapServers);
+            EventPublisher eventPublisher = new ABikeEventsProducer(bootstrapServers, "http://schema-registry:8091");
 
             ABikeServiceImpl abikeService = new ABikeServiceImpl(
                 abikeRepository,
@@ -39,7 +39,7 @@ public class Main {
 
             // Start Kafka consumer for projection updates
             ABikeProjectionUpdatesConsumer consumer =
-                new ABikeProjectionUpdatesConsumer(conf, abikeService);
+                new ABikeProjectionUpdatesConsumer(bootstrapServers, "http://schema-registry:8091", abikeService);
 
             abikeVerticle.init();
             consumer.init();

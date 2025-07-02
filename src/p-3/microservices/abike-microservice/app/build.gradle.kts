@@ -1,6 +1,7 @@
 plugins {
     java
     application
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
 }
 
 java {
@@ -10,6 +11,8 @@ java {
 
 repositories {
     mavenCentral()
+    maven("https://packages.confluent.io/maven/")
+
 }
 
 dependencies {
@@ -32,17 +35,21 @@ dependencies {
     testImplementation("io.vertx:vertx-junit5")
     testImplementation("org.mockito:mockito-core:5.3.1")
 
-    // Add Micrometer and Prometheus dependencies
+    // Micrometer e Prometheus
     implementation("io.micrometer:micrometer-core:1.12.3")
     implementation("io.micrometer:micrometer-registry-prometheus:1.12.3")
     implementation("io.vertx:vertx-micrometer-metrics:4.4.0")
+
     // Kafka Client
     implementation("org.apache.kafka:kafka-clients:3.9.0")
 
+    // Avro core
+    implementation("org.apache.avro:avro:1.11.3")
+    // Confluent Avro Serializer/Deserializer per Kafka/Schema Registry
+    implementation("io.confluent:kafka-avro-serializer:7.5.3")
+
     // Jackson per JSON fallback
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
-
-
 }
 
 tasks.test {
@@ -58,8 +65,11 @@ tasks.jar {
     manifest {
         attributes["Main-Class"] = application.mainClass.get()
     }
-
-    // Include dependencies
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    from(configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) })
+    from(sourceSets.main.get().output)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+avro {
+    stringType.set("String")
 }

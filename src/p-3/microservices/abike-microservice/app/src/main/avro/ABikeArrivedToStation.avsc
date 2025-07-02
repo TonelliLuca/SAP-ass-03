@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "ABikeArrivedToStation",
+  "namespace": "events.avro",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "bikeId", "type": "string" },
+    { "name": "stationId", "type": "string" },
+    { "name": "timestamp", "type": "string" }
+  ]
+}

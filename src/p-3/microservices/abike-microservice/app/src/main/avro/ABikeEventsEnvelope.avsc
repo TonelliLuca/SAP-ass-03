@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "ABikeEventsEnvelope",
+  "namespace": "events.avro",
+  "fields": [
+    {
+      "name": "event",
+      "type": [
+        "events.avro.ABikeUpdate",
+        "events.avro.CallAbikeEvent",
+        "events.avro.ABikeCallComplete",
+        "events.avro.ABikeArrivedToStation",
+        "events.avro.ABikeArrivedToUser",
+        "events.avro.ABikeRequested"
+      ]
+    }
+  ]
+}
