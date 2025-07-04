@@ -16,4 +16,6 @@ include::chapters/header.adoc[]
 
 include::chapters/objective.adoc[]
 
-include::chapters/p-1.adoc
+include::chapters/p-1.adoc[]
+
+include::chapters/p-2.adoc[]
