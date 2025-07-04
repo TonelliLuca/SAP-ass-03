@@ -1,0 +1,173 @@
+== Package P-2: Deployment su Kubernetes
+
+=== Obiettivo
+
+Il secondo package dell'elaborato si concentra sul deployment dell'intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes, sfruttando le funzionalità offerte dal framework.
+
+=== Strategia di Deployment
+
+L'intero sistema è stato containerizzato e distribuito tramite oggetti Deployment, Service, ConfigMap e PersistentVolumeClaim definiti in manifesti YAML e orchestrati all'interno del namespace dedicato sap-assignment. La piattaforma di riferimento è Minikube, configurata con 4 CPU e 4 GB di RAM, che consente di testare l'infrastruttura in locale in un contesto realistico.
+
+=== Componenti Infrastrutturali Distribuiti
+
+==== Kafka & Zookeeper
+
+Il broker Kafka è gestito da un Deployment dedicato, accompagnato dal coordinatore Zookeeper. Entrambi i componenti utilizzano init container per attendere l'avvio dell'altro e assicurare la corretta sequenza di bootstrap.
+
+Kafka espone sia porte interne (29092) che esterne (9092) e ha abilitato la creazione automatica dei topic
+
+Zookeeper viene reso disponibile sulla porta 2181 tramite service ClusterIP
+
+==== Schema Registry
+
+Schema Registry di Confluent è deployato come microservizio separato e interfacciato con Kafka. La configurazione ne garantisce l'inizializzazione solo dopo la disponibilità del broker. Espone la porta 8081 ed è configurato per l'accesso in lettura/scrittura degli schemi Avro.
+
+==== Kafka UI
+
+Per l'osservabilità e il debugging è stato incluso Kafka UI, configurato per comunicare con Kafka e Schema Registry. Espone la porta 8082 tramite un Service di tipo LoadBalancer per facilitarne l'accesso.
+
+==== MongoDB
+
+Il database MongoDB viene eseguito in un Deployment associato ad una PVC da 1Gi. Il volume persistente è utilizzato per conservare i dati utente, noleggi ed e-bike anche in caso di riavvio dei pod.
+
+==== Prometheus
+
+Per il monitoraggio dei microservizi, Prometheus è stato incluso e configurato con initContainers per attendere la disponibilità del gateway. Il servizio Prometheus espone la porta 9090 e può essere raggiunto esternamente tramite NodePort.
+
+==== Service Discovery (Eureka)
+
+Il registro dei servizi Eureka viene eseguito in un Deployment separato e reso disponibile tramite service sulla porta 8761. I microservizi si registrano dinamicamente tramite configurazione centralizzata in ConfigMap.
+
+=== Microservizi Applicativi
+
+Tutti i microservizi del package P-1 (API Gateway, EBike, Ride, User, Map) sono deployati come Deployment Kubernetes con una replica ciascuno. Ogni servizio dispone di:
+
+initContainers per assicurare il corretto ordine di avvio rispetto a dipendenze (Eureka, Kafka, MongoDB, ecc.)
+
+readinessProbe e livenessProbe per supportare auto-riparazione e rolling update
+
+Service di tipo ClusterIP per comunicazioni interne e per il load balancing interno tra pod
+
+Tutti i microservizi sono accessibili unicamente tramite l'API Gateway, che espone un Service di tipo NodePort. In questo modo, il bilanciamento del carico tra le repliche dei microservizi avviene internamente grazie alla natura dei servizi ClusterIP, mentre l'accesso esterno avviene attraverso un singolo punto di ingresso centralizzato (API Gateway).
+
+=== Configurazione Centralizzata
+
+La configurazione di sistema è centralizzata in una ConfigMap denominata app-config, che contiene:
+
+Informazioni su host e porte dei servizi
+
+URL di connessione a Kafka, MongoDB, Eureka, Prometheus
+
+Parametri runtime per microservizi
+
+Tutti i container referenziano la ConfigMap per caricare dinamicamente le variabili d'ambiente.
+
+=== Esecuzione del Deployment
+
+L'intero processo di deploy viene automatizzato tramite uno script Bash (rebuild-minikube.sh), che:
+
+. Ferma ed elimina eventuali istanze Minikube precedenti
+. Avvia una nuova istanza Minikube configurata con risorse adeguate
+. Costruisce localmente tutte le immagini Docker necessarie a partire dai Dockerfile nei microservizi
+. Crea il namespace sap-assignment
+. Applica in sequenza tutti i manifesti Kubernetes
+. Espone gli indirizzi IP e monitora lo stato dei pod
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+echo "==== Destroying existing Minikube ===="
+minikube stop
+minikube delete
+
+echo "==== Creating fresh Minikube instance ===="
+minikube start --driver=docker --cpus=4 --memory=4096
+
+echo "==== Setting up Docker environment for Minikube ===="
+eval $(minikube docker-env)
+
+echo "==== Building Docker images ===="
+docker build -t eureka-server:latest -f ../p-1/microservices/service-discovery/Dockerfile ../p-1/microservices/service-discovery
+docker build -t api-gateway:latest -f ../p-1/microservices/api-gateway/Dockerfile ../p-1/microservices/api-gateway
+docker build -t user-microservice:latest -f ../p-1/microservices/user-microservice/Dockerfile ../p-1/microservices/user-microservice
+docker build -t ebike-microservice:latest -f ../p-1/microservices/ebike-microservice/Dockerfile ../p-1/microservices/ebike-microservice
+docker build -t map-microservice:latest -f ../p-1/microservices/map-microservice/Dockerfile ../p-1/microservices/map-microservice
+docker build -t ride-microservice:latest -f ../p-1/microservices/ride-microservice/Dockerfile ../p-1/microservices/ride-microservice
+
+echo "==== Deploying to Kubernetes ===="
+echo "Creating ConfigMap..."
+kubectl create ns sap-assignment
+kubectl apply -f ./k8s/configMap.yaml
+echo "Deploying infrastructure..."
+kubectl apply -f ./k8s/kafka/zookeeper.yaml
+kubectl apply -f ./k8s/kafka/kafka-broker-1.yaml
+kubectl apply -f ./k8s/kafka/schema-registry.yaml
+kubectl apply -f ./k8s/mongodb.yaml
+kubectl apply -f ./k8s/prometheus.yaml
+kubectl apply -f ./k8s/api-gateway.yaml
+kubectl apply -f ./k8s/eureka-server.yml
+
+echo "Deploying services..."
+kubectl apply -f ./k8s/user-microservice.yaml
+kubectl apply -f ./k8s/ebike-microservice.yaml
+kubectl apply -f ./k8s/ride-microservice.yaml
+kubectl apply -f ./k8s/map-microservice.yaml
+
+echo "Deploying Kafka UI"
+kubectl apply -f ./k8s/kafka/kafka-ui.yaml
+
+echo "==== Minikube IP address ===="
+minikube ip
+
+echo "==== Deployment complete. Checking status... ===="
+watch kubectl get pods -n sap-assignment
+----
+
+=== Accesso al Sistema
+
+Una volta completato il deployment, l'accesso all'API Gateway avviene tramite il comando:
+
+[source,bash]
+
+kubectl port-forward --address 0.0.0.0 api-gateway- 8080:8080 -n sap-assignment
+
+Questo consente di esporre localmente l'applicazione per testare l'interazione tra microservizi e verificare i flussi di eventi.
+
+All'interno del package è presente una copia del presentation layer del package p-1 per testare il funzionamento.
+
+
+=== Pipeline di Lancio Completa
+
+Di seguito viene descritta la sequenza operativa per eseguire il deploy e l’avvio completo dell’applicazione, a partire dall’infrastruttura fino all’interfaccia utente.
+
+. **Eseguire il deployment dell’infrastruttura**
++
+[source,bash]
+----
+cd src/p-2/
+./rebuild-minikube.sh
+----
+Attendere che tutti i pod risultino in stato `Running` con tutti i container pronti (es. `1/1`, `2/2`, ecc.).
+
+. **Impostare il port forwarding per l’API Gateway**
++
+[source,bash]
+----
+kubectl port-forward --address 0.0.0.0 deployment/api-gateway 8080:8080 -n sap-assignment
+----
++
+Lasciare aperto questo terminale durante l’utilizzo dell’applicazione.
+
+. **Avviare il presentation layer**
++
+[source,bash]
+----
+cd ../presentation/
+./gradlew run
+----
+
+
+
+
