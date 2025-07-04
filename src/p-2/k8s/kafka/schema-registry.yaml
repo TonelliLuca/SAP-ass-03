@@ -25,15 +25,27 @@ spec:
       containers:
         - name: schema-registry
           image: confluentinc/cp-schema-registry:7.9.1
+          command:
+            - bash
+            - -c
+            - unset SCHEMA_REGISTRY_PORT; /etc/confluent/docker/run
           ports:
             - containerPort: 8081
           env:
             - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
-              value: "PLAINTEXT://kafka-broker-1:29092"
+              value: "PLAINTEXT://kafka-broker-1:9092"
             - name: SCHEMA_REGISTRY_HOST_NAME
               value: "schema-registry"
             - name: SCHEMA_REGISTRY_LISTENERS
               value: "http://0.0.0.0:8081"
+
+            - name: SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_CONFIG
+              value: "60000"
+            - name: LOG4J_LOGLEVEL
+              value: "DEBUG"
+            - name: SCHEMA_REGISTRY_MASTER_ELIGIBLE
+              value: "true"
+
 ---
 apiVersion: v1
 kind: Service
