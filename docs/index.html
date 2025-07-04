@@ -433,6 +433,124 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<style>
+pre.rouge table td { padding: 5px; }
+pre.rouge table pre { margin: 0; }
+pre.rouge, pre.rouge .w {
+  color: #24292f;
+  background-color: #f6f8fa;
+}
+pre.rouge .k, pre.rouge .kd, pre.rouge .kn, pre.rouge .kp, pre.rouge .kr, pre.rouge .kt, pre.rouge .kv {
+  color: #cf222e;
+}
+pre.rouge .gr {
+  color: #f6f8fa;
+}
+pre.rouge .gd {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+pre.rouge .nb {
+  color: #953800;
+}
+pre.rouge .nc {
+  color: #953800;
+}
+pre.rouge .no {
+  color: #953800;
+}
+pre.rouge .nn {
+  color: #953800;
+}
+pre.rouge .sr {
+  color: #116329;
+}
+pre.rouge .na {
+  color: #116329;
+}
+pre.rouge .nt {
+  color: #116329;
+}
+pre.rouge .gi {
+  color: #116329;
+  background-color: #dafbe1;
+}
+pre.rouge .ges {
+  font-weight: bold;
+  font-style: italic;
+}
+pre.rouge .kc {
+  color: #0550ae;
+}
+pre.rouge .l, pre.rouge .ld, pre.rouge .m, pre.rouge .mb, pre.rouge .mf, pre.rouge .mh, pre.rouge .mi, pre.rouge .il, pre.rouge .mo, pre.rouge .mx {
+  color: #0550ae;
+}
+pre.rouge .sb {
+  color: #0550ae;
+}
+pre.rouge .bp {
+  color: #0550ae;
+}
+pre.rouge .ne {
+  color: #0550ae;
+}
+pre.rouge .nl {
+  color: #0550ae;
+}
+pre.rouge .py {
+  color: #0550ae;
+}
+pre.rouge .nv, pre.rouge .vc, pre.rouge .vg, pre.rouge .vi, pre.rouge .vm {
+  color: #0550ae;
+}
+pre.rouge .o, pre.rouge .ow {
+  color: #0550ae;
+}
+pre.rouge .gh {
+  color: #0550ae;
+  font-weight: bold;
+}
+pre.rouge .gu {
+  color: #0550ae;
+  font-weight: bold;
+}
+pre.rouge .s, pre.rouge .sa, pre.rouge .sc, pre.rouge .dl, pre.rouge .sd, pre.rouge .s2, pre.rouge .se, pre.rouge .sh, pre.rouge .sx, pre.rouge .s1, pre.rouge .ss {
+  color: #0a3069;
+}
+pre.rouge .nd {
+  color: #8250df;
+}
+pre.rouge .nf, pre.rouge .fm {
+  color: #8250df;
+}
+pre.rouge .err {
+  color: #f6f8fa;
+  background-color: #82071e;
+}
+pre.rouge .c, pre.rouge .ch, pre.rouge .cd, pre.rouge .cm, pre.rouge .cp, pre.rouge .cpf, pre.rouge .c1, pre.rouge .cs {
+  color: #6e7781;
+}
+pre.rouge .gl {
+  color: #6e7781;
+}
+pre.rouge .gt {
+  color: #6e7781;
+}
+pre.rouge .ni {
+  color: #24292f;
+}
+pre.rouge .si {
+  color: #24292f;
+}
+pre.rouge .ge {
+  color: #24292f;
+  font-style: italic;
+}
+pre.rouge .gs {
+  color: #24292f;
+  font-weight: bold;
+}
+</style>
 </head>
 <body class="book">
 <div id="header">
@@ -466,6 +584,25 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toctitle" class="title">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_obiettivi_e_descrizione">1. Obiettivi e Descrizione</a></li>
+<li><a href="#_package_p_1_microservizi_event_driven">2. Package P-1: Microservizi Event-Driven</a>
+<ul class="sectlevel2">
+<li><a href="#_visione_architetturale">2.1. Visione Architetturale</a></li>
+<li><a href="#_dettaglio_dei_microservizi">2.2. Dettaglio dei microservizi</a></li>
+<li><a href="#_scelte_architetturali_e_organizzazione_dei_topic_kafka">2.3. Scelte architetturali e organizzazione dei topic Kafka</a></li>
+</ul>
+</li>
+<li><a href="#_package_p_2_deployment_su_kubernetes">3. Package P-2: Deployment su Kubernetes</a>
+<ul class="sectlevel2">
+<li><a href="#_obiettivo">3.1. Obiettivo</a></li>
+<li><a href="#_strategia_di_deployment">3.2. Strategia di Deployment</a></li>
+<li><a href="#_componenti_infrastrutturali_distribuiti">3.3. Componenti Infrastrutturali Distribuiti</a></li>
+<li><a href="#_microservizi_applicativi">3.4. Microservizi Applicativi</a></li>
+<li><a href="#_configurazione_centralizzata">3.5. Configurazione Centralizzata</a></li>
+<li><a href="#_esecuzione_del_deployment">3.6. Esecuzione del Deployment</a></li>
+<li><a href="#_accesso_al_sistema">3.7. Accesso al Sistema</a></li>
+<li><a href="#_pipeline_di_lancio_completa">3.8. Pipeline di Lancio Completa</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -491,15 +628,892 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>Nel seguito del report verranno dettagliate le scelte architetturali, le principali differenze rispetto alla soluzione originaria, e le motivazioni a supporto delle strategie adottate.</p>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_package_p_1_microservizi_event_driven">2. Package P-1: Microservizi Event-Driven</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>include::chapters/p-1.adoc</p>
+<p>Il package P-1 rappresenta il nucleo centrale del progetto, fornendo un&#8217;implementazione completa dell&#8217;applicazione E-Bike tramite un&#8217;architettura basata su microservizi event-driven. La soluzione si basa sulla soluzione proposta dell&#8217;<a href="https://github.com/TonelliLuca/SAP-ass-02">Assignment 02</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_visione_architetturale">2.1. Visione Architetturale</h3>
+<div class="paragraph">
+<p>L&#8217;architettura si basa sulla comunicazione asincrona tra microservizi tramite eventi, con Apache Kafka utilizzato come broker centrale. Ogni microservizio è stato progettato secondo il principio del <strong>single writer</strong>: ciascun servizio produce gli eventi relativi al proprio dominio, diventando così la fonte di verità per quell’ambito e semplificando la gestione della consistenza e della tracciabilità degli stati nel sistema.</p>
+</div>
+<div class="paragraph">
+<p>Per la definizione e l’evoluzione degli eventi, sono stati adottati Apache Avro e Confluent Schema Registry, così che ogni evento scambiato su Kafka rispetti uno schema esplicito e condiviso, mantenendo compatibilità tra servizi anche in caso di evoluzione futura dei dati. L’approccio garantisce che producer e consumer siano sempre allineati sul significato e la struttura delle informazioni trasmesse.</p>
+</div>
+<div class="paragraph">
+<p>Dal punto di vista della struttura interna, ogni microservizio segue un ciclo preciso: riceve eventi da Kafka, li elabora applicando la propria logica di business, aggiorna lo stato locale e, quando necessario, pubblica nuovi eventi verso gli altri servizi. Questo pattern permette a ciascun componente di essere autonomo ma coordinato con il resto del sistema, mantenendo basso l’accoppiamento tra le parti.</p>
+</div>
+<div class="paragraph">
+<p>Vert.x è stato mantenuto come framework principale sia per la gestione delle API REST (sincrone), sia per health check, caricamento configurazioni tramite variabili d’ambiente, interazione con MongoDB e gestione dell’event bus interno di alcuni servizi. In questo modo si differenzia chiaramente il canale delle chiamate API (esterne/sincrone) dalla comunicazione asincrona (interna/eventi).</p>
+</div>
+<div class="paragraph">
+<p>Per il monitoraggio del sistema è stata mantenuta l’integrazione con Prometheus, che consente di raccogliere metriche in tempo reale da tutti i microservizi e agevola l’analisi delle performance o l’individuazione di anomalie operative. Completano l’architettura l’API Gateway (punto di accesso centralizzato) e il Service Discovery (Eureka), che garantisce la registrazione e scoperta dinamica dei servizi all’interno del sistema distribuito.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dettaglio_dei_microservizi">2.2. Dettaglio dei microservizi</h3>
+<div class="paragraph">
+<p>Ogni microservizio è stato adattato a una logica event driven, definendo una serie di eventi di dominio gestiti nell&#8217;application layer.</p>
+</div>
+<div class="sect3">
+<h4 id="_ebike_microservice">2.2.1. EBike Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio EBike rappresenta un componente fondamentale nell&#8217;architettura event-driven complessiva, responsabile della gestione del ciclo di vita delle biciclette elettriche nel sistema.</p>
+</div>
+<div class="sect4">
+<h5 id="_approccio_event_driven">Approccio Event-Driven</h5>
+<div class="paragraph">
+<p>Il microservizio implementa un approccio event-driven puro:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Stato persistente</strong>: Mantiene lo stato attuale delle e-bike nel repository MongoDB</p>
+</li>
+<li>
+<p><strong>Comunicazione asincrona</strong>: Utilizza eventi per notificare altri servizi di cambiamenti di stato</p>
+</li>
+<li>
+<p><strong>Reazioni agli eventi</strong>: Aggiorna lo stato delle e-bike in base agli eventi ricevuti dai noleggi</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Questo approccio permette al servizio di mantenere una fonte di verità per lo stato delle e-bike, comunicando efficacemente ogni cambiamento agli altri microservizi interessati.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modello_a_eventi">Modello a Eventi</h5>
+<div class="paragraph">
+<p>Il microservizio utilizza diversi tipi di eventi immutabili:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>EBikeCreateEvent</code>: Segnala l&#8217;aggiunta di una nuova e-bike al sistema</p>
+</li>
+<li>
+<p><code>EBikeUpdateEvent</code>: Notifica cambiamenti nello stato di un&#8217;e-bike esistente</p>
+</li>
+<li>
+<p><code>EBikeRechargeEvent</code>: Comunica la richiesta di ricarica di una specifica e-bike</p>
+</li>
+<li>
+<p><code>RequestEBikeUpdateEvent</code>: Trasporta richieste di aggiornamento dei dati di un&#8217;e-bike</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tutti gli eventi implementano l&#8217;interfaccia <code>Event</code> e sono definiti come <code>record</code> Java immutabili, garantendo integrità e consistenza nei dati trasmessi.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_interfacce_di_comunicazione">Interfacce di Comunicazione</h5>
+<div class="paragraph">
+<p>Il microservizio espone due modalità di interazione:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>API REST (sincrone)</strong> tramite <code>RESTEBikeAdapter</code> che espone endpoint per:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Creazione di e-bike (<code>POST /api/ebikes/create</code>)</p>
+</li>
+<li>
+<p>Ricarica di e-bike (<code>PUT /api/ebikes/:id/recharge</code>)</p>
+</li>
+<li>
+<p>Recupero di tutte le e-bike (<code>GET /api/ebikes</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Comunicazione asincrona con Kafka</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Consumer</strong>: Tramite <code>RideUpdatesConsumer</code> che ascolta gli eventi <code>RideUpdateEventAvro</code> dal topic "ride-events"</p>
+</li>
+<li>
+<p><strong>Producer</strong>: Pubblica eventi di aggiornamento attraverso <code>EbikeUpdatesProducer</code> sul topic "ebike-events"</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_flusso_operativo">Flusso Operativo</h5>
+<div class="paragraph">
+<p>Per ogni operazione, il microservizio:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Ricezione input</strong>: Tramite REST o eventi Kafka</p>
+</li>
+<li>
+<p><strong>Elaborazione</strong>: <code>EBikeServiceImpl</code> processa le richieste applicando la logica di business</p>
+</li>
+<li>
+<p><strong>Persistenza</strong>: Lo stato attuale delle e-bike viene mantenuto nel repository</p>
+</li>
+<li>
+<p><strong>Pubblicazione eventi</strong>: Dopo ogni cambiamento di stato, viene pubblicato un <code>EBikeUpdateEvent</code> su Kafka per informare gli altri servizi</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>All&#8217;avvio, il servizio carica tutte le e-bike dal repository e pubblica eventi di aggiornamento per sincronizzare gli altri componenti del sistema.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_user_microservice">2.2.2. User Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio User rappresenta un&#8217;implementazione completa del pattern Event Sourcing all&#8217;interno dell&#8217;architettura, gestendo tutte le informazioni e le operazioni relative agli utenti del sistema.</p>
+</div>
+<div class="sect4">
+<h5 id="_event_sourcing_implementation">Event Sourcing Implementation</h5>
+<div class="paragraph">
+<p>A differenza del microservizio EBike, che utilizza un approccio event-driven ma mantiene lo stato corrente, il microservizio User adotta pienamente il pattern Event Sourcing:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Persistenza eventi</strong>: Ogni modifica allo stato di un utente viene salvata come evento immutabile nell&#8217;event store (MongoDB)</p>
+</li>
+<li>
+<p><strong>Ricostruzione stato</strong>: Lo stato corrente di un utente non è mai salvato direttamente, ma viene sempre ricostruito dalla sequenza degli eventi storici</p>
+</li>
+<li>
+<p><strong>Completa tracciabilità</strong>: La cronologia completa di ogni utente è disponibile per audit, debugging e analisi</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Il metodo <code>rebuildUserState</code> in <code>UserServiceImpl</code> è il cuore dell&#8217;implementazione, ricostruendo lo stato attuale dell&#8217;utente processando in sequenza temporale tutti gli eventi associati.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modello_a_eventi_2">Modello a Eventi</h5>
+<div class="paragraph">
+<p>Il microservizio utilizza diversi tipi di eventi immutabili:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>UserCreatedEvent</code>: Registra la creazione di un nuovo utente nel sistema</p>
+</li>
+<li>
+<p><code>UserSignInEvent</code>: Traccia gli accessi degli utenti</p>
+</li>
+<li>
+<p><code>UserUpdateEvent</code>: Cattura modifiche allo stato dell&#8217;utente (tipo, credito)</p>
+</li>
+<li>
+<p><code>RechargeCreditEvent</code>: Registra le operazioni di ricarica del credito</p>
+</li>
+<li>
+<p><code>RequestUserUpdateEvent</code>: Veicola richieste di aggiornamento provenienti da altri servizi</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tutti gli eventi implementano l&#8217;interfaccia <code>Event</code> e sono definiti come <code>record</code> Java, garantendo immutabilità e consistenza.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_interfacce_di_comunicazione_2">Interfacce di Comunicazione</h5>
+<div class="paragraph">
+<p>Il microservizio espone due modalità di interazione:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>API REST (sincrone)</strong> tramite <code>RESTUserAdapter</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Registrazione utente (<code>POST /api/users/signup</code>)</p>
+</li>
+<li>
+<p>Accesso utente (<code>POST /api/users/signin</code>)</p>
+</li>
+<li>
+<p>Ricarica credito (<code>PATCH /api/users/:username/recharge</code>)</p>
+</li>
+<li>
+<p>Osservazione utenti tramite WebSocket (<code>/observeAllUsers</code>, <code>/observeUser/:username</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Comunicazione asincrona con Kafka</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Consumer</strong>: <code>RideUpdatesConsumer</code> ascolta il topic "ride-events" per aggiornare il credito degli utenti</p>
+</li>
+<li>
+<p><strong>Producer</strong>: Pubblica eventi di aggiornamento attraverso <code>UserUpdatesProducer</code> sul topic "user-events"</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_flusso_event_sourcing">Flusso Event Sourcing</h5>
+<div class="paragraph">
+<p>Per ogni operazione, il microservizio:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Ricezione input</strong>: Da API REST o eventi Kafka</p>
+</li>
+<li>
+<p><strong>Recupero eventi</strong>: Ottiene tutti gli eventi storici relativi all&#8217;utente</p>
+</li>
+<li>
+<p><strong>Ricostruzione stato</strong>: Applica sequenzialmente gli eventi per ottenere lo stato corrente</p>
+</li>
+<li>
+<p><strong>Valutazione comando</strong>: Verifica la fattibilità dell&#8217;operazione richiesta</p>
+</li>
+<li>
+<p><strong>Generazione evento</strong>: Crea un nuovo evento che rappresenta l&#8217;operazione</p>
+</li>
+<li>
+<p><strong>Persistenza evento</strong>: Salva l&#8217;evento nell&#8217;event store</p>
+</li>
+<li>
+<p><strong>Pubblicazione</strong>: Notifica altri servizi tramite Kafka e WebSocket</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Questo approccio garantisce consistenza, tracciabilità completa e la possibilità di "time travel" attraverso la storia di ogni utente.</p>
+</div>
+<div class="paragraph">
+<p>All&#8217;avvio, il servizio ricostruisce lo stato di tutti gli utenti dai loro eventi e pubblica eventi di aggiornamento per sincronizzare gli altri microservizi.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_ride_microservice">2.2.3. Ride Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio Ride rappresenta un componente fondamentale nell&#8217;architettura event-driven complessiva, responsabile della gestione del noleggio di e-bike da parte degli utenti e della simulazione in tempo reale delle corse.</p>
+</div>
+<div class="sect4">
+<h5 id="_approccio_a_proiezioni_locali">Approccio a Proiezioni Locali</h5>
+<div class="paragraph">
+<p>Il microservizio implementa un approccio interessante che combina elementi event-driven con proiezioni locali:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event-driven</strong>: Utilizza eventi per comunicare con altri servizi e gestire il ciclo di vita dei noleggi</p>
+</li>
+<li>
+<p><strong>Proiezioni locali</strong>: Mantiene copie locali degli stati di utenti ed e-bike attraverso il <code>LocalProjectionRepository</code></p>
+</li>
+<li>
+<p><strong>Simulazione eventi</strong>: Genera eventi in tempo reale durante il noleggio tramite <code>RideSimulation</code> e <code>EventPublisher</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Questo approccio permette al servizio di reagire rapidamente alle richieste degli utenti senza dover interrogare continuamente gli altri microservizi, mantenendo una cache locale degli stati più recenti ricostruiti dagli eventi ricevuti.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modello_a_eventi_3">Modello a Eventi</h5>
+<div class="paragraph">
+<p>Il microservizio utilizza diversi tipi di eventi immutabili:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>RideStartEvent</code>: Registra l&#8217;inizio di un noleggio, associando un utente a una e-bike</p>
+</li>
+<li>
+<p><code>RideStopEvent</code>: Segnala la conclusione di un noleggio, liberando l&#8217;e-bike</p>
+</li>
+<li>
+<p><code>RideUpdateEvent</code>: Comunica aggiornamenti continui durante la simulazione (posizione, batteria, credito)</p>
+</li>
+<li>
+<p><code>RequestRideEndEvent</code>: Veicola richieste di terminazione anticipata di un noleggio</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Parallelamente, il servizio consuma e memorizza eventi provenienti da altri domini:
+* <code>UserUpdateEvent</code>: Eventi relativi agli utenti ricevuti dal topic "user-events"
+* <code>EBikeUpdateEvent</code>: Eventi relativi alle e-bike ricevuti dal topic "ebike-events"</p>
+</div>
+<div class="paragraph">
+<p>Tutti gli eventi sono implementati come <code>record</code> Java immutabili, garantendo integrità e tracciabilità delle operazioni.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_interfacce_di_comunicazione_3">Interfacce di Comunicazione</h5>
+<div class="paragraph">
+<p>Il microservizio espone due modalità di interazione:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>API REST (sincrone)</strong> tramite <code>RideServiceVerticle</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Avvio noleggio (<code>POST /startRide</code>)</p>
+</li>
+<li>
+<p>Terminazione noleggio (<code>POST /stopRide</code>)</p>
+</li>
+<li>
+<p>Health check (<code>GET /health</code>) e metriche (<code>GET /metrics</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Comunicazione asincrona con Kafka</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Consumer</strong>: Riceve aggiornamenti sugli utenti e le e-bike tramite <code>ProjectionUpdatesConsumer</code></p>
+</li>
+<li>
+<p><strong>Producer</strong>: Pubblica eventi di noleggio attraverso <code>RideEventsProducer</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_flusso_operativo_2">Flusso Operativo</h5>
+<div class="paragraph">
+<p>Il flusso di lavoro del servizio segue questo pattern:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Ricezione richiesta</strong>: Tramite REST o eventi</p>
+</li>
+<li>
+<p><strong>Consultazione proiezioni</strong>: Verifica dello stato attuale di utenti ed e-bike dalle proiezioni locali</p>
+</li>
+<li>
+<p><strong>Validazione business rules</strong>: Controllo di disponibilità dell&#8217;e-bike, credito sufficiente e livello batteria</p>
+</li>
+<li>
+<p><strong>Creazione noleggio</strong>: Inizializzazione di un oggetto <code>Ride</code> e avvio della simulazione</p>
+</li>
+<li>
+<p><strong>Pubblicazione eventi</strong>: Notifica agli altri servizi tramite eventi Kafka</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>La simulazione di una corsa, come nell&#8217;implementazione base:
+* Aggiorna continuamente la posizione dell&#8217;e-bike secondo un algoritmo di movimento
+* Riduce progressivamente il credito dell&#8217;utente e la batteria dell&#8217;e-bike
+* Pubblica eventi <code>RideUpdateEvent</code> ad ogni aggiornamento tramite <code>EventPublisher</code>
+* Termina automaticamente quando la batteria o il credito raggiungono zero</p>
+</div>
+<div class="paragraph">
+<p>All&#8217;avvio, il servizio si registra con Eureka per il service discovery e inizia ad ascoltare gli eventi da Kafka, costruendo progressivamente le sue proiezioni locali per utenti ed e-bike.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_map_microservice">2.2.4. Map Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio Map, già presente nella precedente versione dell&#8217;architettura, ha richiesto solo adattamenti minimali per integrarsi nel nuovo sistema event-driven. In particolare, è stato implementato il componente RideUpdatesConsumer che permette al servizio di reagire in tempo reale agli eventi generati dagli altri microservizi.</p>
+</div>
+<div class="paragraph">
+<p>Questo consumer si sottoscrive a due topic Kafka fondamentali:</p>
+</div>
+<div class="paragraph">
+<p>ride-events: per tracciare inizio e fine dei noleggi
+ebike-events: per aggiornare la posizione e lo stato delle biciclette
+Quando riceve un evento, il consumer lo processa e aggiorna la visualizzazione grafica della mappa di conseguenza, mostrando in tempo reale la posizione delle e-bike con differenti colori in base al loro stato operativo.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scelte_architetturali_e_organizzazione_dei_topic_kafka">2.3. Scelte architetturali e organizzazione dei topic Kafka</h3>
+<div class="paragraph">
+<p>Nel disegno dei topic Kafka, si è seguito un criterio di coerenza con i bounded context del dominio, evitando topic troppo generici. Ogni topic è stato progettato per raccogliere eventi di una singola tipologia logica, in modo che i consumatori possano sottoscriversi solo ai flussi rilevanti e interpretare con chiarezza la semantica degli eventi ricevuti.</p>
+</div>
+<div class="paragraph">
+<p>Nello specifico:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Il topic <code>ride-events</code> veicola esclusivamente eventi relativi al ciclo di vita dei noleggi (inizio, aggiornamento, fine corsa).</p>
+</li>
+<li>
+<p>Il topic <code>ebike-events</code> raccoglie eventi di aggiornamento delle biciclette elettriche.</p>
+</li>
+<li>
+<p>Il topic <code>user-events</code> è dedicato agli aggiornamenti di stato degli utenti.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Questa organizzazione dei topic facilita la <strong>gestione della single source of truth</strong> (ogni servizio produce eventi solo sul proprio topic di riferimento), consente la scalabilità indipendente dei consumer per ogni flusso e rende semplice evolvere gli schemi degli eventi con Avro senza impattare altri domini.</p>
+</div>
+<div class="sect3">
+<h4 id="_flusso_di_propagazione_e_validazione_degli_eventi">2.3.1. Flusso di propagazione e validazione degli eventi</h4>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/p-1-topic.svg" alt="Lista dei topic e interazione con microservizi" width="600">
+</div>
+<div class="title">Figure 1. Lista dei topic e definizione dei consumer/producer</div>
+</div>
+<div class="paragraph">
+<p>Nel ciclo di vita di una corsa, i microservizi non comunicano tramite invocazioni dirette, ma esclusivamente attraverso eventi Kafka, mantenendo un disaccoppiamento logico tra le componenti.</p>
+</div>
+<div class="paragraph">
+<p>Il microservizio Ride ha il compito di gestire la logica di simulazione della corsa: al momento dell&#8217;avvio (<code>startRide</code>) o durante l&#8217;esecuzione (<code>updateRide</code>), esso produce eventi (<code>RideStartedEvent</code>, <code>RideUpdateEvent</code>) che contengono informazioni come la bici utilizzata, l’utente coinvolto, la posizione, il tempo e i consumi stimati.</p>
+</div>
+<div class="paragraph">
+<p>Tuttavia, questi eventi non modificano direttamente lo stato effettivo delle entità coinvolte (come la disponibilità di una bici o il credito di un utente). Invece, tali eventi vengono <strong>consumati dai microservizi EBike e User</strong>, che:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Valutano il contenuto dell’evento secondo le proprie regole di business (es. controllo sul credito residuo o sul livello di batteria),</p>
+</li>
+<li>
+<p>Decidono autonomamente se accettare l’azione proposta,</p>
+</li>
+<li>
+<p>E, solo in caso di esito positivo, producono un proprio evento (<code>EBikeUpdatedEvent</code>, <code>UserUpdatedEvent</code>) che rappresenta la modifica effettiva dello stato interno.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Questo meccanismo garantisce che ogni microservizio resti l’unico responsabile dello stato che gestisce, evitando conflitti e mantenendo la coerenza dei dati. Ad esempio:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>È <strong>EBikeService</strong>, e non Ride, a decidere se una bici può essere assegnata e a comunicarne la nuova disponibilità.</p>
+</li>
+<li>
+<p>È <strong>UserService</strong>, e non Ride, a calcolare e registrare la diminuzione del credito utente.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Gli eventi <code>RideUpdateEvent</code> prodotti da Ride fungono quindi da <strong>richiesta</strong>, ma la modifica reale dello stato avviene solo in risposta alla validazione interna da parte del microservizio destinatario. In questo modo, la sincronizzazione dello stato tra i vari microservizi avviene in maniera affidabile, tracciabile e coerente.</p>
+</div>
+<div class="paragraph">
+<p>I servizi di supporto come Map consumano infine gli eventi di aggiornamento (<code>ride-events</code>, <code>ebike-events</code>) per aggiornare le proiezioni grafiche o informative, senza avere alcuna autorità sui dati stessi, gli aggiornamenti relativi all&#8217;utente invece, vengono notificati alla gui tramite le web socket interne al microservizio user come da previa implementazione.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/sequence-ride.svg" alt="Diagramma di sequenza che rappresenta il ciclo di eventi prodotti da una ride" width="600">
+</div>
+<div class="title">Figure 2. Diagramma di sequenza che rappresenta il ciclo di eventi prodotti da una ride</div>
+</div>
+<div class="sect4">
+<h5 id="_serializzazione_e_validazione_degli_eventi_con_apache_avro_e_schema_registry">Serializzazione e validazione degli eventi con Apache Avro e Schema Registry</h5>
+<div class="paragraph">
+<p>All&#8217;interno del sistema, la serializzazione e la validazione degli eventi tra microservizi si basano sull&#8217;utilizzo congiunto di <strong>Apache Avro</strong> e <strong>Confluent Schema Registry</strong>. Questa combinazione consente di garantire messaggi binari compatti, schema-based, validati automaticamente sia lato producer che consumer.</p>
+</div>
+<div class="paragraph">
+<p>Confluent Schema Registry è stato integrato nel sistema tramite container Docker dedicato, configurato all&#8217;interno del <code>docker-compose.yml</code> per comunicare con Kafka:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">schema-registry</span><span class="pi">:</span>
+  <span class="na">image</span><span class="pi">:</span> <span class="s">confluentinc/cp-schema-registry:7.9.1</span>
+  <span class="na">ports</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">${SCHEMA_REGISTRY_HOST_PORT}:8081"</span>
+  <span class="na">environment</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka:29092</span>
+    <span class="pi">-</span> <span class="s">SCHEMA_REGISTRY_HOST_NAME=schema-registry</span>
+    <span class="pi">-</span> <span class="s">SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Lo Schema Registry mantiene un registro centralizzato di tutti gli schemi <code>.avsc</code> utilizzati nel sistema, assegnando a ciascuno un identificatore univoco. In questo modo, i messaggi Kafka trasportano solo l&#8217;ID dello schema e non l&#8217;intera definizione, ottimizzando le performance e garantendo la validazione automatica e la compatibilità evolutiva.</p>
+</div>
+<div class="paragraph">
+<p>Gli eventi sono modellati come record Avro, che possono contenere campi primitivi oppure record annidati. Ogni producer riceve una serie di eventi di dominio, che successivamente vengono mappati in uno schema avro specifico e inviati. La definizione di uno schema tipico prevede:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Il tipo principale <code>record</code></p>
+</li>
+<li>
+<p>Un nome simbolico identificativo</p>
+</li>
+<li>
+<p>Un namespace coerente con il dominio applicativo</p>
+</li>
+<li>
+<p>Timestamp e UUID dell&#8217;evento</p>
+</li>
+<li>
+<p>Un array di <code>fields</code>, ciascuno con nome e tipo</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Esempio generico di schema Avro</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SomeDomainEvent"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"events.avro"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payload"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Entity"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"status"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">}}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Questa struttura permette di definire eventi ricchi e auto-descrittivi, mantenendo un contratto formale tra i servizi che li scambiano.</p>
+</div>
+<div class="paragraph">
+<p>In alcuni topic Kafka vengono trasmessi più tipi di eventi appartenenti a uno stesso dominio. Per gestirli con un unico schema, è stato adottato il pattern <strong>Union Type</strong> di Avro.</p>
+</div>
+<div class="paragraph">
+<p>Si definisce un record contenitore che include un campo <code>payload</code>, il cui tipo è una unione di più tipi concreti.</p>
+</div>
+<div class="listingblock">
+<div class="title">Esempio generico di schema Union</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DomainEventUnion"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"events.avro"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payload"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="s2">"events.avro.EventTypeA"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"events.avro.EventTypeB"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"events.avro.EventTypeC"</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Questo approccio consente:
+- di trasmettere più eventi logicamente affini in un singolo topic;
+- di evitare la proliferazione di topic distinti;
+- di mantenere coerenza e validazione schema-based.</p>
+</div>
+<div class="paragraph">
+<p>Lato consumer, il record Avro ricevuto viene deserializzato come <code>GenericRecord</code>. Poiché il campo <code>payload</code> è una union, è necessario <strong>identificare il tipo specifico dell’evento ricevuto</strong> tramite il nome dello schema.</p>
+</div>
+<div class="paragraph">
+<p>Il consumer può quindi applicare un filtro e processare solo i tipi rilevanti per il proprio dominio.</p>
+</div>
+<div class="listingblock">
+<div class="title">Esempio generico di codice di consumo filtrato</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">processEvent</span><span class="o">(</span><span class="nc">String</span> <span class="n">key</span><span class="o">,</span> <span class="nc">GenericRecord</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">String</span> <span class="n">schemaName</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getSchema</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="s">"EventTypeB"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">schemaName</span><span class="o">))</span> <span class="o">{</span>
+        <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"Evento ignorato: {}"</span><span class="o">,</span> <span class="n">schemaName</span><span class="o">);</span>
+        <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="c1">// Elaborazione dell'evento di interesse</span>
+    <span class="nc">String</span> <span class="n">id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"id"</span><span class="o">).</span><span class="na">toString</span><span class="o">();</span>
+    <span class="nc">GenericRecord</span> <span class="n">payload</span> <span class="o">=</span> <span class="o">(</span><span class="nc">GenericRecord</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"payload"</span><span class="o">);</span>
+    <span class="nc">String</span> <span class="n">status</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">"status"</span><span class="o">).</span><span class="na">toString</span><span class="o">();</span>
+
+    <span class="c1">// Logica applicativa...</span>
+<span class="o">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Questa tecnica permette di mantenere consumer generici, ma configurabili per gestire <strong>solo gli eventi significativi</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_package_p_2_deployment_su_kubernetes">3. Package P-2: Deployment su Kubernetes</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_obiettivo">3.1. Obiettivo</h3>
+<div class="paragraph">
+<p>Il secondo package dell&#8217;elaborato si concentra sul deployment dell&#8217;intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes, sfruttando le funzionalità offerte dal framework.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_strategia_di_deployment">3.2. Strategia di Deployment</h3>
+<div class="paragraph">
+<p>L&#8217;intero sistema è stato containerizzato e distribuito tramite oggetti Deployment, Service, ConfigMap e PersistentVolumeClaim definiti in manifesti YAML e orchestrati all&#8217;interno del namespace dedicato sap-assignment. La piattaforma di riferimento è Minikube, configurata con 4 CPU e 4 GB di RAM, che consente di testare l&#8217;infrastruttura in locale in un contesto realistico.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_componenti_infrastrutturali_distribuiti">3.3. Componenti Infrastrutturali Distribuiti</h3>
+<div class="sect3">
+<h4 id="_kafka_zookeeper">3.3.1. Kafka &amp; Zookeeper</h4>
+<div class="paragraph">
+<p>Il broker Kafka è gestito da un Deployment dedicato, accompagnato dal coordinatore Zookeeper. Entrambi i componenti utilizzano init container per attendere l&#8217;avvio dell&#8217;altro e assicurare la corretta sequenza di bootstrap.</p>
+</div>
+<div class="paragraph">
+<p>Kafka espone sia porte interne (29092) che esterne (9092) e ha abilitato la creazione automatica dei topic</p>
+</div>
+<div class="paragraph">
+<p>Zookeeper viene reso disponibile sulla porta 2181 tramite service ClusterIP</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_schema_registry">3.3.2. Schema Registry</h4>
+<div class="paragraph">
+<p>Schema Registry di Confluent è deployato come microservizio separato e interfacciato con Kafka. La configurazione ne garantisce l&#8217;inizializzazione solo dopo la disponibilità del broker. Espone la porta 8081 ed è configurato per l&#8217;accesso in lettura/scrittura degli schemi Avro.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_kafka_ui">3.3.3. Kafka UI</h4>
+<div class="paragraph">
+<p>Per l&#8217;osservabilità e il debugging è stato incluso Kafka UI, configurato per comunicare con Kafka e Schema Registry. Espone la porta 8082 tramite un Service di tipo LoadBalancer per facilitarne l&#8217;accesso.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_mongodb">3.3.4. MongoDB</h4>
+<div class="paragraph">
+<p>Il database MongoDB viene eseguito in un Deployment associato ad una PVC da 1Gi. Il volume persistente è utilizzato per conservare i dati utente, noleggi ed e-bike anche in caso di riavvio dei pod.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_prometheus">3.3.5. Prometheus</h4>
+<div class="paragraph">
+<p>Per il monitoraggio dei microservizi, Prometheus è stato incluso e configurato con initContainers per attendere la disponibilità del gateway. Il servizio Prometheus espone la porta 9090 e può essere raggiunto esternamente tramite NodePort.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_service_discovery_eureka">3.3.6. Service Discovery (Eureka)</h4>
+<div class="paragraph">
+<p>Il registro dei servizi Eureka viene eseguito in un Deployment separato e reso disponibile tramite service sulla porta 8761. I microservizi si registrano dinamicamente tramite configurazione centralizzata in ConfigMap.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_microservizi_applicativi">3.4. Microservizi Applicativi</h3>
+<div class="paragraph">
+<p>Tutti i microservizi del package P-1 (API Gateway, EBike, Ride, User, Map) sono deployati come Deployment Kubernetes con una replica ciascuno. Ogni servizio dispone di:</p>
+</div>
+<div class="paragraph">
+<p>initContainers per assicurare il corretto ordine di avvio rispetto a dipendenze (Eureka, Kafka, MongoDB, ecc.)</p>
+</div>
+<div class="paragraph">
+<p>readinessProbe e livenessProbe per supportare auto-riparazione e rolling update</p>
+</div>
+<div class="paragraph">
+<p>Service di tipo ClusterIP per comunicazioni interne e per il load balancing interno tra pod</p>
+</div>
+<div class="paragraph">
+<p>Tutti i microservizi sono accessibili unicamente tramite l&#8217;API Gateway, che espone un Service di tipo NodePort. In questo modo, il bilanciamento del carico tra le repliche dei microservizi avviene internamente grazie alla natura dei servizi ClusterIP, mentre l&#8217;accesso esterno avviene attraverso un singolo punto di ingresso centralizzato (API Gateway).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configurazione_centralizzata">3.5. Configurazione Centralizzata</h3>
+<div class="paragraph">
+<p>La configurazione di sistema è centralizzata in una ConfigMap denominata app-config, che contiene:</p>
+</div>
+<div class="paragraph">
+<p>Informazioni su host e porte dei servizi</p>
+</div>
+<div class="paragraph">
+<p>URL di connessione a Kafka, MongoDB, Eureka, Prometheus</p>
+</div>
+<div class="paragraph">
+<p>Parametri runtime per microservizi</p>
+</div>
+<div class="paragraph">
+<p>Tutti i container referenziano la ConfigMap per caricare dinamicamente le variabili d&#8217;ambiente.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_esecuzione_del_deployment">3.6. Esecuzione del Deployment</h3>
+<div class="paragraph">
+<p>L&#8217;intero processo di deploy viene automatizzato tramite uno script Bash (rebuild-minikube.sh), che:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Ferma ed elimina eventuali istanze Minikube precedenti</p>
+</li>
+<li>
+<p>Avvia una nuova istanza Minikube configurata con risorse adeguate</p>
+</li>
+<li>
+<p>Costruisce localmente tutte le immagini Docker necessarie a partire dai Dockerfile nei microservizi</p>
+</li>
+<li>
+<p>Crea il namespace sap-assignment</p>
+</li>
+<li>
+<p>Applica in sequenza tutti i manifesti Kubernetes</p>
+</li>
+<li>
+<p>Espone gli indirizzi IP e monitora lo stato dei pod</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="nb">set</span> <span class="nt">-e</span>
+
+<span class="nb">echo</span> <span class="s2">"==== Destroying existing Minikube ===="</span>
+minikube stop
+minikube delete
+
+<span class="nb">echo</span> <span class="s2">"==== Creating fresh Minikube instance ===="</span>
+minikube start <span class="nt">--driver</span><span class="o">=</span>docker <span class="nt">--cpus</span><span class="o">=</span>4 <span class="nt">--memory</span><span class="o">=</span>4096
+
+<span class="nb">echo</span> <span class="s2">"==== Setting up Docker environment for Minikube ===="</span>
+<span class="nb">eval</span> <span class="si">$(</span>minikube docker-env<span class="si">)</span>
+
+<span class="nb">echo</span> <span class="s2">"==== Building Docker images ===="</span>
+docker build <span class="nt">-t</span> eureka-server:latest <span class="nt">-f</span> ../p-1/microservices/service-discovery/Dockerfile ../p-1/microservices/service-discovery
+docker build <span class="nt">-t</span> api-gateway:latest <span class="nt">-f</span> ../p-1/microservices/api-gateway/Dockerfile ../p-1/microservices/api-gateway
+docker build <span class="nt">-t</span> user-microservice:latest <span class="nt">-f</span> ../p-1/microservices/user-microservice/Dockerfile ../p-1/microservices/user-microservice
+docker build <span class="nt">-t</span> ebike-microservice:latest <span class="nt">-f</span> ../p-1/microservices/ebike-microservice/Dockerfile ../p-1/microservices/ebike-microservice
+docker build <span class="nt">-t</span> map-microservice:latest <span class="nt">-f</span> ../p-1/microservices/map-microservice/Dockerfile ../p-1/microservices/map-microservice
+docker build <span class="nt">-t</span> ride-microservice:latest <span class="nt">-f</span> ../p-1/microservices/ride-microservice/Dockerfile ../p-1/microservices/ride-microservice
+
+<span class="nb">echo</span> <span class="s2">"==== Deploying to Kubernetes ===="</span>
+<span class="nb">echo</span> <span class="s2">"Creating ConfigMap..."</span>
+kubectl create ns sap-assignment
+kubectl apply <span class="nt">-f</span> ./k8s/configMap.yaml
+<span class="nb">echo</span> <span class="s2">"Deploying infrastructure..."</span>
+kubectl apply <span class="nt">-f</span> ./k8s/kafka/zookeeper.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/kafka/kafka-broker-1.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/kafka/schema-registry.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/mongodb.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/prometheus.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/api-gateway.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/eureka-server.yml
+
+<span class="nb">echo</span> <span class="s2">"Deploying services..."</span>
+kubectl apply <span class="nt">-f</span> ./k8s/user-microservice.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/ebike-microservice.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/ride-microservice.yaml
+kubectl apply <span class="nt">-f</span> ./k8s/map-microservice.yaml
+
+<span class="nb">echo</span> <span class="s2">"Deploying Kafka UI"</span>
+kubectl apply <span class="nt">-f</span> ./k8s/kafka/kafka-ui.yaml
+
+<span class="nb">echo</span> <span class="s2">"==== Minikube IP address ===="</span>
+minikube ip
+
+<span class="nb">echo</span> <span class="s2">"==== Deployment complete. Checking status... ===="</span>
+watch kubectl get pods <span class="nt">-n</span> sap-assignment</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accesso_al_sistema">3.7. Accesso al Sistema</h3>
+<div class="paragraph">
+<p>Una volta completato il deployment, l&#8217;accesso all&#8217;API Gateway avviene tramite il comando:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">kubectl port-forward <span class="nt">--address</span> 0.0.0.0 api-gateway- 8080:8080 <span class="nt">-n</span> sap-assignment</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Questo consente di esporre localmente l&#8217;applicazione per testare l&#8217;interazione tra microservizi e verificare i flussi di eventi.</p>
+</div>
+<div class="paragraph">
+<p>All&#8217;interno del package è presente una copia del presentation layer del package p-1 per testare il funzionamento.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pipeline_di_lancio_completa">3.8. Pipeline di Lancio Completa</h3>
+<div class="paragraph">
+<p>Di seguito viene descritta la sequenza operativa per eseguire il deploy e l’avvio completo dell’applicazione, a partire dall’infrastruttura fino all’interfaccia utente.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Eseguire il deployment dell’infrastruttura</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="nb">cd </span>src/p-2/
+./rebuild-minikube.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Attendere che tutti i pod risultino in stato <code>Running</code> con tutti i container pronti (es. <code>1/1</code>, <code>2/2</code>, ecc.).</p>
+</div>
+</li>
+<li>
+<p><strong>Impostare il port forwarding per l’API Gateway</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash">kubectl port-forward <span class="nt">--address</span> 0.0.0.0 deployment/api-gateway 8080:8080 <span class="nt">-n</span> sap-assignment</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Lasciare aperto questo terminale durante l’utilizzo dell’applicazione.</p>
+</div>
+</li>
+<li>
+<p><strong>Avviare il presentation layer</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="bash"><span class="nb">cd</span> ../presentation/
+./gradlew run</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-02 15:52:52 UTC
+Last updated 2025-07-04 16:17:31 UTC
 </div>
 </div>
 </body>
