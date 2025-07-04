@@ -1,0 +1,44 @@
+@startuml
+actor User
+participant RideService
+participant Kafka
+participant MapService
+participant UserService
+participant EBikeService
+
+== Inizio corsa ==
+
+User ->  RideService : POST /startRide
+RideService -> Kafka : produce RideStartEvent
+
+Kafka -> MapService : consume RideStartEvent
+note right of MapService
+Usato da Map per associare l'utente alla e-bike
+e filtrare i EBikeUpdatedEvent per direzionarli
+alla WS dedicata all' utente
+end note
+
+== Ride Update Loop ==
+
+loop Durante la corsa
+  RideService -> Kafka : produce RideUpdateEvent
+
+  Kafka -> UserService : consume RideUpdateEvent
+  UserService -> Kafka : produce UserUpdatedEvent
+
+  Kafka -> EBikeService : consume RideUpdateEvent
+  EBikeService -> Kafka : produce EBikeUpdatedEvent
+
+  Kafka -> RideService : consume UserUpdatedEvent
+  Kafka -> RideService : consume EBikeUpdatedEvent
+  note right of RideService
+  Ride aggiorna la sua projection locale
+  su utente e bici
+  end note
+
+  Kafka -> MapService : consume EBikeUpdatedEvent
+  note right of MapService
+  Map aggiorna posizione e stato bici
+  end note
+end
+@enduml
