@@ -1,0 +1,103 @@
+@startuml
+actor Utente
+
+participant "API REST\n(ABike Microservice)" as ABikeAPI
+participant "ABike Microservice" as ABikeMS
+participant "Kafka" as Kafka
+participant "Station Microservice" as StationMS
+participant "Map Microservice" as MapMS
+participant "User Microservice" as UserMS
+participant "Ride Microservice" as RideMS
+
+== Creazione A-Bike ==
+
+Utente -> ABikeAPI : Richiesta creazione a-bike (POST /api/abikes/create)
+ABikeAPI -> ABikeMS : createABike()
+ABikeMS -> Kafka : produce ABikeArrivedToStation
+Kafka -> StationMS : ABikeArrivedToStation event
+
+StationMS -> StationMS : Valida station\n(dalla sua projection locale)
+alt stazione esiste e ha spazio
+    StationMS -> StationMS : Docka la a-bike
+    StationMS -> Kafka : produce StationUpdateEvent
+end
+
+Kafka -> ABikeMS : StationUpdateEvent (aggiorna projection stazioni)
+
+== Richiesta A-Bike da parte utente ==
+
+Utente -> ABikeAPI : Chiamata a-bike (POST /api/callAbike)
+ABikeAPI -> ABikeMS : callABike()
+ABikeMS -> ABikeMS : Trova stazione più vicina\nnella sua projection locale
+ABikeMS -> Kafka : produce ABikeRequested
+Kafka -> MapMS : ABikeRequested (per abilitare visualizzazione/binding a utente)
+Kafka -> StationMS : ABikeRequested
+
+StationMS -> StationMS : Rimuove a-bike da stazione (undock)
+StationMS -> Kafka : produce StationUpdateEvent
+
+Kafka -> ABikeMS : StationUpdateEvent (aggiorna projection stazioni)
+
+ABikeMS -> Kafka : produce CallAbikeEvent
+Kafka -> UserMS : CallAbikeEvent (UserMS aggiorna lo stato/credito utente)
+
+== Simulazione movimento verso utente ==
+
+ABikeMS -> ABikeMS : Avvia simulazione movimento (Simulation)
+loop ogni tick
+    ABikeMS -> Kafka : produce ABikeUpdate
+    Kafka -> RideMS : ABikeUpdate (aggiorna projection ride)
+    Kafka -> MapMS : ABikeUpdate (aggiorna posizione su mappa)
+end
+
+== Annullamento richiesta da parte utente ==
+
+alt Utente annulla richiesta
+    Utente -> ABikeAPI : POST /api/cancelCall
+    ABikeAPI -> ABikeMS : cancellCall()
+    ABikeMS -> ABikeMS : Ferma simulazione, avvia ritorno a stazione
+    loop ogni tick
+        ABikeMS -> Kafka : produce ABikeUpdate
+        Kafka -> RideMS : ABikeUpdate (aggiorna projection)
+        Kafka -> MapMS : ABikeUpdate (aggiorna mappa)
+    end
+    ABikeMS -> Kafka : produce ABikeCallComplete
+    Kafka -> MapMS : ABikeCallComplete (disassocia abike-utente)
+    ABikeMS -> Kafka : produce ABikeArrivedToStation
+    Kafka -> StationMS : ABikeArrivedToStation
+    StationMS -> StationMS : Docka a-bike
+    StationMS -> Kafka : produce StationUpdateEvent
+    Kafka -> ABikeMS : StationUpdateEvent (aggiorna projection)
+else A-bike arriva dall’utente
+    ABikeMS -> Kafka : produce ABikeArrivedToUser
+    Kafka -> MapMS : ABikeArrivedToUser (aggiorna mappa)
+    Kafka -> RideMS : ABikeArrivedToUser (triggera start ride)
+end
+
+== Ride con A-Bike ==
+
+RideMS -> RideMS : Avvia ride simulazione
+loop durante ride
+    RideMS -> Kafka : produce RideUpdateABikeEventAvro
+    note right of RideMS
+Il comportamento della ride con A-Bike segue lo stesso pattern già descritto per le ride tradizionali.
+end note
+end
+
+alt Termina ride (da GUI o automatico)
+    RideMS -> Kafka : produce RideStopABikeEventAvro
+    Kafka -> ABikeMS : RideStopABikeEventAvro (triggera ritorno a stazione)
+    ABikeMS -> ABikeMS : Avvia simulazione ritorno a stazione
+    loop ogni tick
+        ABikeMS -> Kafka : produce ABikeUpdate
+        Kafka -> MapMS : ABikeUpdate
+    end
+    ABikeMS -> Kafka : produce ABikeCallComplete
+    Kafka -> MapMS : ABikeCallComplete (disassocia abike-utente)
+    ABikeMS -> Kafka : produce ABikeArrivedToStation
+    Kafka -> StationMS : ABikeArrivedToStation
+    StationMS -> StationMS : Docka a-bike
+    StationMS -> Kafka : produce StationUpdateEvent
+    Kafka -> ABikeMS : StationUpdateEvent (aggiorna projection)
+end
+@enduml
