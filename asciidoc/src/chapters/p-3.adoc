@@ -96,7 +96,7 @@ Gli obiettivi definiti dall’elaborato sono i seguenti:
 === Use-Case diagrams
 
 .Use-case diagram relativo agli utenti
-image::../resources/svg/usecase-user-sap.drawio.svg[Use-case diagram relativo agli utenti, width=600]
+image::../resources/svg/usecase-user-sap.drawio.svg[Use-case diagram relativo agli utenti, width=30%, height=30%]
 
 [cols="1,5", options="header"]
 |===
@@ -309,7 +309,7 @@ image::../resources/svg/usecase-user-sap.drawio.svg[Use-case diagram relativo ag
 |===
 
 .Use-case diagram relativo alle automazioni di sistema
-image::../resources/svg/usecase-system-sap.drawio.svg[Use-case diagram relativo alle automazioni di sistema, width=600]
+image::../resources/svg/usecase-system-sap.drawio.svg[Use-case diagram relativo alle automazioni di sistema, width=30%, height=30%]
 
 
 [cols="1,5", options="header"]
@@ -673,10 +673,10 @@ La logica di creazione dei topic di kafka rispetta la medesima del p-1 realizzan
 
 - Il topic `station-evetns` che veicola gli update relativi alle stazioni.
 
-image::../resources/svg/SAP-ASS-3-topic-p-3.drawio.svg[Lista dei topic e interazione con microservizi, width=50%]
+image::../resources/svg/SAP-ASS-3-topic-p-3.drawio.svg[Lista dei topic e interazione con microservizi, , width=70%, height=70%]
 
 .Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike
-image::../resources/svg/abike-sequence-event.svg[Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike, width=600]
+image::../resources/svg/abike-sequence-event.svg[Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike, width=800]
 
 
 === Integrazione Eclipse Ditto & Digital Twin Adapter
