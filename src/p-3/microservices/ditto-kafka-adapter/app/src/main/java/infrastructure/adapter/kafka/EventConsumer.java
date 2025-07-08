@@ -1,6 +1,8 @@
 package infrastructure.adapter.kafka;
 
 import application.port.DittoTranslatorServicePort;
+import domain.event.ABikeUpdateEvent;
+import domain.event.StationUpdateEvent;
 import domain.model.*;
 import org.apache.avro.generic.GenericRecord;
 

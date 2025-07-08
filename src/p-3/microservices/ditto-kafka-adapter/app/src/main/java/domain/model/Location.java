@@ -1,4 +1,6 @@
 package domain.model;
 
-public record Location(double x, double y) {
+import ddd.ValueObject;
+
+public record Location(double x, double y) implements ValueObject {
 }

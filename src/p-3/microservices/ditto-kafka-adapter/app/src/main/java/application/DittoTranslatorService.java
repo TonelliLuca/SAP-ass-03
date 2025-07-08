@@ -2,6 +2,8 @@ package application;
 import application.port.DittoProducerPort;
 import application.port.DittoTranslatorServicePort;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import domain.event.ABikeUpdateEvent;
+import domain.event.StationUpdateEvent;
 import domain.model.DittoEventFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,9 +63,9 @@ public class DittoTranslatorService implements DittoTranslatorServicePort {
     }
 
     private String extractKey(Object event) {
-        if (event instanceof domain.model.StationUpdateEvent stationEvent) {
+        if (event instanceof StationUpdateEvent stationEvent) {
             return stationEvent.station().id();
-        } else if (event instanceof domain.model.ABikeUpdateEvent abikeEvent) {
+        } else if (event instanceof ABikeUpdateEvent abikeEvent) {
             return abikeEvent.abike().id();
         }
         return "unknown";

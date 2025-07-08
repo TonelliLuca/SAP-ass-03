@@ -1,11 +1,13 @@
 package domain.model;
-import domain.model.StationUpdateEvent;
-import domain.model.ABikeUpdateEvent;
+import ddd.Factory;
+import domain.event.ABikeUpdateEvent;
+import domain.event.StationUpdateEvent;
+import jdk.jfr.EventFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class DittoEventFactory {
+public class DittoEventFactory implements Factory {
 
     private static final DittoEventFactory INSTANCE = new DittoEventFactory();
 
