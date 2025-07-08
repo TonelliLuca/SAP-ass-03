@@ -43,7 +43,7 @@ Il microservizio utilizza diversi tipi di eventi immutabili:
 
 Tutti gli eventi implementano l'interfaccia `Event` e sono definiti come `record` Java immutabili, garantendo integrità e consistenza nei dati trasmessi.
 
-===== Interfacce di Comunicazione
+===== Adapter di Comunicazione
 
 Il microservizio espone due modalità di interazione:
 
@@ -94,7 +94,7 @@ Il microservizio utilizza diversi tipi di eventi immutabili:
 
 Tutti gli eventi implementano l'interfaccia `Event` e sono definiti come `record` Java, garantendo immutabilità e consistenza.
 
-===== Interfacce di Comunicazione
+===== Adapter di Comunicazione
 
 Il microservizio espone due modalità di interazione:
 
@@ -154,7 +154,7 @@ Parallelamente, il servizio consuma e memorizza eventi provenienti da altri domi
 
 Tutti gli eventi sono implementati come `record` Java immutabili, garantendo integrità e tracciabilità delle operazioni.
 
-===== Interfacce di Comunicazione
+===== Adapter di Comunicazione
 
 Il microservizio espone due modalità di interazione:
 
