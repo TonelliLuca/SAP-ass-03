@@ -1,0 +1,11 @@
+== Conclusioni
+
+Questo assignment si è rivelato particolarmente interessante e formativo. Ho avuto la possibilità di mettere in pratica molti concetti affrontati durante il corso, ma soprattutto di approfondire tecnologie che non conoscevo o che avevo solo incontrato superficialmente, come Kafka, Avro ed Eclipse Ditto.
+
+L’approccio event-driven mi ha permesso di comprendere in modo molto più chiaro e concreto i vantaggi dell’architettura a microservizi basata su eventi, sia dal punto di vista della scalabilità che della resilienza. La gestione delle comunicazioni tramite Kafka e la serializzazione con Avro sono state sfide inizialmente complesse, ma estremamente utili per rafforzare le mie competenze pratiche.
+
+Inoltre, la parte di deployment su Kubernetes mi ha permesso di acquisire maggiore familiarità con l’orchestrazione di applicazioni containerizzate in ambienti simili al mondo reale.
+
+Infine, è stato stimolante poter integrare la tematica dei Digital Twin tramite Eclipse Ditto.
+
+In sintesi, considero questa esperienza una tappa importante per la mia crescita tecnica e una base solida per affrontare progetti di maggiore complessità in futuro.

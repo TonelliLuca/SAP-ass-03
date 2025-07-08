@@ -5,8 +5,12 @@ Il presente assignment ha l’obiettivo di estendere e trasformare il sistema di
 A partire dall’analisi di dominio e dal modello già sviluppato nell’Assignment 2 – di cui si rimanda al report ufficiale disponibile all’indirizzo https://github.com/TonelliLuca/SAP-ass-02/blob/main/doc/asciidoc/doc/assets/docs/report.pdf – il lavoro si focalizza sulle attività di refactoring architetturale e sulle scelte progettuali che abilitano la comunicazione asincrona tra servizi, la suddivisione delle responsabilità, e la gestione delle interazioni tramite eventi di dominio.
 
 Per rispondere in modo strutturato ai requisiti dell’Assignment 3, il progetto è stato suddiviso in tre package principali:
+
+
 - `p-1`: contiene la trasformazione del sistema in una soluzione a microservizi event-driven, mantenendo la coerenza con il dominio originale.
+
 - `p-2`: Definisce un deployment del sistema sviluppato nel punto precedente utilizzando Kubernetes.
+
 - `p-3`: Estende le funzionalità sviluppate in p-1 introducendo la gestione delle a-bike, delle stazioni e una prima integrazione di digital twin, in linea con le direttive dell’assignment.
 
 Questa organizzazione riflette la volontà di separare logicamente le diverse fasi e aree di sviluppo, facilitando la leggibilità, la manutenzione e la tracciabilità degli avanzamenti progettuali.
