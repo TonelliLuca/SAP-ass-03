@@ -1,3 +1,5 @@
 package domain.model;
 
-public record P2d(double x, double y) {}
+import ddd.ValueObject;
+
+public record P2d(double x, double y) implements ValueObject {}
