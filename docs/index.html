@@ -603,6 +603,19 @@ pre.rouge .gs {
 <li><a href="#_pipeline_di_lancio_completa">3.8. Pipeline di Lancio Completa</a></li>
 </ul>
 </li>
+<li><a href="#_package_p_3_introduzione_di_a_bike_station_e_digital_twin">4. Package P-3: Introduzione di A-Bike, Station e Digital Twin</a>
+<ul class="sectlevel2">
+<li><a href="#_estensione_del_domain_driven_design_a_bike_station_e_digital_twin">4.1. Estensione del Domain-Driven Design: A-Bike, Station e Digital Twin</a></li>
+<li><a href="#_use_case_diagrams">4.2. Use-Case diagrams</a></li>
+<li><a href="#_domain_storytelling">4.3. Domain storytelling</a></li>
+<li><a href="#_bounded_context">4.4. Bounded Context</a></li>
+<li><a href="#_domain_model">4.5. Domain model</a></li>
+<li><a href="#_implementazione_dei_microservizi">4.6. Implementazione dei microservizi</a></li>
+<li><a href="#_organizzazione_topic_kafka_e_nuovo_flusso_di_comunicazione">4.7. Organizzazione topic Kafka e nuovo flusso di comunicazione</a></li>
+<li><a href="#_integrazione_eclipse_ditto_digital_twin_adapter">4.8. Integrazione Eclipse Ditto &amp; Digital Twin Adapter</a></li>
+</ul>
+</li>
+<li><a href="#_conclusioni">5. Conclusioni</a></li>
 </ul>
 </div>
 </div>
@@ -617,10 +630,20 @@ pre.rouge .gs {
 <p>A partire dall’analisi di dominio e dal modello già sviluppato nell’Assignment 2 – di cui si rimanda al report ufficiale disponibile all’indirizzo <a href="https://github.com/TonelliLuca/SAP-ass-02/blob/main/doc/asciidoc/doc/assets/docs/report.pdf" class="bare">https://github.com/TonelliLuca/SAP-ass-02/blob/main/doc/asciidoc/doc/assets/docs/report.pdf</a> – il lavoro si focalizza sulle attività di refactoring architetturale e sulle scelte progettuali che abilitano la comunicazione asincrona tra servizi, la suddivisione delle responsabilità, e la gestione delle interazioni tramite eventi di dominio.</p>
 </div>
 <div class="paragraph">
-<p>Per rispondere in modo strutturato ai requisiti dell’Assignment 3, il progetto è stato suddiviso in tre package principali:
-- <code>p-1</code>: contiene la trasformazione del sistema in una soluzione a microservizi event-driven, mantenendo la coerenza con il dominio originale.
-- <code>p-2</code>: Definisce un deployment del sistema sviluppato nel punto precedente utilizzando Kubernetes.
-- <code>p-3</code>: Estende le funzionalità sviluppate in p-1 introducendo la gestione delle a-bike, delle stazioni e una prima integrazione di digital twin, in linea con le direttive dell’assignment.</p>
+<p>Per rispondere in modo strutturato ai requisiti dell’Assignment 3, il progetto è stato suddiviso in tre package principali:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>p-1</code>: contiene la trasformazione del sistema in una soluzione a microservizi event-driven, mantenendo la coerenza con il dominio originale.</p>
+</li>
+<li>
+<p><code>p-2</code>: Definisce un deployment del sistema sviluppato nel punto precedente utilizzando Kubernetes.</p>
+</li>
+<li>
+<p><code>p-3</code>: Estende le funzionalità sviluppate in p-1 introducendo la gestione delle a-bike, delle stazioni e una prima integrazione di digital twin, in linea con le direttive dell’assignment.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>Questa organizzazione riflette la volontà di separare logicamente le diverse fasi e aree di sviluppo, facilitando la leggibilità, la manutenzione e la tracciabilità degli avanzamenti progettuali.</p>
@@ -712,7 +735,7 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect4">
-<h5 id="_interfacce_di_comunicazione">Interfacce di Comunicazione</h5>
+<h5 id="_adapter_di_comunicazione">Adapter di Comunicazione</h5>
 <div class="paragraph">
 <p>Il microservizio espone due modalità di interazione:</p>
 </div>
@@ -832,7 +855,7 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect4">
-<h5 id="_interfacce_di_comunicazione_2">Interfacce di Comunicazione</h5>
+<h5 id="_adapter_di_comunicazione_2">Adapter di Comunicazione</h5>
 <div class="paragraph">
 <p>Il microservizio espone due modalità di interazione:</p>
 </div>
@@ -969,7 +992,7 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect4">
-<h5 id="_interfacce_di_comunicazione_3">Interfacce di Comunicazione</h5>
+<h5 id="_adapter_di_comunicazione_3">Adapter di Comunicazione</h5>
 <div class="paragraph">
 <p>Il microservizio espone due modalità di interazione:</p>
 </div>
@@ -1510,10 +1533,1399 @@ watch kubectl get pods <span class="nt">-n</span> sap-assignment</code></pre>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_package_p_3_introduzione_di_a_bike_station_e_digital_twin">4. Package P-3: Introduzione di A-Bike, Station e Digital Twin</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_estensione_del_domain_driven_design_a_bike_station_e_digital_twin">4.1. Estensione del Domain-Driven Design: A-Bike, Station e Digital Twin</h3>
+<div class="paragraph">
+<p>Per rispondere alle nuove richieste progettuali introdotte nella terza parte dell’elaborato, si è reso necessario estendere il Domain-Driven Design sviluppato nel progetto originale. In particolare, vengono introdotti i concetti di bicicletta autonoma (a-bike), stazione (station) e digital twin urbano, al fine di supportare scenari avanzati di mobilità autonoma all’interno di un contesto smart city.</p>
+</div>
+<div class="sect3">
+<h4 id="_obiettivi_e_requisiti_dellestensione">4.1.1. Obiettivi e requisiti dell&#8217;estensione</h4>
+<div class="paragraph">
+<p>Gli obiettivi definiti dall’elaborato sono i seguenti:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Introdurre una nuova tipologia sperimentale di bicicletta, la <strong>a-bike</strong> (bicicletta autonoma), in grado di:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Raggiungere autonomamente la stazione più vicina dopo essere stata utilizzata;</p>
+</li>
+<li>
+<p>Raggiungere autonomamente la posizione dell’utente che ne richiede il servizio.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Integrare le a-bike in un ambiente di smart city, sfruttando una componente di <strong>digital twin</strong> che:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Mantenga una rappresentazione virtuale aggiornata dello stato delle biciclette e delle stazioni;</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_estensione_dellubiquitous_language">4.1.2. Estensione dell&#8217;Ubiquitous Language</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Termine</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A-Bike</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bicicletta elettrica autonoma, dotata di capacità di movimento automatico, in grado di raggiungere la stazione più vicina dopo l&#8217;utilizzo e di muoversi verso l’utente che ne richiede il servizio.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stazione</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Punto fisico all’interno della città dove le a-bike possono essere parcheggiate e ricaricate. Ogni stazione gestisce la propria capacità disponibile.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digital Twin</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gemello digitale della città: una rappresentazione virtuale aggiornata in tempo reale di biciclette e stazioni che fornisce servizi di supporto e monitoraggio.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_requisiti_funzionali_estesi_per_a_bike_station_e_digital_twin">4.1.3. Requisiti Funzionali Estesi per A-Bike, Station e Digital Twin</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Il sistema deve permettere agli utenti di richiedere una a-bike tramite l’interfaccia grafica, così che una bicicletta autonoma si diriga automaticamente verso la loro posizione.</p>
+</li>
+<li>
+<p>Il sistema deve permettere agli utenti di annullare una richiesta di a-bike già inviata; in tal caso, la a-bike deve tornare autonomamente alla stazione più vicina disponibile.</p>
+</li>
+<li>
+<p>Il sistema deve permettere agli utenti di visualizzare tramite l’interfaccia grafica tutte le stazioni e monitorarne la disponibilità in tempo reale.</p>
+</li>
+<li>
+<p>Il sistema deve permettere agli utenti di seguire, sempre tramite interfaccia grafica, l’intero ciclo della a-bike richiesta, dalla partenza verso l’utente, durante la corsa e fino al ritorno in stazione.</p>
+</li>
+<li>
+<p>Il sistema deve permettere alle a-bike di raggiungere autonomamente la stazione più vicina al termine di ogni corsa.</p>
+</li>
+<li>
+<p>Il sistema deve permettere agli utenti amministratori di creare nuove stazioni all’interno dell’ambiente.</p>
+</li>
+<li>
+<p>Il sistema deve permettere agli utenti amministratori di aggiungere nuove a-bike e di assegnarle a una stazione specifica.</p>
+</li>
+<li>
+<p>Il sistema deve permettere alla componente Digital Twin di mantenere una vista aggiornata e coerente della posizione e dello stato di tutte le a-bike e delle stazioni.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_user_story">4.1.4. User Story</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">User Story</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US12: Richiesta A-Bike</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un utente autenticato</p>
+<p class="tableblock"><strong>When</strong> l’utente richiede una a-bike tramite l’interfaccia grafica</p>
+<p class="tableblock"><strong>Then</strong> il sistema seleziona la a-bike disponibile più vicina e la fa muovere automaticamente verso la posizione dell’utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US13: Annullamento richiesta A-Bike</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un utente che ha richiesto una a-bike</p>
+<p class="tableblock"><strong>When</strong> l’utente annulla la richiesta prima che la corsa inizi</p>
+<p class="tableblock"><strong>Then</strong> la a-bike torna autonomamente alla stazione più vicina disponibile</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US14: Monitoraggio A-Bike e Stazioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un utente che ha richiesto una a-bike</p>
+<p class="tableblock"><strong>When</strong> la a-bike è in movimento verso l’utente, durante la corsa, e al termine della stessa</p>
+<p class="tableblock"><strong>Then</strong> l’utente può seguire graficamente su mappa lo spostamento della bici, la corsa e il ritorno in stazione, e può visualizzare lo stato e la disponibilità delle stazioni in tempo reale</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US15: Docking Automatico</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> una a-bike che termina una corsa</p>
+<p class="tableblock"><strong>When</strong> la corsa viene conclusa</p>
+<p class="tableblock"><strong>Then</strong> la a-bike si dirige e parcheggia autonomamente presso la stazione più vicina con slot disponibile</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US16: Creazione Stazione (Admin)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un utente amministratore</p>
+<p class="tableblock"><strong>When</strong> l’amministratore accede alla sezione di gestione delle stazioni</p>
+<p class="tableblock"><strong>Then</strong> può creare una nuova stazione indicando posizione e capacità</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US17: Aggiunta A-Bike (Admin)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un utente amministratore</p>
+<p class="tableblock"><strong>When</strong> l’amministratore accede alla sezione di gestione delle a-bike</p>
+<p class="tableblock"><strong>Then</strong> può aggiungere una nuova a-bike e assegnarla a una stazione specifica</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">US18: Monitoraggio tramite Digital Twin (Admin)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Given</strong> un amministratore</p>
+<p class="tableblock"><strong>When</strong> accede all’interfaccia di Digital Twin</p>
+<p class="tableblock"><strong>Then</strong> può visualizzare in tempo reale lo stato, la posizione e la disponibilità di tutte le a-bike e delle stazioni</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_use_case_diagrams">4.2. Use-Case diagrams</h3>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/usecase-user-sap.drawio.svg" alt="Use-case diagram relativo agli utenti" width="30%" height="30%">
+</div>
+<div class="title">Figure 3. Use-case diagram relativo agli utenti</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Richiedere a-bike</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Alto</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente è autenticato e ha credito sufficiente; esiste almeno una a-bike disponibile</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Una a-bike viene inviata verso la posizione dell’utente; la richiesta è tracciata nel sistema</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente seleziona “Richiedi a-bike” nell’interfaccia grafica</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’utente seleziona l’opzione per richiedere una a-bike</p>
+<p class="tableblock">. Il sistema individua la a-bike disponibile più vicina</p>
+<p class="tableblock">. Il sistema comanda la a-bike a muoversi verso l’utente</p>
+<p class="tableblock">. L’utente può monitorare lo stato della richiesta tramite la GUI</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annullare richiesta a-bike</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Alto</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Esiste una richiesta di a-bike in corso non ancora conclusa</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">La richiesta viene annullata; la a-bike torna autonomamente alla stazione più vicina disponibile</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente seleziona “Annulla richiesta a-bike” nell’interfaccia grafica</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’utente seleziona l’opzione per annullare la richiesta di a-bike</p>
+<p class="tableblock">. Il sistema riceve l’annullamento</p>
+<p class="tableblock">. La a-bike interrompe il movimento verso l’utente (se non ancora arrivata)</p>
+<p class="tableblock">. Il sistema comanda la a-bike a tornare alla stazione disponibile più vicina</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoraggio stazioni/a-bike via UI</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Alto</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente è autenticato</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente può visualizzare in tempo reale la posizione e la disponibilità delle stazioni e delle a-bike, e seguire lo stato della richiesta</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’utente effettua il login al sistema</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’utente effettua il login al sistema</p>
+<p class="tableblock">. Il sistema mostra le stazioni, la disponibilità di slot e la posizione delle a-bike</p>
+<p class="tableblock">. L’utente può seguire l’intero ciclo della a-bike richiesta (avvicinamento, corsa, ritorno in stazione)</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggiunta stazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Admin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medio</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin è autenticato</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Una nuova stazione è registrata nel sistema, visibile nella mappa e disponibile per l’assegnazione di a-bike</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin seleziona “Add stazione” nell’interfaccia di amministrazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’admin preme il pulsatne "Add stazione"</p>
+<p class="tableblock">. Inserisce posizione, capacità e altri dettagli della stazione</p>
+<p class="tableblock">. Il sistema salva la nuova stazione e la rende disponibile</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggiunta a-bike</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Admin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medio</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin è autenticato; esiste almeno una stazione a cui assegnare la nuova a-bike</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Una nuova a-bike è aggiunta alla flotta ed è assegnata a una stazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin seleziona “Add a-bike” nell’interfaccia di amministrazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’admin preme il pulsante "add a-bike"</p>
+<p class="tableblock">. Inserisce i dati della nuova a-bike</p>
+<p class="tableblock">. Seleziona la stazione di assegnazione</p>
+<p class="tableblock">. Il sistema salva la nuova a-bike associandola alla stazione scelta</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoraggio stazioni/a-bike via Digital Twin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Admin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Alto</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin è autenticato</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin può visualizzare in tempo reale la posizione, lo stato e la disponibilità di tutte le a-bike e delle stazioni tramite la piattaforma Digital Twin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L’admin accede alla dashboard Digital Twin</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. L’admin apre la dashboard Digital Twin</p>
+<p class="tableblock">. Il sistema mostra una vista aggiornata di tutte le stazioni e delle a-bike</p>
+<p class="tableblock">. L’admin può filtrare, ricercare o analizzare lo stato delle risorse</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/usecase-system-sap.drawio.svg" alt="Use-case diagram relativo alle automazioni di sistema" width="30%" height="30%">
+</div>
+<div class="title">Figure 4. Use-case diagram relativo alle automazioni di sistema</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A-bike movimento autonomo verso utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sistema</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City – Automazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medio</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Il sistema ha ricevuto una richiesta valida di a-bike da parte di un utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">La a-bike si muove autonomamente verso la posizione dell’utente e aggiorna il suo stato durante il percorso</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Il sistema riceve il comando di muovere la a-bike verso l’utente</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. Il sistema individua la posizione dell’utente</p>
+<p class="tableblock">. Calcola il percorso ottimale</p>
+<p class="tableblock">. Comanda la a-bike a spostarsi autonomamente verso l’utente</p>
+<p class="tableblock">. Aggiorna in tempo reale la posizione della a-bike</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Campo</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A-bike docking autonomo</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attori</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sistema</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Applicazione Smart City – Automazione</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Livello</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medio</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Precondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">La corsa con la a-bike è terminata, oppure la richiesta è stata annullata</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Postcondizioni</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">La a-bike si dirige autonomamente verso la stazione più vicina con slot disponibile e aggiorna il proprio stato</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Termine corsa o annullamento richiesta</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flusso</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">. Il sistema rileva la necessità di docking automatico</p>
+<p class="tableblock">. Calcola la stazione più vicina disponibile</p>
+<p class="tableblock">. Comanda la a-bike a dirigersi autonomamente verso la stazione</p>
+<p class="tableblock">. Aggiorna la disponibilità della stazione e la posizione della a-bike</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_domain_storytelling">4.3. Domain storytelling</h3>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/A-bike%20request_2025-07-07.egn%20(4).svg" alt="domain storytelling" width="600">
+</div>
+</div>
+<div class="exampleblock text-center">
+<div class="content">
+<div class="paragraph">
+<p><strong>Domain Storytelling – Flusso utente per l’utilizzo di una a-bike autonoma</strong>:
+Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike, dal momento della richiesta fino alla conclusione della corsa. Mostra come il sistema individua la stazione più vicina, sgancia la bici, gestisce il movimento autonomo verso l’utente e il ritorno automatico della bici alla stazione al termine della ride o in caso di annullamento.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bounded_context">4.4. Bounded Context</h3>
+<div class="paragraph">
+<p>In seguito all’estensione del sistema per supportare le biciclette autonome e la componente Digital Twin, sono stati individuati i seguenti nuovi bounded context:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Bounded Context</th>
+<th class="tableblock halign-left valign-top">Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Station Management</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gestisce le stazioni di parcheggio e ricarica per abike. Mantiene lo stato, la capacità e la disponibilità delle stazioni. Gestisce tutte le operazioni di docking e undocking delle bici e pubblica eventi di aggiornamento ufficiali relativi alle stazioni.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABike Management</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rappresenta il dominio delle biciclette autonome (a-bike). Gestisce il ciclo di vita, il movimento automatico (verso stazione o utente). Mantiene una proiezione locale delle stazioni per ottimizzare le decisioni di mobilità, ma delega sempre la validazione delle operazioni critiche (ad es. undocking) a Station Management.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digital Twin Integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Adatta e traduce gli eventi di aggiornamento provenienti da ABike Management e Station Management verso la piattaforma Digital Twin (es. Eclipse Ditto), mantenendo una vista digitale e aggiornata della situazione reale del sistema. Questo context funge da adattatore e sincronizzatore tra il sistema event-driven e l’ambiente smart city virtuale.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_domain_model">4.5. Domain model</h3>
+<div class="paragraph">
+<p>In seguito verranno definiti i domain model dei tre context individuati</p>
+</div>
+<div class="sect3">
+<h4 id="_station_management">4.5.1. Station Management</h4>
+<div class="paragraph">
+<p><strong>Aggregate Root:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Station</em>: Rappresenta una stazione fisica dove le a-bike possono essere parcheggiate e ricaricate. Gestisce la propria capacità e mantiene traccia delle biciclette attualmente ancorate.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Value Objects:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>P2d</em>: Rappresenta un punto bidimensionale (x,y) che definisce la posizione geografica di una stazione.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Domain Events:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>BikeDockedEvent</em>: Generato quando una a-bike viene ancorata con successo a una stazione.</p>
+</li>
+<li>
+<p><em>BikeReleasedEvent</em>: Generato quando una a-bike viene rilasciata da una stazione.</p>
+</li>
+<li>
+<p><em>CreateStationEvent</em>: Generato quando una nuova stazione viene creata nel sistema.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Repository:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>StationRepository</em>: Gestisce la persistenza delle stazioni</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_abike_management">4.5.2. ABike Management</h4>
+<div class="paragraph">
+<p><strong>Aggregate Root:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ABike</em>: Rappresenta una bicicletta autonoma con capacità di movimento senza conducente. Mantiene informazioni sulla posizione, livello batteria e stato operativo corrente.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Value Objects:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>P2d</em>: Rappresenta un punto bidimensionale (x,y) utilizzato per la posizione della bicicletta.</p>
+</li>
+<li>
+<p><em>ABikeState</em>: Enumeration che definisce gli stati possibili di una a-bike: AVAILABLE (disponibile), AUTONOMOUS_MOVING (in movimento autonomo), IN_USE (in utilizzo), MAINTENANCE (in manutenzione).</p>
+</li>
+<li>
+<p><em>Purpose</em>: Enumeration che definisce lo scopo di un movimento autonomo: TO_USER (verso l&#8217;utente) o TO_STATION (verso una stazione).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Entities:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Destination</em>: Rappresenta una destinazione con posizione e identificativo, può essere un utente o una stazione.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Domain Services:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Simulation</em>: Servizio di dominio che gestisce il movimento autonomo di una a-bike verso una destinazione. Calcola il percorso, aggiorna la posizione e notifica eventi di posizione fino al raggiungimento della meta.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Domain Events:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ABikeCreateEvent</em>: Generato quando una nuova a-bike viene creata nel sistema.</p>
+</li>
+<li>
+<p><em>ABikeUpdate</em>: Generato quando le proprietà di una a-bike vengono aggiornate (posizione, stato, ecc.).</p>
+</li>
+<li>
+<p><em>ABikeArrivedToUser</em>: Generato quando una a-bike raggiunge con successo un utente.</p>
+</li>
+<li>
+<p><em>ABikeArrivedToStation</em>: Generato quando una a-bike raggiunge con successo una stazione.</p>
+</li>
+<li>
+<p><em>CallAbikeEvent</em>: Generato quando un utente richiede una a-bike.</p>
+</li>
+<li>
+<p><em>CancellCallRequest</em>: Generato quando un utente annulla una richiesta di a-bike.</p>
+</li>
+<li>
+<p><em>ABikeCallComplete</em>: Generato quando una richiesta di a-bike viene completata.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Repository:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>SimulationRepository</em>: Gestisce la persistenza delle simulazioni di movimento autonomo</p>
+</li>
+<li>
+<p><em>ABikeRepository</em>: Gestisce la persistenza delle abike</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Aggregate Projections:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ABike</em>: Rappresentazione locale dell&#8217;aggregato ABike, contenente identificativo, posizione, livello batteria e stato operativo.</p>
+</li>
+<li>
+<p><em>Station</em>: Rappresentazione locale dell&#8217;aggregato Station, con informazioni su posizione, capacità e biciclette attualmente ancorate.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Value Objects:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Location</em>: Rappresenta un punto bidimensionale (x,y) utilizzato per definire la posizione di a-bike e stazioni.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Domain Events:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>ABikeUpdateEvent</em>: Evento che trasporta aggiornamenti relativi a una a-bike, incluso il suo stato completo.</p>
+</li>
+<li>
+<p><em>StationUpdateEvent</em>: Evento che trasporta aggiornamenti relativi a una stazione, incluso il suo stato completo.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Domain Services:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>DittoTranslatorService</em>: Servizio core che gestisce la traduzione degli eventi di dominio in messaggi compatibili con Eclipse Ditto. Mantiene uno stato dei "thingId" già noti per ottimizzare le comunicazioni.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Factory:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>DittoEventFactory</em>: Factory specializzata nella creazione di messaggi nel formato richiesto da Ditto, sia per la creazione che per l&#8217;aggiornamento di entità.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implementazione_dei_microservizi">4.6. Implementazione dei microservizi</h3>
+<div class="sect3">
+<h4 id="_station_microservice">4.6.1. Station Microservice</h4>
+<div class="sect4">
+<h5 id="_approccio_event_driven_e_gestione_del_dominio">Approccio Event-Driven e gestione del dominio</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event-Driven</strong>: La comunicazione con altri microservizi e con i client avviene esclusivamente tramite eventi Kafka e, per le operazioni amministrative, tramite API REST.</p>
+</li>
+<li>
+<p><strong>Gestione dello stato</strong>: Lo stato di ciascuna stazione (posizione, capacità, biciclette attraccate) è mantenuto in modo persistente e aggiornato tramite eventi, con la validazione locale di tutte le operazioni critiche (docking/undocking).</p>
+</li>
+<li>
+<p><strong>Integrazione proiezioni</strong>: Il servizio mantiene la fonte di verità riguardo la disponibilità delle stazioni, pubblicando update ufficiali verso altri context e microservizi che mantengono proiezioni locali.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modello_a_eventi_4">Modello a Eventi</h5>
+<div class="paragraph">
+<p>Il microservizio produce e consuma diversi eventi di dominio:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>StationRegisteredEvent</code>: Emesso quando viene creata una nuova stazione.</p>
+</li>
+<li>
+<p><code>StationUpdateEvent</code>: Pubblicato dopo ogni aggiornamento di stato (docking/undocking di una bici).</p>
+</li>
+<li>
+<p><code>BikeDockedEvent</code>: Consumato per gestire l’attracco di una bici a una stazione.</p>
+</li>
+<li>
+<p><code>BikeReleasedEvent</code>: Consumato per gestire il rilascio (undocking) di una bici da una stazione.</p>
+</li>
+<li>
+<p><code>CreateStationEvent</code>: Consumato quando si richiede la creazione di una nuova stazione (es. da API REST).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tutti gli eventi sono implementati come <code>record</code> Java immutabili, garantendo tracciabilità, integrità e auditabilità delle operazioni.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_adapter_di_comunicazione_4">Adapter di Comunicazione</h5>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>API REST (sincrone)</strong> tramite <code>RESTStationAdapter</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Creazione di nuove stazioni (<code>POST /api/stations</code>)</p>
+</li>
+<li>
+<p>Health check (<code>GET /health</code>)</p>
+</li>
+<li>
+<p>Esposizione metriche (<code>GET /metrics</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Comunicazione asincrona con Kafka</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Consumer</strong>: Ascolta il topic <code>"abike-events"</code> per ricevere eventi di movimento/aggiornamento da a-bike.</p>
+</li>
+<li>
+<p><strong>Producer</strong>: Pubblica eventi di registrazione e aggiornamento su <code>"station-events"</code> per sincronizzare le proiezioni negli altri microservizi.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_flusso_operativo_3">Flusso Operativo</h5>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Gestione creazione stazione</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Riceve richiesta REST o evento di creazione.</p>
+</li>
+<li>
+<p>Valida e salva la nuova stazione.</p>
+</li>
+<li>
+<p>Pubblica <code>StationRegisteredEvent</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Gestione docking/undocking</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Consuma eventi di docking/undocking da a-bike.</p>
+</li>
+<li>
+<p>Valida l’operazione sullo stato locale.</p>
+</li>
+<li>
+<p>Aggiorna lo stato della stazione e pubblica <code>StationUpdateEvent</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Inizializzazione</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>All’avvio, il servizio carica tutte le stazioni dal database e pubblica un evento per ciascuna, permettendo la sincronizzazione delle proiezioni negli altri context.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_persistenza_e_repository">Persistenza e Repository</h5>
+<div class="paragraph">
+<p>La persistenza delle stazioni è affidata a un repository MongoDB, implementato tramite <code>MongoRepository</code> che fornisce:
+- Salvataggio e aggiornamento di entità Station.
+- Recupero di tutte le stazioni.
+- Mappatura tra documenti MongoDB e oggetti dominio (Station, P2d).</p>
+</div>
+<div class="paragraph">
+<p>Il microservizio Station non accede direttamente ad altri bounded context, ma interagisce solo tramite eventi, mantenendo basso l’accoppiamento e assicurando la coerenza tramite la validazione locale delle operazioni di docking.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_abike_microservice">4.6.2. ABike Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio ABike costituisce il bounded context dedicato alla gestione delle biciclette autonome, orchestrando tutte le logiche di movimento automatico, assegnazione e stato delle a-bike nel sistema smart city.</p>
+</div>
+<div class="sect4">
+<h5 id="_approccio_event_driven_e_gestione_del_dominio_2">Approccio Event-Driven e gestione del dominio</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event-Driven</strong>: Tutta la logica di comunicazione con altri microservizi (Station, Ride, Map, ecc.) è basata su eventi pubblicati e consumati tramite Kafka, in particolare su topic come <code>"abike-events"</code>, <code>"station-events"</code> e <code>"ride-events"</code>.</p>
+</li>
+<li>
+<p><strong>Proiezioni locali</strong>: Il servizio mantiene una proiezione locale delle stazioni per selezionare sempre la più vicina quando necessario (ad esempio, per il ritorno della bici in stazione o per la chiamata da parte di un utente).</p>
+</li>
+<li>
+<p><strong>Movimento autonomo</strong>: Il movimento automatico delle a-bike (verso utente o stazione) è simulato da un servizio di dominio (<code>Simulation</code>) che aggiorna posizionee stato ogni tick, pubblicando gli eventi di avanzamento.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modello_a_eventi_5">Modello a Eventi</h5>
+<div class="paragraph">
+<p>Il microservizio produce e consuma diversi eventi di dominio:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ABikeCreateEvent</code>: Segnala la creazione di una nuova a-bike nel sistema.</p>
+</li>
+<li>
+<p><code>CallAbikeEvent</code>: Segnala la richiesta di una a-bike da parte di un utente (con destinazione utente).</p>
+</li>
+<li>
+<p><code>ABikeRequested</code>: Evento di inizio movimento verso utente.</p>
+</li>
+<li>
+<p><code>CancellCallRequest</code>: Segnala la cancellazione di una chiamata da parte dell’utente.</p>
+</li>
+<li>
+<p><code>ABikeUpdate</code>: Aggiornamenti continui sullo stato e posizione della bici.</p>
+</li>
+<li>
+<p><code>ABikeArrivedToUser</code>: Raggiungimento della destinazione utente.</p>
+</li>
+<li>
+<p><code>ABikeArrivedToStation</code>: Raggiungimento di una stazione.</p>
+</li>
+<li>
+<p><code>ABikeCallComplete</code>: Completamento del ciclo di chiamata.</p>
+</li>
+<li>
+<p><code>RequestStationUpdate</code>: Sincronizzazione proiezioni di stazione.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tutti gli eventi sono implementati come <code>record</code> Java, garantendo immutabilità e tracciabilità.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_adapter_di_comunicazione_5">Adapter di Comunicazione</h5>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>API REST (sincrone)</strong> tramite <code>RESTABikeAdapter</code>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Creazione di a-bike (<code>POST /api/abikes/create</code>)</p>
+</li>
+<li>
+<p>Richiesta a-bike (<code>POST /api/callAbike</code>)</p>
+</li>
+<li>
+<p>Annullamento richiesta (<code>POST /api/cancelCall</code>)</p>
+</li>
+<li>
+<p>Health check e metriche</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Comunicazione asincrona con Kafka</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Producer</strong>: pubblica tutti gli eventi del ciclo di vita della a-bike su <code>"abike-events"</code>.</p>
+</li>
+<li>
+<p><strong>Consumer</strong>: ascolta eventi da <code>"station-events"</code> (per mantenere aggiornata la proiezione locale delle stazioni) e da <code>"ride-events"</code> (per intercettare le richeiste di update dello stat odelle a-bike durante una ride).</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_flusso_operativo_4">Flusso Operativo</h5>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Creazione a-bike</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Riceve richiesta REST e genera l&#8217;evento di dominio <code>ABikeCreateEvent</code>.</p>
+</li>
+<li>
+<p>Recupera la posizione iniziale dalla stazione selezionata.</p>
+</li>
+<li>
+<p>Crea la nuova a-bike (stato AVAILABLE), la salva e pubblica evento di creazione e update.
+Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservice approva il docking della a-bike nella stazione definita e rilascia uno <code>StationUpdateEvent</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Chiamata a-bike (callAbike)</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Riceve richiesta (REST/evento) con destinazione utente  <code>CallAbikeEvent</code>.</p>
+</li>
+<li>
+<p>Seleziona la stazione più vicina con bici disponibile.</p>
+</li>
+<li>
+<p>Assegna una a-bike e crea una nuova simulazione con <code>Purpose.TO_USER</code>, iniziando a generare update (evento <code>ABikeRequested</code> e ripubblicazione dell' evento <code>CallAbikeEvent</code>).</p>
+</li>
+<li>
+<p>Aggiorna ciclicamente posizione e stato, pubblicando eventi di update <code>ABikeUpdate</code>.</p>
+</li>
+<li>
+<p>Al termine, pubblica evento di arrivo (<code>ABikeArrivedToUser</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Fine corsa e ritorno in stazione</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Al termine di una ride viene intercettato l&#8217;evento di stop</p>
+</li>
+<li>
+<p>Identifica la stazione più vicina con spazio disponibile.</p>
+</li>
+<li>
+<p>Simula il movimento della bici verso la stazione (creando una nuova simulazione con <code>Purpose.TO_STATION</code>) e pubblica eventi di update e arrivo (<code>ABikeUpdate</code>, <code>ABikeArrivedToStation</code>).</p>
+</li>
+<li>
+<p>Pubblica l&#8217;evento di completamento della call <code>ABikeCallComplete</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Annullamento richiesta</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Riceve richiesta di cancellazione (REST/evento <code>CancellCallRequest</code>).</p>
+</li>
+<li>
+<p>Interrompe la simulazione in corso (se presente).</p>
+</li>
+<li>
+<p>Avvia il ritorno automatico della bici alla stazione più vicina (nuova simulazione con <code>Purpose.TO_STATION</code>).</p>
+</li>
+<li>
+<p>Al termine esegue la procedura standard di termine chiamata descritta al punto 3</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Proiezioni locali di stazione</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Sincronizza lo stato delle stazioni ascoltando eventi <code>"StationRegisteredEventAvro"</code> e <code>"StationUpdateEventAvro"</code> da Kafka, mantenendo aggiornata la lista interna.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_persistenza_e_repository_2">Persistenza e Repository</h5>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>ABikeRepository</strong>: persistenza delle a-bike (posizione, stato, batteria).</p>
+</li>
+<li>
+<p><strong>StationProjectionRepository</strong>: persistenza e aggiornamento delle proiezioni delle stazioni.</p>
+</li>
+<li>
+<p><strong>SimulationRepository</strong>: gestione delle simulazioni attive per ogni a-bike.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_ride_microservice_2">4.6.3. Ride Microservice</h4>
+<div class="paragraph">
+<p>Il microservizio Ride mantiene l’approccio event-driven descritto nella prima versione dell’architettura, ma è stato esteso e adattato per supportare la nuova tipologia di bicicletta autonoma (ABike) accanto alle EBike tradizionali.</p>
+</div>
+<div class="sect4">
+<h5 id="_estensione_del_domain_model">Estensione del Domain Model</h5>
+<div class="paragraph">
+<p>Per astrarre la gestione di EBike e ABike, sono stati introdotti i seguenti elementi:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Interfaccia Bike</strong>: rappresenta un contratto comune che consente al microservizio di gestire in modo generico le istanze di EBike e ABike nelle proiezioni locali.</p>
+</li>
+<li>
+<p><strong>Classe ABike</strong>: aggiunta come implementazione di Bike, con i propri attributi specifici (in particolare, lo stato di movimento autonomo).</p>
+</li>
+<li>
+<p><strong>Enum BikeState</strong>: ora contiene gli stati comuni a EBike e ABike, consentendo di uniformare la gestione dello stato durante la simulazione e le ride.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Queste astrazioni permettono di utilizzare la stessa logica di proiezione, simulazione e verifica sia per ebike che per abike, mantenendo separata la gestione degli eventi specifici.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_eventi_di_dominio_aggiornati">Eventi di Dominio Aggiornati</h5>
+<div class="paragraph">
+<p>Gli eventi di dominio sono stati estesi come segue:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Eventi comuni</strong>: <code>RideStartEvent</code>, <code>RideStopEvent</code>, <code>RequestRideEndEvent</code>, <code>UserUpdateEvent</code></p>
+</li>
+<li>
+<p><strong>Eventi specifici EBike</strong>: <code>EBikeUpdateEvent</code>, <code>RideUpdateEBikeEvent</code></p>
+</li>
+<li>
+<p><strong>Eventi specifici ABike</strong>: <code>ABikeUpdateEvent</code>, <code>RideUpdateABikeEvent</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Per quanto riguarda gli eventi pubblicati sul topic Kafka, questi vengono ora completamente separati in base al tipo di bicicletta, come evidenziato dagli schemi Avro</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_proiezione_locale">Proiezione Locale</h5>
+<div class="paragraph">
+<p>Il microservizio mantiene proiezioni locali per:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Utenti</strong>: mappati tramite sequenze di <code>UserUpdateEvent</code></p>
+</li>
+<li>
+<p><strong>Biciclette</strong>: ora generalizzate tramite l’interfaccia Bike, ma distinte in base al tipo (EBike/ABike) e popolate tramite i rispettivi eventi di update</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_map_microservice_2">4.6.4. Map microservice</h4>
+<div class="paragraph">
+<p>Questo microservizio è stato adattato a processare anche i vari eventi generati da Station e ABike.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_user_microservice_2">4.6.5. User microservice</h4>
+<div class="paragraph">
+<p>Questo microservizio è stato adattato a processare <code>CallAbikeEvent</code> per decrementare il credito dell&#8217;utente che ha effettuato la chiamata.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_organizzazione_topic_kafka_e_nuovo_flusso_di_comunicazione">4.7. Organizzazione topic Kafka e nuovo flusso di comunicazione</h3>
+<div class="paragraph">
+<p>La logica di creazione dei topic di kafka rispetta la medesima del p-1 realizzando quindi due nuovi topic:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Il topic <code>abike-events</code> che veicola gli update relativi all&#8217;intero ciclo di vita di una abike.</p>
+</li>
+<li>
+<p>Il topic <code>station-evetns</code> che veicola gli update relativi alle stazioni.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/SAP-ASS-3-topic-p-3.drawio.svg" alt="Lista dei topic e interazione con microservizi" width="70%" height="70%">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="resources/svg/abike-sequence-event.svg" alt="Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike" width="800">
+</div>
+<div class="title">Figure 5. Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_integrazione_eclipse_ditto_digital_twin_adapter">4.8. Integrazione Eclipse Ditto &amp; Digital Twin Adapter</h3>
+<div class="paragraph">
+<p>Per abilitare la sincronizzazione tra la flotta di a-bike/stazioni fisiche e la loro rappresentazione digitale in ambiente smart city, è stata integrata la piattaforma <strong>Eclipse Ditto</strong> come Digital Twin framework.</p>
+</div>
+<div class="sect3">
+<h4 id="_architettura_e_orchestrazione">4.8.1. Architettura e orchestrazione</h4>
+<div class="paragraph">
+<p>L’infrastruttura include i servizi principali di Ditto (gateway, things, policies, connectivity, search, UI) deployati tramite Docker Compose insieme ai microservizi core. Tutte le componenti condividono una rete bridge dedicata per garantire isolamento e connettività diretta ai servizi Kafka e MongoDB condivisi.</p>
+</div>
+<div class="paragraph">
+<p>Il Digital Twin si interfaccia con l’ecosistema event-driven tramite un microservizio denominato <strong>ditto-kafka-adapter</strong>, che svolge un ruolo di <strong>translator</strong> e <strong>bridge</strong> tra i topic Kafka (dove i microservizi pubblicano eventi di dominio serializzati con Avro) e le API di Ditto.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_flusso_dati_e_ruolo_del_microservizio_adapter">4.8.2. Flusso dati e ruolo del microservizio adapter</h4>
+<div class="paragraph">
+<p><strong>ditto-kafka-adapter</strong> svolge due ruoli principali:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Ricezione eventi da Kafka</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Sottoscrive i topic Kafka <code>abike-events</code> e <code>station-events</code>.</p>
+</li>
+<li>
+<p>Consuma in particolare eventi di tipo <code>ABikeUpdate</code> e <code>StationUpdateEvent</code> prodotti dai rispettivi microservizi.</p>
+</li>
+<li>
+<p>Alla ricezione di questi eventi, converte i dati di dominio in <strong>comandi Ditto</strong> (formato JSON), rispettando le specifiche delle <strong>Ditto Things</strong> (gemelli digitali di a-bike e stazioni).</p>
+</li>
+<li>
+<p>Gestisce in modo trasparente sia la creazione (comando "create") che l’aggiornamento periodico ("modify") dei gemelli digitali, pubblicando i messaggi su Kafka nel topic dedicato a Ditto <code>ditto-messages</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Gestione eventi di ritorno da Ditto</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Implementata (per scopi di test/estendibilità) la ricezione di eventi/risposte provenienti dal topic Kafka <code>ditto-commands</code>, normalmente prodotti da Ditto in seguito a modifiche o richieste verso i suoi gemelli digitali.</p>
+</li>
+<li>
+<p>Il microservizio elabora questi messaggi, estrae identificativi, correlation-id e invia (tramite le API di Ditto o di nuovo via Kafka) eventuali risposte o conferme di avvenuta esecuzione, secondo lo standard Ditto.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_pipeline_operativa">4.8.3. Pipeline operativa</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Aggiornamento Digital Twin</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Ogni volta che un evento di aggiornamento (ad esempio una nuova posizione di una a-bike o lo stato di una stazione) viene emesso su Kafka, il <strong>ditto-kafka-adapter</strong> lo intercetta, lo converte e lo inoltra verso Ditto.</p>
+</li>
+<li>
+<p>Se il gemello digitale della a-bike o della stazione non esiste ancora, il microservizio provvede automaticamente alla creazione, altrimenti effettua un update.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Ciclo completo di Digital Twin</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Tutte le modifiche di stato, posizione, batteria, capacità delle stazioni sono sincronizzate in near real-time tra la parte fisica (microservizi) e la rappresentazione digitale (Ditto Things).</p>
+</li>
+<li>
+<p>È stata validata la possibilità di ricevere comandi/risposte da Ditto tramite Kafka, aprendo a scenari di controllo bidirezionale.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conclusioni">5. Conclusioni</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Questo assignment si è rivelato particolarmente interessante e formativo. Ho avuto la possibilità di mettere in pratica molti concetti affrontati durante il corso, ma soprattutto di approfondire tecnologie che non conoscevo o che avevo solo incontrato superficialmente, come Kafka, Avro ed Eclipse Ditto.</p>
+</div>
+<div class="paragraph">
+<p>L’approccio event-driven mi ha permesso di comprendere in modo molto più chiaro e concreto i vantaggi dell’architettura a microservizi basata su eventi, sia dal punto di vista della scalabilità che della resilienza. La gestione delle comunicazioni tramite Kafka e la serializzazione con Avro sono state sfide inizialmente complesse, ma estremamente utili per rafforzare le mie competenze pratiche.</p>
+</div>
+<div class="paragraph">
+<p>Inoltre, la parte di deployment su Kubernetes mi ha permesso di acquisire maggiore familiarità con l’orchestrazione di applicazioni containerizzate in ambienti simili al mondo reale.</p>
+</div>
+<div class="paragraph">
+<p>Infine, è stato stimolante poter integrare la tematica dei Digital Twin tramite Eclipse Ditto.</p>
+</div>
+<div class="paragraph">
+<p>In sintesi, considero questa esperienza una tappa importante per la mia crescita tecnica e una base solida per affrontare progetti di maggiore complessità in futuro.</p>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-04 16:17:31 UTC
+Last updated 2025-07-08 20:25:37 UTC
 </div>
 </div>
 </body>
