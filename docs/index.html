@@ -751,9 +751,6 @@ pre.rouge .gs {
 <li>
 <p>Ricarica di e-bike (<code>PUT /api/ebikes/:id/recharge</code>)</p>
 </li>
-<li>
-<p>Recupero di tutte le e-bike (<code>GET /api/ebikes</code>)</p>
-</li>
 </ul>
 </div>
 </li>
@@ -762,7 +759,7 @@ pre.rouge .gs {
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Consumer</strong>: Tramite <code>RideUpdatesConsumer</code> che ascolta gli eventi <code>RideUpdateEventAvro</code> dal topic "ride-events"</p>
+<p><strong>Consumer</strong>: Tramite <code>MapEventConsumer</code> che ascolta gli eventi <code>RideUpdateEventAvro</code> dal topic "ride-events"</p>
 </li>
 <li>
 <p><strong>Producer</strong>: Pubblica eventi di aggiornamento attraverso <code>EbikeUpdatesProducer</code> sul topic "ebike-events"</p>
@@ -823,7 +820,7 @@ pre.rouge .gs {
 </ul>
 </div>
 <div class="paragraph">
-<p>Il metodo <code>rebuildUserState</code> in <code>UserServiceImpl</code> è il cuore dell&#8217;implementazione, ricostruendo lo stato attuale dell&#8217;utente processando in sequenza temporale tutti gli eventi associati.</p>
+<p>Il metodo <code>rebuildUserState</code> in <code>UserServiceImpl</code> è il cuore dell&#8217;implementazione, ricostruendo lo stato attuale dell&#8217;utente processando in sequenza temporale tutti gli eventi associati. Nello specifico è stato scelto di integrare event-sourcing in questo microservizio pechè, in un contesto reale, gestisce il credito utente, è quindi utile tenere una traccia temporale delle modifiche di credito del singolo utente.</p>
 </div>
 </div>
 <div class="sect4">
@@ -885,7 +882,7 @@ pre.rouge .gs {
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Consumer</strong>: <code>RideUpdatesConsumer</code> ascolta il topic "ride-events" per aggiornare il credito degli utenti</p>
+<p><strong>Consumer</strong>: <code>MapEventConsumer</code> ascolta il topic "ride-events" per aggiornare il credito degli utenti</p>
 </li>
 <li>
 <p><strong>Producer</strong>: Pubblica eventi di aggiornamento attraverso <code>UserUpdatesProducer</code> sul topic "user-events"</p>
@@ -942,12 +939,12 @@ pre.rouge .gs {
 <div class="sect4">
 <h5 id="_approccio_a_proiezioni_locali">Approccio a Proiezioni Locali</h5>
 <div class="paragraph">
-<p>Il microservizio implementa un approccio interessante che combina elementi event-driven con proiezioni locali:</p>
+<p>Il microservizio implementa un approccio che combina elementi event-driven con proiezioni locali:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Event-driven</strong>: Utilizza eventi per comunicare con altri servizi e gestire il ciclo di vita dei noleggi</p>
+<p><strong>Event-driven</strong>: Utilizza eventi per comunicare con altri servizi e gestire il ciclo di vita delle ride</p>
 </li>
 <li>
 <p><strong>Proiezioni locali</strong>: Mantiene copie locali degli stati di utenti ed e-bike attraverso il <code>LocalProjectionRepository</code></p>
@@ -1069,22 +1066,30 @@ pre.rouge .gs {
 <div class="sect3">
 <h4 id="_map_microservice">2.2.4. Map Microservice</h4>
 <div class="paragraph">
-<p>Il microservizio Map, già presente nella precedente versione dell&#8217;architettura, ha richiesto solo adattamenti minimali per integrarsi nel nuovo sistema event-driven. In particolare, è stato implementato il componente RideUpdatesConsumer che permette al servizio di reagire in tempo reale agli eventi generati dagli altri microservizi.</p>
+<p>Il microservizio Map, già presente nella precedente versione dell&#8217;architettura, ha richiesto solo adattamenti minimali per integrarsi nel nuovo sistema event-driven. In particolare, è stato implementato il componente <code>MapEventConsumer</code> che permette al servizio di reagire in tempo reale agli eventi generati dagli altri microservizi.</p>
 </div>
 <div class="paragraph">
 <p>Questo consumer si sottoscrive a due topic Kafka fondamentali:</p>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p>ride-events: per tracciare inizio e fine dei noleggi</p>
+</li>
+<li>
+<p>ebike-events: per aggiornare la posizione e lo stato delle biciclette</p>
+</li>
+</ul>
+</div>
 <div class="paragraph">
-<p>ride-events: per tracciare inizio e fine dei noleggi
-ebike-events: per aggiornare la posizione e lo stato delle biciclette
-Quando riceve un evento, il consumer lo processa e aggiorna la visualizzazione grafica della mappa di conseguenza, mostrando in tempo reale la posizione delle e-bike con differenti colori in base al loro stato operativo.</p>
+<p>Quando riceve un evento, il consumer lo processa e direziona l&#8217;update alla web socket specifica.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_scelte_architetturali_e_organizzazione_dei_topic_kafka">2.3. Scelte architetturali e organizzazione dei topic Kafka</h3>
 <div class="paragraph">
-<p>Nel disegno dei topic Kafka, si è seguito un criterio di coerenza con i bounded context del dominio, evitando topic troppo generici. Ogni topic è stato progettato per raccogliere eventi di una singola tipologia logica, in modo che i consumatori possano sottoscriversi solo ai flussi rilevanti e interpretare con chiarezza la semantica degli eventi ricevuti.</p>
+<p>Nel disegno dei topic Kafka, si è seguito un criterio di coerenza con i bounded context del dominio, evitando topic troppo generici/specifici. Ogni topic è stato progettato per raccogliere eventi di una singola tipologia logica, in modo che i consumatori possano sottoscriversi solo ai flussi rilevanti e interpretare con chiarezza la semantica degli eventi ricevuti.</p>
 </div>
 <div class="paragraph">
 <p>Nello specifico:</p>
@@ -1539,7 +1544,7 @@ watch kubectl get pods <span class="nt">-n</span> sap-assignment</code></pre>
 <div class="sect2">
 <h3 id="_estensione_del_domain_driven_design_a_bike_station_e_digital_twin">4.1. Estensione del Domain-Driven Design: A-Bike, Station e Digital Twin</h3>
 <div class="paragraph">
-<p>Per rispondere alle nuove richieste progettuali introdotte nella terza parte dell’elaborato, si è reso necessario estendere il Domain-Driven Design sviluppato nel progetto originale. In particolare, vengono introdotti i concetti di bicicletta autonoma (a-bike), stazione (station) e digital twin urbano, al fine di supportare scenari avanzati di mobilità autonoma all’interno di un contesto smart city.</p>
+<p>Per rispondere alle nuove richieste progettuali introdotte nella terza parte dell’elaborato, si è reso necessario estendere il Domain-Driven Design sviluppato nel progetto originale. In particolare, vengono introdotti i concetti di bicicletta autonoma (a-bike), stazione (station) e digital twin, al fine di supportare scenari avanzati di mobilità autonoma all’interno di un contesto smart city.</p>
 </div>
 <div class="sect3">
 <h4 id="_obiettivi_e_requisiti_dellestensione">4.1.1. Obiettivi e requisiti dell&#8217;estensione</h4>
@@ -2356,7 +2361,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Event-Driven</strong>: La comunicazione con altri microservizi e con i client avviene esclusivamente tramite eventi Kafka e, per le operazioni amministrative, tramite API REST.</p>
+<p><strong>Event-Driven</strong>: La comunicazione con altri microservizi avviene esclusivamente tramite eventi Kafka e, per le operazioni amministrative, tramite API REST.</p>
 </li>
 <li>
 <p><strong>Gestione dello stato</strong>: Lo stato di ciascuna stazione (posizione, capacità, biciclette attraccate) è mantenuto in modo persistente e aggiornato tramite eventi, con la validazione locale di tutte le operazioni critiche (docking/undocking).</p>
@@ -2420,7 +2425,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Consumer</strong>: Ascolta il topic <code>"abike-events"</code> per ricevere eventi di movimento/aggiornamento da a-bike.</p>
+<p><strong>Consumer</strong>: Ascolta il topic <code>"abike-events"</code> per ricevere richieste di docking/undocking da a-bike.</p>
 </li>
 <li>
 <p><strong>Producer</strong>: Pubblica eventi di registrazione e aggiornamento su <code>"station-events"</code> per sincronizzare le proiezioni negli altri microservizi.</p>
@@ -2509,7 +2514,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 <p><strong>Proiezioni locali</strong>: Il servizio mantiene una proiezione locale delle stazioni per selezionare sempre la più vicina quando necessario (ad esempio, per il ritorno della bici in stazione o per la chiamata da parte di un utente).</p>
 </li>
 <li>
-<p><strong>Movimento autonomo</strong>: Il movimento automatico delle a-bike (verso utente o stazione) è simulato da un servizio di dominio (<code>Simulation</code>) che aggiorna posizionee stato ogni tick, pubblicando gli eventi di avanzamento.</p>
+<p><strong>Movimento autonomo</strong>: Il movimento automatico delle a-bike (verso utente o stazione) è simulato da un servizio di dominio (<code>Simulation</code>) che aggiorna posizione e stato ogni tick, pubblicando gli eventi di avanzamento.</p>
 </li>
 </ul>
 </div>
@@ -2585,7 +2590,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 <p><strong>Producer</strong>: pubblica tutti gli eventi del ciclo di vita della a-bike su <code>"abike-events"</code>.</p>
 </li>
 <li>
-<p><strong>Consumer</strong>: ascolta eventi da <code>"station-events"</code> (per mantenere aggiornata la proiezione locale delle stazioni) e da <code>"ride-events"</code> (per intercettare le richeiste di update dello stat odelle a-bike durante una ride).</p>
+<p><strong>Consumer</strong>: ascolta eventi da <code>"station-events"</code> (per mantenere aggiornata la proiezione locale delle stazioni) e da <code>"ride-events"</code> (per intercettare le richeiste di update dello stato delle a-bike durante una ride).</p>
 </li>
 </ul>
 </div>
@@ -2625,7 +2630,10 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <p>Seleziona la stazione più vicina con bici disponibile.</p>
 </li>
 <li>
-<p>Assegna una a-bike e crea una nuova simulazione con <code>Purpose.TO_USER</code>, iniziando a generare update (evento <code>ABikeRequested</code> e ripubblicazione dell' evento <code>CallAbikeEvent</code>).</p>
+<p>Pubblica gli eventi <code>AbikeRequested</code> e <code>CallAbikeEvent</code> per segnalare la richiesta di undock della a-bike a station e la richiesta di pagamento per la chiamata all' utente.</p>
+</li>
+<li>
+<p>Assegna una a-bike e crea una nuova simulazione con <code>Purpose.TO_USER</code>, iniziando a generare update.</p>
 </li>
 <li>
 <p>Aggiorna ciclicamente posizione e stato, pubblicando eventi di update <code>ABikeUpdate</code>.</p>
@@ -2641,7 +2649,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <div class="ulist">
 <ul>
 <li>
-<p>Al termine di una ride viene intercettato l&#8217;evento di stop</p>
+<p>Al termine di una ride viene intercettato l&#8217;evento di stop.</p>
 </li>
 <li>
 <p>Identifica la stazione più vicina con spazio disponibile.</p>
@@ -2650,7 +2658,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <p>Simula il movimento della bici verso la stazione (creando una nuova simulazione con <code>Purpose.TO_STATION</code>) e pubblica eventi di update e arrivo (<code>ABikeUpdate</code>, <code>ABikeArrivedToStation</code>).</p>
 </li>
 <li>
-<p>Pubblica l&#8217;evento di completamento della call <code>ABikeCallComplete</code></p>
+<p>Pubblica l&#8217;evento di completamento della call <code>ABikeCallComplete</code>.</p>
 </li>
 </ul>
 </div>
@@ -2723,7 +2731,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <p><strong>Classe ABike</strong>: aggiunta come implementazione di Bike, con i propri attributi specifici (in particolare, lo stato di movimento autonomo).</p>
 </li>
 <li>
-<p><strong>Enum BikeState</strong>: ora contiene gli stati comuni a EBike e ABike, consentendo di uniformare la gestione dello stato durante la simulazione e le ride.</p>
+<p><strong>Enum BikeState</strong>: ora contiene gli stati di EBike e ABike, consentendo di uniformare la gestione dello stato durante la simulazione e le ride.</p>
 </li>
 </ul>
 </div>
@@ -2750,23 +2758,36 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 </ul>
 </div>
 <div class="paragraph">
-<p>Per quanto riguarda gli eventi pubblicati sul topic Kafka, questi vengono ora completamente separati in base al tipo di bicicletta, come evidenziato dagli schemi Avro</p>
+<p>Per quanto riguarda gli eventi pubblicati sul topic Kafka, questi vengono ora completamente separati in base al tipo di bicicletta, come evidenziato dagli schemi Avro. Eventi di dominio generici come <code>RideStartEvent</code> e <code>RideStopEvent</code> sono stati differenziati a livello di adapter gestendoli con schemi Avro specifici per tipo di bike.</p>
 </div>
 </div>
 <div class="sect4">
 <h5 id="_proiezione_locale">Proiezione Locale</h5>
 <div class="paragraph">
-<p>Il microservizio mantiene proiezioni locali per:</p>
+<p>Il microservizio mantiene proiezioni locali tramite il <code>LocalProjectionRepository</code>, che implementa il pattern Event Sourcing per:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Utenti</strong>: mappati tramite sequenze di <code>UserUpdateEvent</code></p>
+<p><strong>Utenti</strong>: Tracciati in una mappa con chiave username, dove ogni elemento contiene una lista cronologica di <code>UserUpdateEvent</code>. Lo stato corrente dell&#8217;utente viene ricostruito recuperando l&#8217;evento più recente.</p>
 </li>
 <li>
-<p><strong>Biciclette</strong>: ora generalizzate tramite l’interfaccia Bike, ma distinte in base al tipo (EBike/ABike) e popolate tramite i rispettivi eventi di update</p>
+<p><strong>Biciclette</strong>: Gestite attraverso l&#8217;interfaccia <code>Bike</code> che unifica il comportamento, ma memorizzate in una mappa con chiave composta (id + tipo) che distingue tra:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>EBike</code>: Popolata tramite eventi <code>EBikeUpdateEvent</code></p>
+</li>
+<li>
+<p><code>ABike</code>: Popolata tramite eventi <code>ABikeUpdateEvent</code></p>
 </li>
 </ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ogni richiesta di informazioni su un&#8217;entità viene soddisfatta asincronamente (<code>CompletableFuture</code>), recuperando l&#8217;evento più recente dalla cronologia pertinente e ricostruendo lo stato corrente dell&#8217;oggetto di dominio.</p>
 </div>
 </div>
 </div>
@@ -2808,6 +2829,9 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <img src="resources/svg/abike-sequence-event.svg" alt="Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike" width="800">
 </div>
 <div class="title">Figure 5. Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike</div>
+</div>
+<div class="paragraph">
+<p>Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato l&#8217;adapter consumer per processare nel modo corretto i nuovi eventi prodotti.</p>
 </div>
 </div>
 <div class="sect2">
@@ -2925,7 +2949,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-08 20:25:37 UTC
+Last updated 2025-07-15 22:49:28 UTC
 </div>
 </div>
 </body>
