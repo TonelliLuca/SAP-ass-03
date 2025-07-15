@@ -212,7 +212,7 @@ Questa organizzazione dei topic facilita la **gestione della single source of tr
 
 ==== Flusso di propagazione e validazione degli eventi
 .Lista dei topic e definizione dei consumer/producer
-image::../resources/svg/p-1-topic.svg[Lista dei topic e interazione con microservizi, width=600]
+image::../resources/svg/SAP-ASS-3-topic-p1.drawio.svg[Lista dei topic e interazione con microservizi, width=600]
 
 Nel ciclo di vita di una corsa, i microservizi non comunicano tramite invocazioni dirette, ma esclusivamente attraverso eventi Kafka, mantenendo un disaccoppiamento logico tra le componenti.
 
