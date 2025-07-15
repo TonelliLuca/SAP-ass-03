@@ -50,10 +50,9 @@ Il microservizio espone due modalità di interazione:
 1. **API REST (sincrone)** tramite `RESTEBikeAdapter` che espone endpoint per:
    * Creazione di e-bike (`POST /api/ebikes/create`)
    * Ricarica di e-bike (`PUT /api/ebikes/:id/recharge`)
-   * Recupero di tutte le e-bike (`GET /api/ebikes`)
 
 2. **Comunicazione asincrona con Kafka**:
-   * **Consumer**: Tramite `RideUpdatesConsumer` che ascolta gli eventi `RideUpdateEventAvro` dal topic "ride-events"
+   * **Consumer**: Tramite `MapEventConsumer` che ascolta gli eventi `RideUpdateEventAvro` dal topic "ride-events"
    * **Producer**: Pubblica eventi di aggiornamento attraverso `EbikeUpdatesProducer` sul topic "ebike-events"
 
 ===== Flusso Operativo
@@ -80,7 +79,8 @@ A differenza del microservizio EBike, che utilizza un approccio event-driven ma 
 * **Ricostruzione stato**: Lo stato corrente di un utente non è mai salvato direttamente, ma viene sempre ricostruito dalla sequenza degli eventi storici
 * **Completa tracciabilità**: La cronologia completa di ogni utente è disponibile per audit, debugging e analisi
 
-Il metodo `rebuildUserState` in `UserServiceImpl` è il cuore dell'implementazione, ricostruendo lo stato attuale dell'utente processando in sequenza temporale tutti gli eventi associati.
+Il metodo `rebuildUserState` in `UserServiceImpl` è il cuore dell'implementazione, ricostruendo lo stato attuale dell'utente processando in sequenza temporale tutti gli eventi associati. Nello specifico è stato scelto di integrare event-sourcing in questo microservizio pechè, in un contesto reale, gestisce il credito utente, è quindi utile tenere una traccia temporale delle modifiche di credito del singolo utente.
+
 
 ===== Modello a Eventi
 
@@ -105,7 +105,7 @@ Il microservizio espone due modalità di interazione:
   * Osservazione utenti tramite WebSocket (`/observeAllUsers`, `/observeUser/:username`)
 
 2. **Comunicazione asincrona con Kafka**:
-  * **Consumer**: `RideUpdatesConsumer` ascolta il topic "ride-events" per aggiornare il credito degli utenti
+  * **Consumer**: `MapEventConsumer` ascolta il topic "ride-events" per aggiornare il credito degli utenti
   * **Producer**: Pubblica eventi di aggiornamento attraverso `UserUpdatesProducer` sul topic "user-events"
 
 ===== Flusso Event Sourcing
@@ -131,9 +131,9 @@ Il microservizio Ride rappresenta un componente fondamentale nell'architettura e
 
 ===== Approccio a Proiezioni Locali
 
-Il microservizio implementa un approccio interessante che combina elementi event-driven con proiezioni locali:
+Il microservizio implementa un approccio che combina elementi event-driven con proiezioni locali:
 
-* **Event-driven**: Utilizza eventi per comunicare con altri servizi e gestire il ciclo di vita dei noleggi
+* **Event-driven**: Utilizza eventi per comunicare con altri servizi e gestire il ciclo di vita delle ride
 * **Proiezioni locali**: Mantiene copie locali degli stati di utenti ed e-bike attraverso il `LocalProjectionRepository`
 * **Simulazione eventi**: Genera eventi in tempo reale durante il noleggio tramite `RideSimulation` e `EventPublisher`
 
@@ -187,19 +187,20 @@ All'avvio, il servizio si registra con Eureka per il service discovery e inizia 
 
 ==== Map Microservice
 
-Il microservizio Map, già presente nella precedente versione dell'architettura, ha richiesto solo adattamenti minimali per integrarsi nel nuovo sistema event-driven. In particolare, è stato implementato il componente RideUpdatesConsumer che permette al servizio di reagire in tempo reale agli eventi generati dagli altri microservizi.
+Il microservizio Map, già presente nella precedente versione dell'architettura, ha richiesto solo adattamenti minimali per integrarsi nel nuovo sistema event-driven. In particolare, è stato implementato il componente `MapEventConsumer` che permette al servizio di reagire in tempo reale agli eventi generati dagli altri microservizi.
 
 Questo consumer si sottoscrive a due topic Kafka fondamentali:
 
 
-ride-events: per tracciare inizio e fine dei noleggi
-ebike-events: per aggiornare la posizione e lo stato delle biciclette
-Quando riceve un evento, il consumer lo processa e aggiorna la visualizzazione grafica della mappa di conseguenza, mostrando in tempo reale la posizione delle e-bike con differenti colori in base al loro stato operativo.
+- ride-events: per tracciare inizio e fine dei noleggi
+- ebike-events: per aggiornare la posizione e lo stato delle biciclette
+
+Quando riceve un evento, il consumer lo processa e direziona l'update alla web socket specifica.
 
 
 === Scelte architetturali e organizzazione dei topic Kafka
 
-Nel disegno dei topic Kafka, si è seguito un criterio di coerenza con i bounded context del dominio, evitando topic troppo generici. Ogni topic è stato progettato per raccogliere eventi di una singola tipologia logica, in modo che i consumatori possano sottoscriversi solo ai flussi rilevanti e interpretare con chiarezza la semantica degli eventi ricevuti.
+Nel disegno dei topic Kafka, si è seguito un criterio di coerenza con i bounded context del dominio, evitando topic troppo generici/specifici. Ogni topic è stato progettato per raccogliere eventi di una singola tipologia logica, in modo che i consumatori possano sottoscriversi solo ai flussi rilevanti e interpretare con chiarezza la semantica degli eventi ricevuti.
 
 Nello specifico:
 
