@@ -54,7 +54,6 @@ public class ServiceConfiguration {
         return retriever.getConfig()
                 .onSuccess(conf -> {
                     this.config = conf;
-                    // Listen for changes
                     retriever.listen(change -> {
                         this.config = change.getNewConfiguration();
                         System.out.println("Configuration updated: " + this.config.encodePrettily());

@@ -33,7 +33,6 @@ public class MongoUserEventStoreRepository implements UserEventStoreRepository {
             JsonObject doc = new JsonObject(mapper.writeValueAsString(event))
                     .put("eventType", event.getClass().getSimpleName());
 
-            // PATCH: Se trovi 'user.id', metti 'user.username'
             if (doc.containsKey("user")) {
                 JsonObject userObj = doc.getJsonObject("user");
                 if (!userObj.containsKey("username") && userObj.containsKey("id")) {

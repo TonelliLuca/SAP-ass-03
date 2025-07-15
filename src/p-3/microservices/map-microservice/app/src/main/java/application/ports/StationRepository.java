@@ -1,4 +1,6 @@
-package domain.model;
+package application.ports;
+
+import domain.model.Station;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

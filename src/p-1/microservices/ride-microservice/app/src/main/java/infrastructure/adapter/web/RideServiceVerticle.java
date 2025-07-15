@@ -79,7 +79,7 @@ public class RideServiceVerticle extends AbstractVerticle {
                 metricsManager.recordTimer(timer, "startRide");
             }).exceptionally(ex -> {
                 ctx.response()
-                        .setStatusCode(400)  // Use 400 for client errors
+                        .setStatusCode(400)
                         .putHeader("Content-Type", "application/json")
                         .end(new JsonObject()
                                 .put("error", ex.getMessage())

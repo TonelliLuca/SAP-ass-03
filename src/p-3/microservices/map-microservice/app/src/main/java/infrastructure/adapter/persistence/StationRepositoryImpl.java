@@ -1,4 +1,7 @@
-package domain.model;
+package infrastructure.adapter.persistence;
+
+import application.ports.StationRepository;
+import domain.model.Station;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

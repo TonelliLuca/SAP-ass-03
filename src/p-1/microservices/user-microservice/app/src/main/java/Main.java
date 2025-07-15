@@ -23,7 +23,6 @@ public class Main {
         ServiceConfiguration config = ServiceConfiguration.getInstance(vertx);
         config.load().onSuccess(conf -> {
             String bootstrapServers = config.getKakaConf();
-
             logger.info("Configuration loaded: " + conf.encodePrettily());
             MongoClient mongoClient = MongoClient.create(vertx, config.getMongoConfig());
             UserEventStoreRepository repository = new MongoUserEventStoreRepository(mongoClient);

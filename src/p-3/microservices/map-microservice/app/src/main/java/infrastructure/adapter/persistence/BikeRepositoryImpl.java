@@ -1,9 +1,14 @@
-package domain.model;
+package infrastructure.adapter.persistence;
 
+import application.ports.BikeRepository;
 import ddd.Repository;
+import domain.model.ABike;
+import domain.model.Bike;
+import domain.model.BikeState;
+import domain.model.EBike;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

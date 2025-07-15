@@ -50,7 +50,7 @@ public class EventPublisherImpl implements EventPublisher {
                 .put("x", bike.getPosition().x())
                 .put("y", bike.getPosition().y()));
         json.put("state", bike.getState().toString());
-        json.put("batteryLevel", bike.getBatteryLevel()); // Add this line
+        json.put("batteryLevel", bike.getBatteryLevel());
         return json.encode();
     }
 

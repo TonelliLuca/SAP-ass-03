@@ -43,7 +43,6 @@ public class RideUpdatesConsumer {
                     for (ConsumerRecord<String, GenericRecord> record : records) {
                         try {
                             GenericRecord unionRecord = record.value();
-                            // RideEventUnion: estrai il vero evento dal campo "payload"
                             GenericRecord payload = (GenericRecord) unionRecord.get("payload");
                             if (payload == null) continue;
 

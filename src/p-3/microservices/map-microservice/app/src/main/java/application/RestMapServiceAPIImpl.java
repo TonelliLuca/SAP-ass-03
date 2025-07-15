@@ -1,9 +1,13 @@
 package application;
 
+import application.ports.BikeRepository;
 import application.ports.RestMapServiceAPI;
 
+import application.ports.StationRepository;
 import domain.model.*;
 import application.ports.EventPublisher;
+import infrastructure.adapter.persistence.BikeRepositoryImpl;
+import infrastructure.adapter.persistence.StationRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;

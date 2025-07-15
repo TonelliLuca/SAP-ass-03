@@ -43,11 +43,9 @@ public class RideUpdatesConsumer {
                     for (ConsumerRecord<String, GenericRecord> record : records) {
                         try {
                             GenericRecord unionRecord = record.value();
-                            // RideEventUnion: estrai il vero evento!
                             GenericRecord payload = (GenericRecord) unionRecord.get("payload");
                             if (payload == null) continue;
 
-                            // Filtra SOLO RideUpdateEventAvro!
                             if (!"RideUpdateEventAvro".equals(payload.getSchema().getName())) continue;
 
                             String bikeId = payload.get("bikeId").toString();

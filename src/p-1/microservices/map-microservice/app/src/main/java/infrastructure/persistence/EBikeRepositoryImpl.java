@@ -1,6 +1,9 @@
-package domain.model;
+package infrastructure.persistence;
 
+import application.ports.EBikeRepository;
 import ddd.Repository;
+import domain.model.EBike;
+import domain.model.EBikeState;
 
 import java.util.ArrayList;
 import java.util.List;

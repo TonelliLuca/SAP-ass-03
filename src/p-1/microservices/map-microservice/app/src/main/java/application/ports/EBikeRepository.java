@@ -1,4 +1,6 @@
-package domain.model;
+package application.ports;
+
+import domain.model.EBike;
 
 import java.util.Map;
 import java.util.List;
@@ -7,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Port representing the repository for managing e-bikes.
  */
-public interface BikeRepository {
+public interface EBikeRepository{
 
     /**
      * Saves an e-bike to the repository.
@@ -15,7 +17,7 @@ public interface BikeRepository {
      * @param bike the e-bike to save.
      * @return a CompletableFuture that completes when the bike is saved.
      */
-    CompletableFuture<Void> saveBike(Bike bike);
+    CompletableFuture<Void> saveBike(EBike bike);
 
     /**
      * Retrieves an e-bike from the repository by its name.
@@ -23,7 +25,7 @@ public interface BikeRepository {
      * @param bikeName the name of the e-bike to retrieve.
      * @return a CompletableFuture containing the retrieved e-bike.
      */
-    CompletableFuture<Bike> getBike(String bikeName, String bikeType);
+    CompletableFuture<EBike> getBike(String bikeName);
 
     /**
      * Assigns an e-bike to a user.
@@ -32,7 +34,7 @@ public interface BikeRepository {
      * @param bike the e-bike to assign.
      * @return a CompletableFuture that completes when the bike is assigned.
      */
-    CompletableFuture<Void> assignBikeToUser(String username, Bike bike);
+    CompletableFuture<Void> assignBikeToUser(String username, EBike bike);
 
     /**
      * Unassigns an e-bike from a user.
@@ -41,14 +43,14 @@ public interface BikeRepository {
      * @param bike the e-bike to unassign.
      * @return a CompletableFuture that completes when the bike is unassigned.
      */
-    CompletableFuture<Void> unassignBikeFromUser(String username, Bike bike);
+    CompletableFuture<Void> unassignBikeFromUser(String username, EBike bike);
 
     /**
      * Retrieves a list of all available e-bikes.
      *
      * @return a CompletableFuture containing a list of available e-bikes.
      */
-    CompletableFuture<List<Bike>> getAvailableBikes();
+    CompletableFuture<List<EBike>> getAvailableBikes();
 
     /**
      * Checks if an e-bike is assigned to a user.
@@ -56,21 +58,21 @@ public interface BikeRepository {
      * @param bike the e-bike to check.
      * @return a CompletableFuture containing the username of the user the bike is assigned to, or null if not assigned.
      */
-    CompletableFuture<String> isBikeAssigned(Bike bike);
+    CompletableFuture<String> isBikeAssigned(EBike bike);
 
     /**
      * Retrieves a map of users with their assigned and available e-bikes.
      *
      * @return a CompletableFuture containing a map of usernames to lists of assigned and available e-bikes.
      */
-    CompletableFuture<Map<String, List<Bike>>> getUsersWithAssignedAndAvailableBikes();
+    CompletableFuture<Map<String, List<EBike>>> getUsersWithAssignedAndAvailableBikes();
 
     /**
      * Retrieves a list of all e-bikes.
      *
      * @return a CompletableFuture containing a list of all e-bikes.
      */
-    CompletableFuture<List<Bike>> getAllBikes();
+    CompletableFuture<List<EBike>> getAllBikes();
 
     /**
      * Retrieves a list of all e-bikes assigned to a specific user.
@@ -78,7 +80,5 @@ public interface BikeRepository {
      * @param username the username of the user.
      * @return a CompletableFuture containing a list of e-bikes assigned to the user.
      */
-    CompletableFuture<List<Bike>> getAllBikes(String username);
-    CompletableFuture<List<Bike>> getAssignedABike(String username);
-    CompletableFuture<List<Bike>> getAllMovingAbikes();
+    CompletableFuture<List<EBike>> getAllBikes(String username);
 }

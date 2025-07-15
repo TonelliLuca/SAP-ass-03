@@ -18,13 +18,7 @@ public interface RestMapServiceAPI {
      */
     CompletableFuture<Void> updateEBike(EBike bike);
 
-    /**
-     * Updates the information of multiple e-bikes.
-     *
-     * @param bikes the list of e-bikes to update.
-     * @return a CompletableFuture that completes when the updates are done.
-     */
-    CompletableFuture<Void> updateEBikes(List<EBike> bikes);
+
 
     /**
      * Notifies the start of a ride for a user.

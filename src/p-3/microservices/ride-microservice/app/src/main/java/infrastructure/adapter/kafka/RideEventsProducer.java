@@ -64,7 +64,6 @@ public class RideEventsProducer implements RideEventsProducerPort {
                         .build();
                 key = e.bikeId()+":"+e.userId();
             } else if (event instanceof RideStartEvent e) {
-                // Se vuoi togliere type dal dominio, crea RideStartABikeEvent e RideStartEBikeEvent domain separati
                 if (e.type().equalsIgnoreCase("abike")) {
                     envelope = RideEventsEnvelope.newBuilder()
                             .setEvent(toAvroStartABike(e))

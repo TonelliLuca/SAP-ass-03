@@ -46,7 +46,6 @@ public class RideUpdatesConsumer {
                 userService.abikeRequested(new UserRequestedAbike(id));
                 logger.info("Processed CallAbikeEvent for userId={}", id);
             }
-            // Se serve: gestisci altri eventi abike qui...
         } catch (Exception e) {
             logger.error("Error processing abike update", e);
         }
@@ -54,7 +53,6 @@ public class RideUpdatesConsumer {
 
     private void processUserUpdate(String key, GenericRecord envelope) {
         try {
-            // Estrai il vero evento dall'envelope
             GenericRecord event = (GenericRecord) envelope.get("event");
             if (event == null) {
                 logger.error("Envelope missing event field");
@@ -67,7 +65,6 @@ public class RideUpdatesConsumer {
                 userService.updateUser(new RequestUserUpdateEvent(userId, userCredit));
                 logger.info("Processed {} and triggered UserUpdateEvent for userId={}", schemaName, userId);
             }
-            // Se serve: gestisci altri eventi ride qui...
         } catch (Exception e) {
             logger.error("Error processing user update", e);
         }

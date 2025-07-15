@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LocalProjectionRepository implements ProjectionRepositoryPort {
     private static final Logger logger = LoggerFactory.getLogger(LocalProjectionRepository.class);
 
-    // Mappa <username, lista eventi>
     private final Map<String, List<UserUpdateEvent>> userEvents = new ConcurrentHashMap<>();
     private final Map<String, List<EBikeUpdateEvent>> ebikeEvents = new ConcurrentHashMap<>();
 

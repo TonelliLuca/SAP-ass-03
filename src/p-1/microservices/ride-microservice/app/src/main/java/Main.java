@@ -15,16 +15,12 @@ public class Main {
         config.load().onSuccess(conf -> {
             System.out.println("Configuration loaded: " + conf.encodePrettily());
 
-            // Get Kafka configuration
             String bootstrapServers = config.getKakaConf();
 
-            // Create shared projection repository
             ProjectionRepositoryPort localProjections = new LocalProjectionRepository();
 
-            // Create Kafka event producer
             RideEventsProducerPort producer = new RideEventsProducer(bootstrapServers, "http://schema-registry:8081", vertx);
 
-            // Create and initialize projection updates consumer
             ProjectionUpdatesConsumer updatesConsumer = new ProjectionUpdatesConsumer(
                 bootstrapServers,
                     "http://schema-registry:8081",
@@ -32,7 +28,6 @@ public class Main {
             );
             updatesConsumer.init();
 
-            // Create REST API service implementation
             RestRideServiceAPI service = new RestRideServiceAPIImpl(
                 new EventPublisherImpl(vertx),
                 vertx,
@@ -40,12 +35,10 @@ public class Main {
                 producer
             );
 
-            // Create and initialize web service verticle
             RideServiceVerticle rideServiceVerticle = new RideServiceVerticle(service, vertx);
             rideServiceVerticle.init();
             producer.init();
             updatesConsumer.init();
-            System.out.println("Ride microservice started successfully");
         });
     }
 }

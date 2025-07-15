@@ -31,7 +31,6 @@ public class MongoUserEventStoreRepository implements UserEventStoreRepository {
             JsonObject doc = new JsonObject(mapper.writeValueAsString(event))
                     .put("eventType", event.getClass().getSimpleName());
 
-            // PATCH: Se trovi 'user.id', metti 'user.username'
             if (doc.containsKey("user")) {
                 JsonObject userObj = doc.getJsonObject("user");
                 if (!userObj.containsKey("username") && userObj.containsKey("id")) {
@@ -61,7 +60,6 @@ public class MongoUserEventStoreRepository implements UserEventStoreRepository {
                             .map(this::toEvent)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
-                    // Log se trovi documenti malformati
                     long skipped = results.size() - events.size();
                     if (skipped > 0) {
                         logger.warn("Skipped {} malformatted events for username '{}'", skipped, username);

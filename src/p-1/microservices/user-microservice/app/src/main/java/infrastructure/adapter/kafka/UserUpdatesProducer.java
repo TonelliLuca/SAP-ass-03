@@ -18,12 +18,12 @@ public class UserUpdatesProducer implements UserProducerPort {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
-        props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 1000000); // opzionale
-        props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);   // opzionale
+        props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 1000000);
+        props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
         props.put("schema.registry.url", schemaRegistryUrl);
-        props.put("specific.avro.reader", true); // Usa le classi Avro generate
+        props.put("specific.avro.reader", true);
 
         this.userProducer = new KafkaProducer<>(props);
     }

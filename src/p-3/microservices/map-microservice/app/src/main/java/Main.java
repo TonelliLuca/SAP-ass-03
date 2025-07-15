@@ -16,15 +16,12 @@ public class Main {
             EventPublisher eventPublisher = new EventPublisherImpl(vertx);
             RestMapServiceAPI service = new RestMapServiceAPIImpl(eventPublisher);
             MapServiceVerticle mapServiceVerticle = new MapServiceVerticle(service, vertx);
-            //BikeUpdateAdapter bikeUpdateAdapter = new BikeUpdateAdapter(service, vertx);
-            //RideUpdateAdapter rideUpdateAdapter = new RideUpdateAdapter(service, vertx);
             String bootstrapServers = config.getKakaConf();
             MapEventsConsumer consumer = new MapEventsConsumer(service, bootstrapServers,  "http://schema-registry:8091");
 
             mapServiceVerticle.init();
             consumer.init();
-            //bikeUpdateAdapter.init();
-            //rideUpdateAdapter.init();
+
         });
 
 

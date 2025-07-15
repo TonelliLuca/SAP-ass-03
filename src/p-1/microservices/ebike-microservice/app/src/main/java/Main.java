@@ -19,13 +19,10 @@ public class Main {
             MongoEBikeRepository repository = new MongoEBikeRepository(mongoClient);
             String bootstrapServers = config.getKakaConf();
             EbikeProducerPort producer = new EbikeUpdatesProducer(bootstrapServers, "http://schema-registry:8081");
-            //MapCommunicationAdapter mapCommunicationAdapter = new MapCommunicationAdapter(vertx);
             EBikeServiceImpl service = new EBikeServiceImpl(repository, producer);
             RESTEBikeAdapter restEBikeAdapter = new RESTEBikeAdapter(service);
             RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers,"http://schema-registry:8081");
-            //RideCommunicationAdapter rideCommunicationAdapter = new RideCommunicationAdapter(service, vertx); // Port for RideCommunicationAdapter
             EBikeVerticle eBikeVerticle = new EBikeVerticle(restEBikeAdapter, vertx);
-            //rideCommunicationAdapter.init();
             eBikeVerticle.init();
             consumer.start();
         });

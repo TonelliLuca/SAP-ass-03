@@ -4,8 +4,8 @@ import application.ports.RestMapServiceAPI;
 
 import domain.model.EBike;
 import application.ports.EventPublisher;
-import domain.model.EBikeRepository;
-import domain.model.EBikeRepositoryImpl;
+import application.ports.EBikeRepository;
+import infrastructure.persistence.EBikeRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
@@ -24,25 +24,6 @@ public class RestMapServiceAPIImpl implements RestMapServiceAPI {
         this.eventPublisher = eventPublisher;
     }
 
-    @Override
-    public CompletableFuture<Void> updateEBikes(List<EBike> bikes) {
-        return CompletableFuture.allOf(bikes.stream()
-                .map(bikeRepository::saveBike)
-                .toArray(CompletableFuture[]::new))
-                .thenAccept(v -> {
-                    bikeRepository.getAllBikes().thenAccept(eventPublisher::publishBikesUpdate);
-
-                    bikeRepository.getUsersWithAssignedAndAvailableBikes().thenAccept(usersWithBikeMap -> {
-                        if(!usersWithBikeMap.isEmpty()){
-                            usersWithBikeMap.forEach((username, userBikes) -> eventPublisher.publishUserBikesUpdate(userBikes, username));
-                        }
-                        else{
-                            bikeRepository.getAvailableBikes().thenAccept(eventPublisher::publishUserAvailableBikesUpdate);
-                        }
-                    });
-
-                });
-    }
 
     @Override
     public CompletableFuture<Void> updateEBike(EBike bike) {

@@ -1,7 +1,7 @@
 package it.unibo;
 
 import domain.model.P2d;
-import domain.model.EBikeRepositoryImpl;
+import infrastructure.persistence.EBikeRepositoryImpl;
 import domain.model.EBike;
 import domain.model.EBikeState;
 import org.junit.jupiter.api.BeforeEach;

@@ -35,7 +35,6 @@ public class UserServiceImpl implements UserServiceAPI {
             } else if (event instanceof UserUpdateEvent e && user != null) {
                 user = e.user();
             } else if (event instanceof RechargeCreditEvent e && user != null) {
-                // Assuming User has a method to add credit
                 user = new User(user.getId(), user.getType(), user.getCredit() + e.amount());
             }
         }
