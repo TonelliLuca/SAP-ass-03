@@ -2,7 +2,7 @@
 
 === Estensione del Domain-Driven Design: A-Bike, Station e Digital Twin
 
-Per rispondere alle nuove richieste progettuali introdotte nella terza parte dell’elaborato, si è reso necessario estendere il Domain-Driven Design sviluppato nel progetto originale. In particolare, vengono introdotti i concetti di bicicletta autonoma (a-bike), stazione (station) e digital twin urbano, al fine di supportare scenari avanzati di mobilità autonoma all’interno di un contesto smart city.
+Per rispondere alle nuove richieste progettuali introdotte nella terza parte dell’elaborato, si è reso necessario estendere il Domain-Driven Design sviluppato nel progetto originale. In particolare, vengono introdotti i concetti di bicicletta autonoma (a-bike), stazione (station) e digital twin, al fine di supportare scenari avanzati di mobilità autonoma all’interno di un contesto smart city.
 
 ==== Obiettivi e requisiti dell'estensione
 
@@ -500,7 +500,7 @@ In seguito verranno definiti i domain model dei tre context individuati
 
 ===== Approccio Event-Driven e gestione del dominio
 
-* **Event-Driven**: La comunicazione con altri microservizi e con i client avviene esclusivamente tramite eventi Kafka e, per le operazioni amministrative, tramite API REST.
+* **Event-Driven**: La comunicazione con altri microservizi avviene esclusivamente tramite eventi Kafka e, per le operazioni amministrative, tramite API REST.
 * **Gestione dello stato**: Lo stato di ciascuna stazione (posizione, capacità, biciclette attraccate) è mantenuto in modo persistente e aggiornato tramite eventi, con la validazione locale di tutte le operazioni critiche (docking/undocking).
 * **Integrazione proiezioni**: Il servizio mantiene la fonte di verità riguardo la disponibilità delle stazioni, pubblicando update ufficiali verso altri context e microservizi che mantengono proiezioni locali.
 
@@ -524,7 +524,7 @@ Tutti gli eventi sono implementati come `record` Java immutabili, garantendo tra
 * Esposizione metriche (`GET /metrics`)
 
 2. **Comunicazione asincrona con Kafka**:
-* **Consumer**: Ascolta il topic `"abike-events"` per ricevere eventi di movimento/aggiornamento da a-bike.
+* **Consumer**: Ascolta il topic `"abike-events"` per ricevere richieste di docking/undocking da a-bike.
 * **Producer**: Pubblica eventi di registrazione e aggiornamento su `"station-events"` per sincronizzare le proiezioni negli altri microservizi.
 
 ===== Flusso Operativo
@@ -560,7 +560,7 @@ Il microservizio ABike costituisce il bounded context dedicato alla gestione del
 
 * **Event-Driven**: Tutta la logica di comunicazione con altri microservizi (Station, Ride, Map, ecc.) è basata su eventi pubblicati e consumati tramite Kafka, in particolare su topic come `"abike-events"`, `"station-events"` e `"ride-events"`.
 * **Proiezioni locali**: Il servizio mantiene una proiezione locale delle stazioni per selezionare sempre la più vicina quando necessario (ad esempio, per il ritorno della bici in stazione o per la chiamata da parte di un utente).
-* **Movimento autonomo**: Il movimento automatico delle a-bike (verso utente o stazione) è simulato da un servizio di dominio (`Simulation`) che aggiorna posizionee stato ogni tick, pubblicando gli eventi di avanzamento.
+* **Movimento autonomo**: Il movimento automatico delle a-bike (verso utente o stazione) è simulato da un servizio di dominio (`Simulation`) che aggiorna posizione e stato ogni tick, pubblicando gli eventi di avanzamento.
 
 ===== Modello a Eventi
 
@@ -588,7 +588,7 @@ Tutti gli eventi sono implementati come `record` Java, garantendo immutabilità 
 
 2. **Comunicazione asincrona con Kafka**:
 * **Producer**: pubblica tutti gli eventi del ciclo di vita della a-bike su `"abike-events"`.
-* **Consumer**: ascolta eventi da `"station-events"` (per mantenere aggiornata la proiezione locale delle stazioni) e da `"ride-events"` (per intercettare le richeiste di update dello stat odelle a-bike durante una ride).
+* **Consumer**: ascolta eventi da `"station-events"` (per mantenere aggiornata la proiezione locale delle stazioni) e da `"ride-events"` (per intercettare le richeiste di update dello stato delle a-bike durante una ride).
 
 ===== Flusso Operativo
 
@@ -601,15 +601,16 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 2. **Chiamata a-bike (callAbike)**:
 - Riceve richiesta (REST/evento) con destinazione utente  `CallAbikeEvent`.
 - Seleziona la stazione più vicina con bici disponibile.
-- Assegna una a-bike e crea una nuova simulazione con `Purpose.TO_USER`, iniziando a generare update (evento `ABikeRequested` e ripubblicazione dell' evento `CallAbikeEvent`).
+- Pubblica gli eventi `AbikeRequested` e `CallAbikeEvent` per segnalare la richiesta di undock della a-bike a station e la richiesta di pagamento per la chiamata all' utente.
+- Assegna una a-bike e crea una nuova simulazione con `Purpose.TO_USER`, iniziando a generare update.
 - Aggiorna ciclicamente posizione e stato, pubblicando eventi di update `ABikeUpdate`.
 - Al termine, pubblica evento di arrivo (`ABikeArrivedToUser`).
 
 3. **Fine corsa e ritorno in stazione**:
-- Al termine di una ride viene intercettato l'evento di stop
+- Al termine di una ride viene intercettato l'evento di stop.
 - Identifica la stazione più vicina con spazio disponibile.
 - Simula il movimento della bici verso la stazione (creando una nuova simulazione con `Purpose.TO_STATION`) e pubblica eventi di update e arrivo (`ABikeUpdate`, `ABikeArrivedToStation`).
-- Pubblica l'evento di completamento della call `ABikeCallComplete`
+- Pubblica l'evento di completamento della call `ABikeCallComplete`.
 
 4. **Annullamento richiesta**:
 - Riceve richiesta di cancellazione (REST/evento `CancellCallRequest`).
@@ -636,7 +637,7 @@ Per astrarre la gestione di EBike e ABike, sono stati introdotti i seguenti elem
 
 - **Interfaccia Bike**: rappresenta un contratto comune che consente al microservizio di gestire in modo generico le istanze di EBike e ABike nelle proiezioni locali.
 - **Classe ABike**: aggiunta come implementazione di Bike, con i propri attributi specifici (in particolare, lo stato di movimento autonomo).
-- **Enum BikeState**: ora contiene gli stati comuni a EBike e ABike, consentendo di uniformare la gestione dello stato durante la simulazione e le ride.
+- **Enum BikeState**: ora contiene gli stati di EBike e ABike, consentendo di uniformare la gestione dello stato durante la simulazione e le ride.
 
 Queste astrazioni permettono di utilizzare la stessa logica di proiezione, simulazione e verifica sia per ebike che per abike, mantenendo separata la gestione degli eventi specifici.
 
@@ -648,14 +649,19 @@ Gli eventi di dominio sono stati estesi come segue:
 * **Eventi specifici EBike**: `EBikeUpdateEvent`, `RideUpdateEBikeEvent`
 * **Eventi specifici ABike**: `ABikeUpdateEvent`, `RideUpdateABikeEvent`
 
-Per quanto riguarda gli eventi pubblicati sul topic Kafka, questi vengono ora completamente separati in base al tipo di bicicletta, come evidenziato dagli schemi Avro
+Per quanto riguarda gli eventi pubblicati sul topic Kafka, questi vengono ora completamente separati in base al tipo di bicicletta, come evidenziato dagli schemi Avro. Eventi di dominio generici come `RideStartEvent` e `RideStopEvent` sono stati differenziati a livello di adapter gestendoli con schemi Avro specifici per tipo di bike.
 
 ===== Proiezione Locale
 
-Il microservizio mantiene proiezioni locali per:
+Il microservizio mantiene proiezioni locali tramite il `LocalProjectionRepository`, che implementa il pattern Event Sourcing per:
 
-- **Utenti**: mappati tramite sequenze di `UserUpdateEvent`
-- **Biciclette**: ora generalizzate tramite l’interfaccia Bike, ma distinte in base al tipo (EBike/ABike) e popolate tramite i rispettivi eventi di update
+- **Utenti**: Tracciati in una mappa con chiave username, dove ogni elemento contiene una lista cronologica di `UserUpdateEvent`. Lo stato corrente dell'utente viene ricostruito recuperando l'evento più recente.
+
+- **Biciclette**: Gestite attraverso l'interfaccia `Bike` che unifica il comportamento, ma memorizzate in una mappa con chiave composta (id + tipo) che distingue tra:
+* `EBike`: Popolata tramite eventi `EBikeUpdateEvent`
+* `ABike`: Popolata tramite eventi `ABikeUpdateEvent`
+
+Ogni richiesta di informazioni su un'entità viene soddisfatta asincronamente (`CompletableFuture`), recuperando l'evento più recente dalla cronologia pertinente e ricostruendo lo stato corrente dell'oggetto di dominio.
 
 
 ==== Map microservice
@@ -678,6 +684,7 @@ image::../resources/svg/SAP-ASS-3-topic-p-3.drawio.svg[Lista dei topic e interaz
 .Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike
 image::../resources/svg/abike-sequence-event.svg[Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike, width=800]
 
+Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato l'adapter consumer per processare nel modo corretto i nuovi eventi prodotti.
 
 === Integrazione Eclipse Ditto & Digital Twin Adapter
 
