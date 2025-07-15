@@ -8,13 +8,13 @@ import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RideUpdatesConsumer {
-    private static final Logger logger = LoggerFactory.getLogger(RideUpdatesConsumer.class);
+public class MapEventConsumer {
+    private static final Logger logger = LoggerFactory.getLogger(MapEventConsumer.class);
     private final RestMapServiceAPI mapService;
     private final AvroKafkaConsumer rideConsumer;
     private final AvroKafkaConsumer bikeConsumer;
 
-    public RideUpdatesConsumer(RestMapServiceAPI mapService, String bootstrapServers, String schemaRegistryUrl) {
+    public MapEventConsumer(RestMapServiceAPI mapService, String bootstrapServers, String schemaRegistryUrl) {
         this.mapService = mapService;
         this.rideConsumer = new AvroKafkaConsumer(bootstrapServers, schemaRegistryUrl, "map-service-ride-group", "ride-events");
         this.bikeConsumer = new AvroKafkaConsumer(bootstrapServers, schemaRegistryUrl, "map-service-ebike-group", "ebike-events");

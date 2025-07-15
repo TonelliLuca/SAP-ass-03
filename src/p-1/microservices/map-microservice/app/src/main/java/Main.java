@@ -5,7 +5,7 @@ import infrastructure.utils.EventPublisherImpl;
 import infrastructure.adapter.web.MapServiceVerticle;
 import infrastructure.config.ServiceConfiguration;
 import io.vertx.core.Vertx;
-import infrastructure.adapter.kafka.RideUpdatesConsumer;
+import infrastructure.adapter.kafka.MapEventConsumer;
 
 public class Main {
     public static void main(String[] args) {
@@ -16,14 +16,10 @@ public class Main {
             EventPublisher eventPublisher = new EventPublisherImpl(vertx);
             RestMapServiceAPI service = new RestMapServiceAPIImpl(eventPublisher);
             MapServiceVerticle mapServiceVerticle = new MapServiceVerticle(service, vertx);
-            //BikeUpdateAdapter bikeUpdateAdapter = new BikeUpdateAdapter(service, vertx);
-            //RideUpdateAdapter rideUpdateAdapter = new RideUpdateAdapter(service, vertx);
             String bootstrapServers = config.getKakaConf();
-            RideUpdatesConsumer consumer = new RideUpdatesConsumer(service, bootstrapServers, "http://schema-registry:8081");
+            MapEventConsumer consumer = new MapEventConsumer(service, bootstrapServers, "http://schema-registry:8081");
             mapServiceVerticle.init();
             consumer.init();
-            //bikeUpdateAdapter.init();
-            //rideUpdateAdapter.init();
         });
 
 
