@@ -666,7 +666,7 @@ Ogni richiesta di informazioni su un'entità viene soddisfatta asincronamente (`
 
 ==== Map microservice
 
-Questo microservizio è stato adattato a processare anche i vari eventi generati da Station e ABike.
+Questo microservizio è stato adattato a processare anche i vari eventi generati da Station e ABike. La gestione dedlle E-Bike e A-Bike è stata resa generica come nel microservizio Ride.
 
 ==== User microservice
 Questo microservizio è stato adattato a processare `CallAbikeEvent` per decrementare il credito dell'utente che ha effettuato la chiamata.
@@ -684,7 +684,7 @@ image::../resources/svg/SAP-ASS-3-topic-p-3.drawio.svg[Lista dei topic e interaz
 .Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike
 image::../resources/svg/abike-sequence-event.svg[Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike, width=800]
 
-Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato l'adapter consumer per processare nel modo corretto i nuovi eventi prodotti.
+Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato il suo adapter consumer a processare nel modo corretto i nuovi eventi prodotti.
 
 === Integrazione Eclipse Ditto & Digital Twin Adapter
 

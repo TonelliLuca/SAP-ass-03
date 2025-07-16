@@ -2,7 +2,7 @@
 
 === Obiettivo
 
-Il secondo package dell'elaborato si concentra sul deployment dell'intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes, sfruttando le funzionalità offerte dal framework.
+Il secondo package dell'elaborato si concentra sul deployment dell'intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes.
 
 === Strategia di Deployment
 
@@ -70,7 +70,7 @@ L'intero processo di deploy viene automatizzato tramite uno script Bash (rebuild
 . Avvia una nuova istanza Minikube configurata con risorse adeguate
 . Costruisce localmente tutte le immagini Docker necessarie a partire dai Dockerfile nei microservizi
 . Crea il namespace sap-assignment
-. Applica in sequenza tutti i manifesti Kubernetes
+. Applica in sequenza tutti i manifest Kubernetes
 . Espone gli indirizzi IP e monitora lo stato dei pod
 
 [source,bash]
