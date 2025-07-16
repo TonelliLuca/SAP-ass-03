@@ -882,7 +882,7 @@ pre.rouge .gs {
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Consumer</strong>: <code>MapEventConsumer</code> ascolta il topic "ride-events" per aggiornare il credito degli utenti</p>
+<p><strong>Consumer</strong>: <code>RideUpdateConsumer</code> ascolta il topic "ride-events" per aggiornare il credito degli utenti</p>
 </li>
 <li>
 <p><strong>Producer</strong>: Pubblica eventi di aggiornamento attraverso <code>UserUpdatesProducer</code> sul topic "user-events"</p>
@@ -894,7 +894,7 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect4">
-<h5 id="_flusso_event_sourcing">Flusso Event Sourcing</h5>
+<h5 id="_flusso_operativo_2">Flusso operativo</h5>
 <div class="paragraph">
 <p>Per ogni operazione, il microservizio:</p>
 </div>
@@ -1028,7 +1028,7 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect4">
-<h5 id="_flusso_operativo_2">Flusso Operativo</h5>
+<h5 id="_flusso_operativo_3">Flusso Operativo</h5>
 <div class="paragraph">
 <p>Il flusso di lavoro del servizio segue questo pattern:</p>
 </div>
@@ -1122,7 +1122,7 @@ pre.rouge .gs {
 <p>Nel ciclo di vita di una corsa, i microservizi non comunicano tramite invocazioni dirette, ma esclusivamente attraverso eventi Kafka, mantenendo un disaccoppiamento logico tra le componenti.</p>
 </div>
 <div class="paragraph">
-<p>Il microservizio Ride ha il compito di gestire la logica di simulazione della corsa: al momento dell&#8217;avvio (<code>startRide</code>) o durante l&#8217;esecuzione (<code>updateRide</code>), esso produce eventi (<code>RideStartedEvent</code>, <code>RideUpdateEvent</code>) che contengono informazioni come la bici utilizzata, l’utente coinvolto, la posizione, il tempo e i consumi stimati.</p>
+<p>Il microservizio Ride ha il compito di gestire la logica di simulazione della corsa: al momento dell&#8217;avvio (<code>startRide</code>) o durante l&#8217;esecuzione, esso produce eventi (<code>RideStartedEvent</code>, <code>RideUpdateEvent</code>) che contengono informazioni come la bici utilizzata, l’utente coinvolto, la posizione, il tempo e i consumi stimati.</p>
 </div>
 <div class="paragraph">
 <p>Tuttavia, questi eventi non modificano direttamente lo stato effettivo delle entità coinvolte (come la disponibilità di una bici o il credito di un utente). Invece, tali eventi vengono <strong>consumati dai microservizi EBike e User</strong>, che:</p>
@@ -1307,7 +1307,7 @@ pre.rouge .gs {
 <div class="sect2">
 <h3 id="_obiettivo">3.1. Obiettivo</h3>
 <div class="paragraph">
-<p>Il secondo package dell&#8217;elaborato si concentra sul deployment dell&#8217;intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes, sfruttando le funzionalità offerte dal framework.</p>
+<p>Il secondo package dell&#8217;elaborato si concentra sul deployment dell&#8217;intera architettura progettata nel package P-1 su una infrastruttura distribuita basata su Kubernetes.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1417,7 +1417,7 @@ pre.rouge .gs {
 <p>Crea il namespace sap-assignment</p>
 </li>
 <li>
-<p>Applica in sequenza tutti i manifesti Kubernetes</p>
+<p>Applica in sequenza tutti i manifest Kubernetes</p>
 </li>
 <li>
 <p>Espone gli indirizzi IP e monitora lo stato dei pod</p>
@@ -2437,7 +2437,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 </div>
 </div>
 <div class="sect4">
-<h5 id="_flusso_operativo_3">Flusso Operativo</h5>
+<h5 id="_flusso_operativo_4">Flusso Operativo</h5>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -2599,7 +2599,7 @@ Il diagramma rappresenta il percorso tipico di un utente che richiede una a-bike
 </div>
 </div>
 <div class="sect4">
-<h5 id="_flusso_operativo_4">Flusso Operativo</h5>
+<h5 id="_flusso_operativo_5">Flusso Operativo</h5>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -2794,7 +2794,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <div class="sect3">
 <h4 id="_map_microservice_2">4.6.4. Map microservice</h4>
 <div class="paragraph">
-<p>Questo microservizio è stato adattato a processare anche i vari eventi generati da Station e ABike.</p>
+<p>Questo microservizio è stato adattato a processare anche i vari eventi generati da Station e ABike. La gestione dedlle E-Bike e A-Bike è stata resa generica come nel microservizio Ride.</p>
 </div>
 </div>
 <div class="sect3">
@@ -2831,7 +2831,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 <div class="title">Figure 5. Diagramma di sequenza che rappresenta il ciclo di eventi introdotti da a-bike</div>
 </div>
 <div class="paragraph">
-<p>Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato l&#8217;adapter consumer per processare nel modo corretto i nuovi eventi prodotti.</p>
+<p>Il flusso di eventi non descritto nel diagramma è da considerarsi identico al punto p-1, visto che ride-microservice è stato reso generico dal punto di vista di una bike ed è stato adattato il suo adapter consumer a processare nel modo corretto i nuovi eventi prodotti.</p>
 </div>
 </div>
 <div class="sect2">
@@ -2949,7 +2949,7 @@ Una nuova a-bike diventa a tutti glie effetti disponibile se Station microservic
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-15 23:46:48 UTC
+Last updated 2025-07-16 22:53:13 UTC
 </div>
 </div>
 </body>
